@@ -1,4 +1,6 @@
-# Datastore Wrapper
+# Datastore Wrapper [![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)][godoc]
+
+[godoc]: https://godoc.org/go.mercari.io/datastore
 
 :construction: This package is unstable :construction: [github repo](https://github.com/mercari/datastore)
 
