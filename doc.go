@@ -1,1 +1,1 @@
-package datastore
+package datastore // import "go.mercari.io/datastore"
