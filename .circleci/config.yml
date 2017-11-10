@@ -1,0 +1,46 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/go.mercari.io/datastore
+    docker:
+      - image: google/cloud-sdk:178.0.0
+        environment:
+          GOPATH: /go
+          GOLANG_VERSION: 1.9.2
+          PROJECT_ID: datastore-wrapper
+      - image: google/cloud-sdk:178.0.0
+        command: ['gcloud', '--project=datastore-wrapper', 'beta', 'emulators', 'datastore', 'start', '--host-port=localhost:8081', '--no-store-on-disk', '--consistency=1.0']
+    steps:
+      - checkout
+
+      - run:
+          name: PATH update
+          command: |
+            echo "export PATH=\$PATH:/go/bin:/usr/local/go/bin:/usr/lib/google-cloud-sdk/platform/google_appengine" >> $BASH_ENV
+            cat $BASH_ENV
+      - run:
+          name: install go binary
+          command: |
+            echo $PATH
+            /usr/bin/curl -o go.tar.gz https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
+            tar -zxf go.tar.gz && \
+            mv go /usr/local && \
+            rm go.tar.gz
+
+      - run:
+          name: apply monkey patch
+          command: chmod +x /usr/lib/google-cloud-sdk/platform/google_appengine/goapp
+
+      - restore_cache:
+          keys:
+            - dep-cache-{{ checksum "Gopkg.toml" }}-{{ checksum "Gopkg.lock" }}
+      - run:
+          name: setup
+          command: ./setup.sh
+      - save_cache:
+          key: dep-cache-{{ checksum "Gopkg.toml" }}-{{ checksum "Gopkg.lock" }}
+          paths:
+            - /go/pkg/dep
+      - run:
+          name: run tests
+          command: ./test.sh

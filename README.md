@@ -81,14 +81,24 @@ https://www.mercari.com/cla/
     * [dep](github.com/golang/dep)
         * `go get -u github.com/golang/dep/cmd/dep`
 
+1. Testing in local
+
 ```
 $ ./setup.sh # exec once
 $ ./serve.sh # exec in background
 $ ./test.sh
 ```
 
+2. Testing with Docker
+
 ```
 $ ./build-in-docker.sh
+```
+
+3. Testing with [Circle CI CLI](https://circleci.com/docs/2.0/local-jobs/)
+
+```
+$ circleci build
 ```
 
 ## License

@@ -11,9 +11,15 @@ go tool vet $targets
 ./build-cmd/unused $(go list ./...)
 
 # Testing in local env
-$(gcloud beta emulators datastore env-init)
+if [ "${CI}" != "true" ]; then
+  $(gcloud beta emulators datastore env-init)
+else
+  export DATASTORE_EMULATOR_HOST=localhost:8081
+fi
 goapp test $(go list ./...) $@
-$(gcloud beta emulators datastore env-unset)
+if [ "${CI}" != "true" ]; then
+  $(gcloud beta emulators datastore env-unset)
+fi
 
 # Connect Cloud Datastore (production env)
 # (if you need login) → gcloud auth application-default login
