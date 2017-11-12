@@ -11,13 +11,13 @@ go tool vet $targets
 ./build-cmd/unused $(go list ./...)
 
 # Testing in local env
-if [ "${CI}" != "true" ]; then
+if [ "${CI:=''}" != "true" ]; then
   $(gcloud beta emulators datastore env-init)
 else
   export DATASTORE_EMULATOR_HOST=localhost:8081
 fi
 goapp test $(go list ./...) $@
-if [ "${CI}" != "true" ]; then
+if [ "${CI:=''}" != "true" ]; then
   $(gcloud beta emulators datastore env-unset)
 fi
 
