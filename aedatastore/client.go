@@ -19,8 +19,8 @@ type datastoreImpl struct {
 	ctx context.Context
 }
 
-func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dts interface{}) error {
-	err := d.GetMulti(ctx, []w.Key{key}, []interface{}{dts})
+func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dst interface{}) error {
+	err := d.GetMulti(ctx, []w.Key{key}, []interface{}{dst})
 	if merr, ok := err.(w.MultiError); ok {
 		return merr[0]
 	} else if err != nil {

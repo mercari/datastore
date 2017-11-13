@@ -9,7 +9,7 @@ var FromContext ClientGenerator
 type ClientGenerator func(ctx context.Context, opts ...ClientOption) (Client, error)
 
 type Client interface {
-	Get(ctx context.Context, key Key, dts interface{}) error
+	Get(ctx context.Context, key Key, dst interface{}) error
 	GetMulti(ctx context.Context, keys []Key, dst interface{}) error
 	Put(ctx context.Context, key Key, src interface{}) (Key, error)
 	PutMulti(ctx context.Context, keys []Key, src interface{}) ([]Key, error)
@@ -56,7 +56,7 @@ type PendingKey interface {
 }
 
 type Transaction interface {
-	Get(key Key, dts interface{}) error
+	Get(key Key, dst interface{}) error
 	GetMulti(keys []Key, dst interface{}) error
 	Put(key Key, src interface{}) (PendingKey, error)
 	PutMulti(keys []Key, src interface{}) ([]PendingKey, error)

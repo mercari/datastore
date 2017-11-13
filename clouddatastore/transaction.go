@@ -30,8 +30,8 @@ type commitImpl struct {
 	commit *datastore.Commit
 }
 
-func (tx *transactionImpl) Get(key w.Key, dts interface{}) error {
-	err := tx.GetMulti([]w.Key{key}, []interface{}{dts})
+func (tx *transactionImpl) Get(key w.Key, dst interface{}) error {
+	err := tx.GetMulti([]w.Key{key}, []interface{}{dst})
 	if merr, ok := err.(w.MultiError); ok {
 		return merr[0]
 	} else if err != nil {
