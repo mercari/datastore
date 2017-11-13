@@ -18,11 +18,6 @@ func FromClient(ctx context.Context, client datastore.Client) *Boom {
 	return &Boom{Context: ctx, Client: client}
 }
 
-type Iterator interface {
-	Next(dst interface{}) (datastore.Key, error)
-	Cursor() (datastore.Cursor, error)
-}
-
 type Transaction interface {
 	Get(dst interface{}) error
 	GetMulti(dst interface{}) error

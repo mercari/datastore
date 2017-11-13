@@ -2,7 +2,6 @@ package boom
 
 import (
 	"context"
-
 	"fmt"
 	"reflect"
 	"strings"
@@ -122,6 +121,15 @@ func (bm *Boom) setStructKey(src interface{}, key datastore.Key) error {
 	}
 
 	return nil
+}
+
+func (bm *Boom) Kind(src interface{}) string {
+	key, err := bm.KeyError(src)
+	if err != nil {
+		return ""
+	}
+
+	return key.Kind()
 }
 
 func (bm *Boom) Key(src interface{}) datastore.Key {
@@ -294,8 +302,9 @@ func (bm *Boom) RunInTransaction(ctx context.Context, f func(tx Transaction) err
 	panic("not implemented")
 }
 
-func (bm *Boom) Run(ctx context.Context, q datastore.Query) Iterator {
-	panic("not implemented")
+func (bm *Boom) Run(ctx context.Context, q datastore.Query) *Iterator {
+	it := bm.Client.Run(ctx, q)
+	return &Iterator{bm: bm, it: it}
 }
 
 func (bm *Boom) Count(ctx context.Context, q datastore.Query) (int, error) {
@@ -303,7 +312,20 @@ func (bm *Boom) Count(ctx context.Context, q datastore.Query) (int, error) {
 }
 
 func (bm *Boom) GetAll(ctx context.Context, q datastore.Query, dst interface{}) ([]datastore.Key, error) {
-	panic("not implemented")
+	keys, err := bm.Client.GetAll(ctx, q, dst)
+	if err != nil {
+		return nil, err
+	}
+
+	v := reflect.Indirect(reflect.ValueOf(dst))
+	for idx, key := range keys {
+		err = bm.setStructKey(v.Index(idx).Interface(), key)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return keys, nil
 }
 
 func (bm *Boom) Batch() Batch {
