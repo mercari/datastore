@@ -350,6 +350,7 @@ func (bm *Boom) GetAll(ctx context.Context, q datastore.Query, dst interface{}) 
 	return keys, nil
 }
 
-func (bm *Boom) Batch() Batch {
-	panic("not implemented")
+func (bm *Boom) Batch() *Batch {
+	b := bm.Client.Batch()
+	return &Batch{bm: bm, b: b}
 }
