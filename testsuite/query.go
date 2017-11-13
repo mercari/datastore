@@ -271,7 +271,7 @@ func Filter_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
 				t.Fatal(err)
 			}
 			if v := len(keys); v != 1 {
-				t.Errorf("unexpected: %v", v)
+				t.Fatalf("unexpected: %v", v)
 			}
 			if v := keys[0]; v.ID() != key1.ID() {
 				t.Errorf("unexpected: %v", v)
@@ -368,7 +368,7 @@ func Filter_PropertyTranslater(t *testing.T, ctx context.Context, client datasto
 				t.Fatal(err)
 			}
 			if v := len(keys); v != 1 {
-				t.Errorf("unexpected: %v", v)
+				t.Fatalf("unexpected: %v", v)
 			}
 			if v := keys[0]; v.ID() != key1.ID() {
 				t.Errorf("unexpected: %v", v)
@@ -465,7 +465,7 @@ func Filter_PropertyTranslaterWithOriginalTypes(t *testing.T, ctx context.Contex
 				t.Fatal(err)
 			}
 			if v := len(keys); v != 1 {
-				t.Errorf("unexpected: %v", v)
+				t.Fatalf("unexpected: %v", v)
 			}
 			if v := keys[0]; v.ID() != key1.ID() {
 				t.Errorf("unexpected: %v", v)
