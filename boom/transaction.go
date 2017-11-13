@@ -2,11 +2,13 @@ package boom
 
 import (
 	"reflect"
+	"sync"
 
 	"go.mercari.io/datastore"
 )
 
 type Transaction struct {
+	m                sync.Mutex
 	bm               *Boom
 	tx               datastore.Transaction
 	pendingKeysLater []*setKeyLater
@@ -62,6 +64,8 @@ func (tx *Transaction) PutMulti(src interface{}) ([]datastore.PendingKey, error)
 	}
 
 	v := reflect.Indirect(reflect.ValueOf(src))
+	tx.m.Lock()
+	defer tx.m.Unlock()
 	for idx, pKey := range pKeys {
 		tx.pendingKeysLater = append(tx.pendingKeysLater, &setKeyLater{
 			pendingKey: pKey,
@@ -99,6 +103,9 @@ func (tx *Transaction) Commit() (datastore.Commit, error) {
 		return nil, err
 	}
 
+	tx.m.Lock()
+	defer tx.m.Unlock()
+
 	for _, s := range tx.pendingKeysLater {
 		key := commit.Key(s.pendingKey)
 		err = tx.bm.setStructKey(s.src, key)
@@ -106,6 +113,7 @@ func (tx *Transaction) Commit() (datastore.Commit, error) {
 			return nil, err
 		}
 	}
+	tx.pendingKeysLater = nil
 
 	return commit, nil
 }
@@ -114,6 +122,7 @@ func (tx *Transaction) Rollback() error {
 	return tx.tx.Rollback()
 }
 
-func (tx *Transaction) Batch() TransactionBatch {
-	panic("not implemented")
+func (tx *Transaction) Batch() *TransactionBatch {
+	b := tx.tx.Batch()
+	return &TransactionBatch{bm: tx.bm, tx: tx, b: b}
 }
