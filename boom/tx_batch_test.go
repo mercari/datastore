@@ -1,27 +1,15 @@
 package boom
 
 import (
-	"context"
 	"testing"
 
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/clouddatastore"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 func TestBoom_TransactionBatchGet(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
@@ -73,19 +61,8 @@ func TestBoom_TransactionBatchGet(t *testing.T) {
 }
 
 func TestBoom_TransactionBatchPut(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
@@ -134,19 +111,8 @@ func TestBoom_TransactionBatchPut(t *testing.T) {
 }
 
 func TestBoom_TransactionBatchDelete(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`

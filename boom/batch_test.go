@@ -1,27 +1,15 @@
 package boom
 
 import (
-	"context"
 	"testing"
 
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/clouddatastore"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 func TestBoom_BatchGet(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
@@ -64,19 +52,8 @@ func TestBoom_BatchGet(t *testing.T) {
 }
 
 func TestBoom_BatchPut(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
@@ -94,7 +71,7 @@ func TestBoom_BatchPut(t *testing.T) {
 		list = append(list, obj)
 	}
 
-	err = b.Exec(ctx)
+	err := b.Exec(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,19 +87,8 @@ func TestBoom_BatchPut(t *testing.T) {
 }
 
 func TestBoom_BatchDelete(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`

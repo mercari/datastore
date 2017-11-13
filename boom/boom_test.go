@@ -5,50 +5,12 @@ import (
 	"testing"
 
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/clouddatastore"
-	"google.golang.org/api/iterator"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 var _ datastore.PropertyTranslator = UserID(0)
 
 type contextClient struct{}
-
-func cleanUp() error {
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
-	q := client.NewQuery("__kind__").KeysOnly()
-	iter := client.Run(ctx, q)
-	var kinds []string
-	for {
-		key, err := iter.Next(nil)
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		kinds = append(kinds, key.Name())
-	}
-
-	for _, kind := range kinds {
-		q := client.NewQuery(kind).Limit(1000).KeysOnly()
-		keys, err := client.GetAll(ctx, q, nil)
-		if err != nil {
-			return err
-		}
-		err = client.DeleteMulti(ctx, keys)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 type UserID int64
 type DataID int64
@@ -82,19 +44,8 @@ func (id DataID) FromPropertyValue(ctx context.Context, p datastore.Property) (d
 }
 
 func TestBoom_Key(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
@@ -112,19 +63,8 @@ func TestBoom_Key(t *testing.T) {
 }
 
 func TestBoom_KeyWithParent(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ParentKey datastore.Key `datastore:"-" boom:"parent"`
@@ -150,19 +90,8 @@ func TestBoom_KeyWithParent(t *testing.T) {
 }
 
 func TestBoom_Put(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -195,19 +124,8 @@ func TestBoom_Put(t *testing.T) {
 }
 
 func TestBoom_PutWithIncomplete(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -244,19 +162,8 @@ func TestBoom_PutWithIncomplete(t *testing.T) {
 }
 
 func TestBoom_Get(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -266,7 +173,7 @@ func TestBoom_Get(t *testing.T) {
 	bm := FromClient(ctx, client)
 
 	key := client.IDKey("Data", 111, nil)
-	_, err = client.Put(ctx, key, &Data{Str: "Str"})
+	_, err := client.Put(ctx, key, &Data{Str: "Str"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,19 +190,8 @@ func TestBoom_Get(t *testing.T) {
 }
 
 func TestBoom_DeleteByStruct(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -305,7 +201,7 @@ func TestBoom_DeleteByStruct(t *testing.T) {
 	bm := FromClient(ctx, client)
 
 	key := client.IDKey("Data", 111, nil)
-	_, err = client.Put(ctx, key, &Data{Str: "Str"})
+	_, err := client.Put(ctx, key, &Data{Str: "Str"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,19 +219,8 @@ func TestBoom_DeleteByStruct(t *testing.T) {
 }
 
 func TestBoom_DeleteByKey(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -345,7 +230,7 @@ func TestBoom_DeleteByKey(t *testing.T) {
 	bm := FromClient(ctx, client)
 
 	key := client.IDKey("Data", 111, nil)
-	_, err = client.Put(ctx, key, &Data{Str: "Str"})
+	_, err := client.Put(ctx, key, &Data{Str: "Str"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -362,19 +247,8 @@ func TestBoom_DeleteByKey(t *testing.T) {
 }
 
 func TestBoom_GetAll(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
@@ -389,7 +263,7 @@ func TestBoom_GetAll(t *testing.T) {
 		list = append(list, &Data{})
 	}
 
-	_, err = bm.PutMulti(ctx, list)
+	_, err := bm.PutMulti(ctx, list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,19 +286,8 @@ func TestBoom_GetAll(t *testing.T) {
 }
 
 func TestBoom_TagWithPropertyTranslator(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
-
-	ctx := context.Background()
-	client, err := clouddatastore.FromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	ctx = context.WithValue(ctx, contextClient{}, client)
 
