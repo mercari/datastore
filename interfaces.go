@@ -8,17 +8,13 @@ var FromContext ClientGenerator
 
 type ClientGenerator func(ctx context.Context, opts ...ClientOption) (Client, error)
 
-type datastoreOperation interface {
+type Client interface {
 	Get(ctx context.Context, key Key, dts interface{}) error
 	GetMulti(ctx context.Context, keys []Key, dst interface{}) error
 	Put(ctx context.Context, key Key, src interface{}) (Key, error)
 	PutMulti(ctx context.Context, keys []Key, src interface{}) ([]Key, error)
 	Delete(ctx context.Context, key Key) error
 	DeleteMulti(ctx context.Context, keys []Key) error
-}
-
-type Client interface {
-	datastoreOperation
 
 	NewTransaction(ctx context.Context) (Transaction, error)
 	RunInTransaction(ctx context.Context, f func(tx Transaction) error) (Commit, error)
@@ -38,10 +34,6 @@ type Client interface {
 	DecodeCursor(s string) (Cursor, error)
 
 	Batch() *Batch
-
-	// GetAsIDMap
-	// GetAsNameMap
-	// IsTransactionContext
 }
 
 type Key interface {
