@@ -36,7 +36,7 @@ func cleanUp() error {
 	}
 
 	for _, kind := range kinds {
-		q := client.NewQuery(kind).KeysOnly()
+		q := client.NewQuery(kind).Limit(1000).KeysOnly()
 		keys, err := client.GetAll(ctx, q, nil)
 		if err != nil {
 			return err
@@ -82,13 +82,19 @@ func (id DataID) FromPropertyValue(ctx context.Context, p datastore.Property) (d
 }
 
 func TestBoom_Key(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
@@ -106,13 +112,19 @@ func TestBoom_Key(t *testing.T) {
 }
 
 func TestBoom_KeyWithParent(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ParentKey datastore.Key `datastore:"-" boom:"parent"`
@@ -138,13 +150,19 @@ func TestBoom_KeyWithParent(t *testing.T) {
 }
 
 func TestBoom_Put(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -177,13 +195,19 @@ func TestBoom_Put(t *testing.T) {
 }
 
 func TestBoom_PutWithIncomplete(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -220,13 +244,19 @@ func TestBoom_PutWithIncomplete(t *testing.T) {
 }
 
 func TestBoom_Get(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -253,13 +283,19 @@ func TestBoom_Get(t *testing.T) {
 }
 
 func TestBoom_DeleteByStruct(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -287,13 +323,19 @@ func TestBoom_DeleteByStruct(t *testing.T) {
 }
 
 func TestBoom_DeleteByKey(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ID  int64  `datastore:"-" boom:"id"`
@@ -320,24 +362,33 @@ func TestBoom_DeleteByKey(t *testing.T) {
 }
 
 func TestBoom_GetAll(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	type Data struct {
 		ID int64 `datastore:"-" boom:"id"`
 	}
 
+	const size = 100
+
 	bm := FromClient(ctx, client)
 
 	var list []*Data
-	for i := 0; i < 100; i++ {
+	for i := 0; i < size; i++ {
 		list = append(list, &Data{})
 	}
+
 	_, err = bm.PutMulti(ctx, list)
 	if err != nil {
 		t.Fatal(err)
@@ -350,7 +401,7 @@ func TestBoom_GetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if v := len(list); v != 100 {
+	if v := len(list); v != size {
 		t.Errorf("unexpected: %v", v)
 	}
 	for _, obj := range list {
@@ -361,13 +412,19 @@ func TestBoom_GetAll(t *testing.T) {
 }
 
 func TestBoom_TagWithPropertyTranslator(t *testing.T) {
+	defer cleanUp()
+
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
-	defer cleanUp()
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	ctx = context.WithValue(ctx, contextClient{}, client)
 
