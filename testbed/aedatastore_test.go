@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"testing"
 
+	"sort"
+	"strings"
+
 	netcontext "golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
@@ -417,29 +420,43 @@ func TestAEDatastore_ObjectHasObjectSlice(t *testing.T) {
 	if v := len(ps); v != 6 {
 		t.Fatalf("unexpected: %v", v)
 	}
+
+	sort.SliceStable(ps, func(i, j int) bool {
+		a := ps[i]
+		b := ps[j]
+		if v := strings.Compare(a.Name, b.Name); v < 0 {
+			return true
+		}
+		if v := strings.Compare(a.Value.(string), b.Value.(string)); v < 0 {
+			return true
+		}
+
+		return false
+	})
+
 	expects := []struct {
 		Name     string
 		Value    string
 		Multiple bool
 	}{
 		{"Slice.A", "A1", true},
-		{"Slice.B", "B1", true},
 		{"Slice.A", "A2", true},
-		{"Slice.B", "B2", true},
 		{"Slice.A", "A3", true},
+		{"Slice.B", "B1", true},
+		{"Slice.B", "B2", true},
 		{"Slice.B", "B3", true},
 	}
 	for idx, expect := range expects {
 		t.Logf("idx: %d", idx)
 		p := ps[idx]
 		if v := p.Name; v != expect.Name {
-			t.Fatalf("unexpected: %v", v)
+			t.Errorf("unexpected: %v", v)
 		}
 		if v := p.Value.(string); v != expect.Value {
-			t.Fatalf("unexpected: %v", v)
+			t.Errorf("unexpected: %v", v)
 		}
 		if v := p.Multiple; v != expect.Multiple {
-			t.Fatalf("unexpected: %v", v)
+			t.Errorf("unexpected: %v", v)
 		}
 	}
 }
