@@ -10,6 +10,9 @@ go tool vet $targets
 # ./build-cmd/gosimple $(go list ./...)
 ./build-cmd/unused $(go list ./...)
 
+# don't execute in parallel
+export GOMAXPROCS=1
+
 # Testing in local env
 if [ "${CI:=''}" != "true" ]; then
   $(gcloud beta emulators datastore env-init)
