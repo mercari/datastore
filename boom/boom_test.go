@@ -9,6 +9,10 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+var _ datastore.PropertyTranslator = UserID(0)
+
+type contextClient struct{}
+
 func cleanUp() error {
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
@@ -44,6 +48,37 @@ func cleanUp() error {
 	}
 
 	return nil
+}
+
+type UserID int64
+type DataID int64
+
+func (id UserID) ToPropertyValue(ctx context.Context) (interface{}, error) {
+	client := ctx.Value(contextClient{}).(datastore.Client)
+	key := client.IDKey("User", int64(id), nil)
+	return key, nil
+}
+
+func (id UserID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+	key, ok := p.Value.(datastore.Key)
+	if !ok {
+		return nil, datastore.ErrInvalidEntityType
+	}
+	return UserID(key.ID()), nil
+}
+
+func (id DataID) ToPropertyValue(ctx context.Context) (interface{}, error) {
+	client := ctx.Value(contextClient{}).(datastore.Client)
+	key := client.IDKey("Data", int64(id), nil)
+	return key, nil
+}
+
+func (id DataID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+	key, ok := p.Value.(datastore.Key)
+	if !ok {
+		return nil, datastore.ErrInvalidEntityType
+	}
+	return DataID(key.ID()), nil
 }
 
 func TestBoom_Key(t *testing.T) {
@@ -321,6 +356,72 @@ func TestBoom_GetAll(t *testing.T) {
 	for _, obj := range list {
 		if v := obj.ID; v == 0 {
 			t.Errorf("unexpected: %v", v)
+		}
+	}
+}
+
+func TestBoom_TagWithPropertyTranslator(t *testing.T) {
+	ctx := context.Background()
+	client, err := clouddatastore.FromContext(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	ctx = context.WithValue(ctx, contextClient{}, client)
+
+	bm := FromClient(ctx, client)
+
+	{ // Put & Get with boom:"id"
+		type Data struct {
+			ID DataID `datastore:"-" boom:"id"`
+		}
+
+		key, err := bm.Put(ctx, &Data{ID: DataID(100)})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if v := key.Kind(); v != "Data" {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ID(); v != 100 {
+			t.Errorf("unexpected: %v", v)
+		}
+
+		err = bm.Get(ctx, &Data{ID: DataID(100)})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	{ // Put & Get with boom:"parent"
+		type Data struct {
+			ParentUserID UserID `datastore:"-" boom:"parent"`
+			ID           DataID `datastore:"-" boom:"id"`
+		}
+
+		key, err := bm.Put(ctx, &Data{ParentUserID: UserID(20), ID: DataID(100)})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if v := key.Kind(); v != "Data" {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ID(); v != 100 {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ParentKey().Kind(); v != "User" {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ParentKey().ID(); v != 20 {
+			t.Errorf("unexpected: %v", v)
+		}
+
+		err = bm.Get(ctx, &Data{ParentUserID: UserID(20), ID: DataID(100)})
+		if err != nil {
+			t.Fatal(err)
 		}
 	}
 }

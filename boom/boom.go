@@ -9,6 +9,8 @@ import (
 	"go.mercari.io/datastore"
 )
 
+var typeOfKey = reflect.TypeOf(datastore.Key(nil))
+
 type Boom struct {
 	Context context.Context
 	Client  datastore.Client
@@ -84,12 +86,24 @@ func (bm *Boom) setStructKey(src interface{}, key datastore.Key) error {
 				return fmt.Errorf("boom: Only one field may be marked id")
 			}
 
-			switch vf.Kind() {
-			case reflect.Int64:
-				vf.SetInt(key.ID())
-			case reflect.String:
-				vf.SetString(key.Name())
+			pt, ok := vf.Interface().(datastore.PropertyTranslator)
+			if ok {
+				pv, err := pt.FromPropertyValue(bm.Context, datastore.Property{Value: key})
+				if err != nil {
+					return err
+				}
+
+				vf.Set(reflect.ValueOf(pv))
+
+			} else {
+				switch vf.Kind() {
+				case reflect.Int64:
+					vf.SetInt(key.ID())
+				case reflect.String:
+					vf.SetString(key.Name())
+				}
 			}
+
 			idSet = true
 
 		case "kind":
@@ -107,11 +121,23 @@ func (bm *Boom) setStructKey(src interface{}, key datastore.Key) error {
 			if parentSet {
 				return fmt.Errorf("boom: Only one field may be marked parent")
 			}
-			dskeyType := reflect.TypeOf((*datastore.Key)(nil)).Elem() // TODO
-			vfType := vf.Type()
-			if vfType.ConvertibleTo(dskeyType) {
-				vf.Set(reflect.ValueOf(key.ParentKey()).Convert(vfType))
+
+			pt, ok := vf.Interface().(datastore.PropertyTranslator)
+			if ok {
+				pv, err := pt.FromPropertyValue(bm.Context, datastore.Property{Value: key.ParentKey()})
+				if err != nil {
+					return err
+				}
+
+				vf.Set(reflect.ValueOf(pv))
 				parentSet = true
+
+			} else {
+				vfType := vf.Type()
+				if vfType.ConvertibleTo(typeOfKey) {
+					vf.Set(reflect.ValueOf(key.ParentKey()).Convert(vfType))
+					parentSet = true
+				}
 			}
 		}
 	}
@@ -167,21 +193,51 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 		if len(tagValues) > 0 {
 			switch tagValues[0] {
 			case "id":
-				switch vf.Kind() {
-				case reflect.Int64:
-					if keyID != 0 || keyName != "" {
-						return nil, fmt.Errorf("boom: Only one field may be marked id")
+
+				pt, ok := vf.Interface().(datastore.PropertyTranslator)
+				if ok {
+					pv, err := pt.ToPropertyValue(bm.Context)
+					if err != nil {
+						return nil, err
 					}
-					keyID = vf.Int()
-				case reflect.String:
-					if keyID != 0 || keyName != "" {
-						return nil, fmt.Errorf("boom: Only one field may be marked id")
+					if id, ok := pv.(int64); ok {
+						if keyID != 0 || keyName != "" {
+							return nil, fmt.Errorf("boom: Only one field may be marked id")
+						}
+						keyID = id
+					} else if name, ok := pv.(string); ok {
+						if keyID != 0 || keyName != "" {
+							return nil, fmt.Errorf("boom: Only one field may be marked id")
+						}
+						keyName = name
+					} else if key, ok := pv.(datastore.Key); ok {
+						if keyID != 0 || keyName != "" {
+							return nil, fmt.Errorf("boom: Only one field may be marked id")
+						}
+						if key.ID() != 0 {
+							keyID = key.ID()
+						} else if key.Name() != "" {
+							keyName = key.Name()
+						} else {
+							return nil, fmt.Errorf("boom: ID field must be int64 or string in %v", t.Name())
+						}
 					}
-					keyName = vf.String()
-				default:
-					return nil, fmt.Errorf("boom: ID field must be int64 or string in %v", t.Name())
+				} else {
+					switch vf.Kind() {
+					case reflect.Int64:
+						if keyID != 0 || keyName != "" {
+							return nil, fmt.Errorf("boom: Only one field may be marked id")
+						}
+						keyID = vf.Int()
+					case reflect.String:
+						if keyID != 0 || keyName != "" {
+							return nil, fmt.Errorf("boom: Only one field may be marked id")
+						}
+						keyName = vf.String()
+					default:
+						return nil, fmt.Errorf("boom: ID field must be int64 or string in %v", t.Name())
+					}
 				}
-				// TODO PropertyTranslator support
 
 			case "kind":
 				if vf.Kind() == reflect.String {
@@ -195,14 +251,26 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 				}
 
 			case "parent":
-				dskeyType := reflect.TypeOf((*datastore.Key)(nil)).Elem() // TODO
-				if vf.Type().ConvertibleTo(dskeyType) {
-					if parent != nil {
-						return nil, fmt.Errorf("boom: Only one field may be marked parent")
+				pt, ok := vf.Interface().(datastore.PropertyTranslator)
+				if ok {
+					pv, err := pt.ToPropertyValue(bm.Context)
+					if err != nil {
+						return nil, err
 					}
-					parent = vf.Convert(dskeyType).Interface().(datastore.Key)
+					if key, ok := pv.(datastore.Key); ok {
+						if parent != nil {
+							return nil, fmt.Errorf("boom: Only one field may be marked parent")
+						}
+						parent = key
+					}
+				} else {
+					if vf.Type().ConvertibleTo(typeOfKey) {
+						if parent != nil {
+							return nil, fmt.Errorf("boom: Only one field may be marked parent")
+						}
+						parent = vf.Convert(typeOfKey).Interface().(datastore.Key)
+					}
 				}
-				// TODO PropertyTranslator support
 			}
 		}
 	}
