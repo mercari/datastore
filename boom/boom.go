@@ -273,9 +273,9 @@ func (bm *Boom) PutMulti(ctx context.Context, src interface{}) ([]datastore.Key,
 	return keys, nil
 }
 
-func (bm *Boom) Delete(ctx context.Context, dst interface{}) error {
-	dsts := []interface{}{dst}
-	err := bm.DeleteMulti(ctx, dsts)
+func (bm *Boom) Delete(ctx context.Context, src interface{}) error {
+	srcs := []interface{}{src}
+	err := bm.DeleteMulti(ctx, srcs)
 	if merr, ok := err.(datastore.MultiError); ok {
 		return merr[0]
 	} else if err != nil {
@@ -285,8 +285,8 @@ func (bm *Boom) Delete(ctx context.Context, dst interface{}) error {
 	return nil
 }
 
-func (bm *Boom) DeleteMulti(ctx context.Context, dst interface{}) error {
-	keys, err := bm.extractKeys(dst)
+func (bm *Boom) DeleteMulti(ctx context.Context, src interface{}) error {
+	keys, err := bm.extractKeys(src)
 	if err != nil {
 		return err
 	}
@@ -294,12 +294,34 @@ func (bm *Boom) DeleteMulti(ctx context.Context, dst interface{}) error {
 	return bm.Client.DeleteMulti(ctx, keys)
 }
 
-func (bm *Boom) NewTransaction(ctx context.Context) (Transaction, error) {
-	panic("not implemented")
+func (bm *Boom) NewTransaction(ctx context.Context) (*Transaction, error) {
+	tx, err := bm.Client.NewTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Transaction{bm: bm, tx: tx}, nil
 }
 
-func (bm *Boom) RunInTransaction(ctx context.Context, f func(tx Transaction) error) (datastore.Commit, error) {
-	panic("not implemented")
+func (bm *Boom) RunInTransaction(ctx context.Context, f func(tx *Transaction) error) (datastore.Commit, error) {
+	var tx *Transaction
+	commit, err := bm.Client.RunInTransaction(ctx, func(origTx datastore.Transaction) error {
+		tx = &Transaction{bm: bm, tx: origTx}
+		return f(tx)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range tx.pendingKeysLater {
+		key := commit.Key(s.pendingKey)
+		err = tx.bm.setStructKey(s.src, key)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return commit, nil
 }
 
 func (bm *Boom) Run(ctx context.Context, q datastore.Query) *Iterator {
