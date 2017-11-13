@@ -29,7 +29,7 @@ var (
 	typeOfByteSlice = reflect.TypeOf([]byte(nil))
 	typeOfTime      = reflect.TypeOf(time.Time{})
 	typeOfGeoPoint  = reflect.TypeOf(GeoPoint{})
-	typeOfKey       = reflect.TypeOf(Key(nil))
+	typeOfKey       = reflect.TypeOf((*Key)(nil)).Elem()
 )
 
 // typeMismatchReason returns a string explaining why the property p could not

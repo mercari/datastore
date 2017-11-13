@@ -395,7 +395,7 @@ func TestBoom_TagWithPropertyTranslator(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	{ // Put & Get with boom:"parent"
+	{ // Put & Get	 with boom:"parent"
 		type Data struct {
 			ParentUserID UserID `datastore:"-" boom:"parent"`
 			ID           DataID `datastore:"-" boom:"id"`

@@ -9,7 +9,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-var typeOfKey = reflect.TypeOf(datastore.Key(nil))
+var typeOfKey = reflect.TypeOf((*datastore.Key)(nil)).Elem()
 
 type Boom struct {
 	Context context.Context
@@ -264,7 +264,8 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 						parent = key
 					}
 				} else {
-					if vf.Type().ConvertibleTo(typeOfKey) {
+					vfType := vf.Type()
+					if vfType.ConvertibleTo(typeOfKey) {
 						if parent != nil {
 							return nil, fmt.Errorf("boom: Only one field may be marked parent")
 						}
