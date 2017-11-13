@@ -57,17 +57,59 @@ func (b *TransactionBatch) Delete(key Key) chan error {
 	return b.delete.Delete(key)
 }
 
-func (b *TransactionBatch) Exec() {
-	go b.put.Exec(b.Transaction)
-	go b.get.Exec(b.Transaction)
-	go b.delete.Exec(b.Transaction)
+func (b *TransactionBatch) Exec() error {
+	var wg sync.WaitGroup
+	var errors []error
+	var m sync.Mutex
+	wg.Add(3)
+
+	go func() {
+		defer wg.Done()
+		errs := b.put.Exec(b.Transaction)
+		if len(errs) != 0 {
+			m.Lock()
+			errors = append(errors, errs...)
+			m.Unlock()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		errs := b.get.Exec(b.Transaction)
+		if len(errs) != 0 {
+			m.Lock()
+			errors = append(errors, errs...)
+			m.Unlock()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		errs := b.delete.Exec(b.Transaction)
+		if len(errs) != 0 {
+			m.Lock()
+			errors = append(errors, errs...)
+			m.Unlock()
+		}
+	}()
+
+	wg.Wait()
+
+	if len(errors) != 0 {
+		return MultiError(errors)
+	}
+
+	// Batch操作した後PropertyLoadSaverなどで追加のBatch操作が積まれたらそれがなくなるまで処理する
+	if len(b.put.keys) != 0 || len(b.get.keys) != 0 || len(b.delete.keys) != 0 {
+		return b.Exec()
+	}
+
+	return nil
 }
 
 func (b *txBatchPut) Put(key Key, src interface{}) chan *TransactionPutResult {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan *TransactionPutResult)
+	c := make(chan *TransactionPutResult, 1)
 
 	b.keys = append(b.keys, key)
 	b.srcs = append(b.srcs, src)
@@ -76,9 +118,9 @@ func (b *txBatchPut) Put(key Key, src interface{}) chan *TransactionPutResult {
 	return c
 }
 
-func (b *txBatchPut) Exec(tx Transaction) {
+func (b *txBatchPut) Exec(tx Transaction) []error {
 	if len(b.keys) == 0 {
-		return
+		return nil
 	}
 
 	b.m.Lock()
@@ -92,33 +134,37 @@ func (b *txBatchPut) Exec(tx Transaction) {
 	newPendingKeys, err := tx.PutMulti(b.keys, b.srcs)
 
 	if merr, ok := err.(MultiError); ok {
+		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
 			c := b.cs[idx]
 			if err != nil {
+				trimmedError = append(trimmedError, err)
 				c <- &TransactionPutResult{Err: err}
 			} else {
 				c <- &TransactionPutResult{PendingKey: newPendingKeys[idx]}
 			}
 		}
-		return
+		return trimmedError
 	} else if err != nil {
 		for _, c := range b.cs {
 			c <- &TransactionPutResult{Err: err}
 		}
-		return
+		return []error{err}
 	}
 
 	for idx, newKey := range newPendingKeys {
 		c := b.cs[idx]
 		c <- &TransactionPutResult{PendingKey: newKey}
 	}
+
+	return nil
 }
 
 func (b *txBatchGet) Get(key Key, dst interface{}) chan error {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan error)
+	c := make(chan error, 1)
 
 	b.keys = append(b.keys, key)
 	b.dsts = append(b.dsts, dst)
@@ -127,9 +173,9 @@ func (b *txBatchGet) Get(key Key, dst interface{}) chan error {
 	return c
 }
 
-func (b *txBatchGet) Exec(tx Transaction) {
+func (b *txBatchGet) Exec(tx Transaction) []error {
 	if len(b.keys) == 0 {
-		return
+		return nil
 	}
 
 	b.m.Lock()
@@ -143,32 +189,36 @@ func (b *txBatchGet) Exec(tx Transaction) {
 	err := tx.GetMulti(b.keys, b.dsts)
 
 	if merr, ok := err.(MultiError); ok {
+		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
 			c := b.cs[idx]
 			if err != nil {
+				trimmedError = append(trimmedError, err)
 				c <- err
 			} else {
 				c <- nil
 			}
 		}
-		return
+		return trimmedError
 	} else if err != nil {
 		for _, c := range b.cs {
 			c <- err
 		}
-		return
+		return []error{err}
 	}
 
 	for _, c := range b.cs {
 		c <- nil
 	}
+
+	return nil
 }
 
 func (b *txBatchDelete) Delete(key Key) chan error {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan error)
+	c := make(chan error, 1)
 
 	b.keys = append(b.keys, key)
 	b.cs = append(b.cs, c)
@@ -176,9 +226,9 @@ func (b *txBatchDelete) Delete(key Key) chan error {
 	return c
 }
 
-func (b *txBatchDelete) Exec(tx Transaction) {
+func (b *txBatchDelete) Exec(tx Transaction) []error {
 	if len(b.keys) == 0 {
-		return
+		return nil
 	}
 
 	b.m.Lock()
@@ -191,23 +241,27 @@ func (b *txBatchDelete) Exec(tx Transaction) {
 	err := tx.DeleteMulti(b.keys)
 
 	if merr, ok := err.(MultiError); ok {
+		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
 			c := b.cs[idx]
 			if err != nil {
+				trimmedError = append(trimmedError, err)
 				c <- err
 			} else {
 				c <- nil
 			}
 		}
-		return
+		return trimmedError
 	} else if err != nil {
 		for _, c := range b.cs {
 			c <- err
 		}
-		return
+		return []error{err}
 	}
 
 	for _, c := range b.cs {
 		c <- nil
 	}
+
+	return nil
 }
