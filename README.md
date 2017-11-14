@@ -71,6 +71,8 @@ TODO
     * Datastore Wrapper implementation for AppEngine Datastore
 * `aeprodtest`
     * Test code that works in AppEngine production environment
+* `boom`
+    * [goon](https://github.com/mjibson/goon) likes interface for this package
 * `clouddatastore`
     * Datastore Wrapper implementation for Cloud Datastore
 * `internal`
