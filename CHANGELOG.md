@@ -1,3 +1,13 @@
+<a name="0.3.0"></a>
+# [0.3.0](https://github.com/mercari/datastore/compare/v0.2.0...v0.3.0) (2017-11-14)
+
+
+### Bug Fixes
+
+* **boom:** improve goon compatibility ([03beb64](https://github.com/mercari/datastore/commit/03beb64))
+
+
+
 <a name="0.2.0"></a>
 # [0.2.0](https://github.com/mercari/datastore/compare/v0.1.0...v0.2.0) (2017-11-14)
 
