@@ -57,11 +57,37 @@ $ go get -u go.mercari.io/datastore
         * original (ae & cloud) datastore.SaveStruct have different behaviors.
         * see aeprodtest/main.go `/api/test3`
 
+## How To Use
+
+TODO
+
+## Best Practice
+
+TODO
+
+## Project Navigation
+
+* `aedatastore`
+    * Datastore Wrapper implementation for AppEngine Datastore
+* `aeprodtest`
+    * Test code that works in AppEngine production environment
+* `clouddatastore`
+    * Datastore Wrapper implementation for Cloud Datastore
+* `internal`
+    * internal package
+* `testbed`
+    * Testbed to check the behavior of AE Datastore and Cloud Datastore
+* `testsuite`
+    * Test suite for this package
+        * [AE Datastore entry point](https://github.com/mercari/datastore/blob/master/aedatastore/testsuite_test.go)
+        * [Cloud Datastore entry point](https://github.com/mercari/datastore/blob/master/clouddatastore/testsuite_test.go)
+
 ## TODO
 
 * Write tests for namespace
 * Implement cache layers
 * Retry feature
+* Write more documents
 
 ## Committers
 
