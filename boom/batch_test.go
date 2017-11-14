@@ -1,6 +1,7 @@
 package boom
 
 import (
+	"strings"
 	"testing"
 
 	"go.mercari.io/datastore"
@@ -48,6 +49,25 @@ func TestBoom_BatchGet(t *testing.T) {
 		if v := obj.ID; v == 0 {
 			t.Errorf("unexpected: %v", v)
 		}
+	}
+}
+
+func TestBoom_BatchPutSingle(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	type Data struct {
+		ID int64 `datastore:"-" boom:"id"`
+	}
+
+	bm := FromClient(ctx, client)
+
+	b := bm.Batch()
+	b.Put(ctx, &Data{})
+
+	err := b.Exec(ctx)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -128,5 +148,28 @@ func TestBoom_BatchDelete(t *testing.T) {
 		if v := err; err != datastore.ErrNoSuchEntity {
 			t.Errorf("unexpected: %v", v)
 		}
+	}
+}
+
+func TestBoom_BatchEarlyError(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	bm := FromClient(ctx, client)
+
+	b := bm.Batch()
+	// invalid src
+	b.Put(ctx, 1)
+
+	err := b.Exec(ctx)
+	if merr, ok := err.(datastore.MultiError); ok {
+		if v := len(merr); v != 1 {
+			t.Fatalf("unexpected: %v", v)
+		}
+		if v := merr[0].Error(); !strings.HasPrefix(v, "boom:") {
+			t.Errorf("unexpected: %v", v)
+		}
+	} else {
+		t.Fatalf("unexpected: %v", ok)
 	}
 }

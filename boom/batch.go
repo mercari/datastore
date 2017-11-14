@@ -84,23 +84,27 @@ func (b *Batch) Delete(ctx context.Context, dst interface{}) chan error {
 }
 
 func (b *Batch) Exec(ctx context.Context) error {
+	err := b.b.Exec(ctx)
+
+	b.putWait.Wait()
+
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	err := b.b.Exec(ctx)
-
 	if merr, ok := err.(datastore.MultiError); ok {
 		merr = append(merr, b.earlyErrors...)
+		b.earlyErrors = nil
 		if len(merr) == 0 {
 			return nil
 		}
 		return merr
 	} else if err != nil {
 		return err
+	} else if len(b.earlyErrors) != 0 {
+		errs := b.earlyErrors
+		b.earlyErrors = nil
+		return datastore.MultiError(errs)
 	}
-
-	b.putWait.Wait()
-	b.earlyErrors = nil
 
 	return nil
 }

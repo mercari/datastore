@@ -112,3 +112,30 @@ func TestBoom_RunInTransaction(t *testing.T) {
 		t.Errorf("unexpected: %v", v)
 	}
 }
+
+func TestBoom_TxRollback(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	type Data struct {
+		ID  int64 `datastore:"-" boom:"id"`
+		Str string
+	}
+
+	bm := FromClient(ctx, client)
+
+	tx, err := bm.NewTransaction(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Put(&Data{Str: "Str1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = tx.Rollback()
+	if err != nil {
+		t.Fatal(err)
+	}
+}

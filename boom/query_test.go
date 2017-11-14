@@ -41,5 +41,10 @@ func TestBoom_IteratorNext(t *testing.T) {
 		if v := obj.ID; v == 0 {
 			t.Errorf("unexpected: %v", v)
 		}
+
+		_, err := it.Cursor()
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
