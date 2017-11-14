@@ -287,9 +287,9 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 	return bm.Client.IDKey(kind, keyID, parent), nil
 }
 
-func (bm *Boom) Get(ctx context.Context, dst interface{}) error {
+func (bm *Boom) Get(dst interface{}) error {
 	dsts := []interface{}{dst}
-	err := bm.GetMulti(ctx, dsts)
+	err := bm.GetMulti(dsts)
 	if merr, ok := err.(datastore.MultiError); ok {
 		return merr[0]
 	} else if err != nil {
@@ -299,18 +299,18 @@ func (bm *Boom) Get(ctx context.Context, dst interface{}) error {
 	return nil
 }
 
-func (bm *Boom) GetMulti(ctx context.Context, dst interface{}) error {
+func (bm *Boom) GetMulti(dst interface{}) error {
 	keys, err := bm.extractKeys(dst)
 	if err != nil {
 		return err
 	}
 
-	return bm.Client.GetMulti(ctx, keys, dst)
+	return bm.Client.GetMulti(bm.Context, keys, dst)
 }
 
-func (bm *Boom) Put(ctx context.Context, src interface{}) (datastore.Key, error) {
+func (bm *Boom) Put(src interface{}) (datastore.Key, error) {
 	srcs := []interface{}{src}
-	keys, err := bm.PutMulti(ctx, srcs)
+	keys, err := bm.PutMulti(srcs)
 	if merr, ok := err.(datastore.MultiError); ok {
 		return nil, merr[0]
 	} else if err != nil {
@@ -320,13 +320,13 @@ func (bm *Boom) Put(ctx context.Context, src interface{}) (datastore.Key, error)
 	return keys[0], nil
 }
 
-func (bm *Boom) PutMulti(ctx context.Context, src interface{}) ([]datastore.Key, error) {
+func (bm *Boom) PutMulti(src interface{}) ([]datastore.Key, error) {
 	keys, err := bm.extractKeys(src)
 	if err != nil {
 		return nil, err
 	}
 
-	keys, err = bm.Client.PutMulti(ctx, keys, src)
+	keys, err = bm.Client.PutMulti(bm.Context, keys, src)
 	if err != nil {
 		return nil, err
 	}
@@ -342,9 +342,9 @@ func (bm *Boom) PutMulti(ctx context.Context, src interface{}) ([]datastore.Key,
 	return keys, nil
 }
 
-func (bm *Boom) Delete(ctx context.Context, src interface{}) error {
+func (bm *Boom) Delete(src interface{}) error {
 	srcs := []interface{}{src}
-	err := bm.DeleteMulti(ctx, srcs)
+	err := bm.DeleteMulti(srcs)
 	if merr, ok := err.(datastore.MultiError); ok {
 		return merr[0]
 	} else if err != nil {
@@ -354,17 +354,17 @@ func (bm *Boom) Delete(ctx context.Context, src interface{}) error {
 	return nil
 }
 
-func (bm *Boom) DeleteMulti(ctx context.Context, src interface{}) error {
+func (bm *Boom) DeleteMulti(src interface{}) error {
 	keys, err := bm.extractKeys(src)
 	if err != nil {
 		return err
 	}
 
-	return bm.Client.DeleteMulti(ctx, keys)
+	return bm.Client.DeleteMulti(bm.Context, keys)
 }
 
-func (bm *Boom) NewTransaction(ctx context.Context) (*Transaction, error) {
-	tx, err := bm.Client.NewTransaction(ctx)
+func (bm *Boom) NewTransaction() (*Transaction, error) {
+	tx, err := bm.Client.NewTransaction(bm.Context)
 	if err != nil {
 		return nil, err
 	}
@@ -372,9 +372,9 @@ func (bm *Boom) NewTransaction(ctx context.Context) (*Transaction, error) {
 	return &Transaction{bm: bm, tx: tx}, nil
 }
 
-func (bm *Boom) RunInTransaction(ctx context.Context, f func(tx *Transaction) error) (datastore.Commit, error) {
+func (bm *Boom) RunInTransaction(f func(tx *Transaction) error) (datastore.Commit, error) {
 	var tx *Transaction
-	commit, err := bm.Client.RunInTransaction(ctx, func(origTx datastore.Transaction) error {
+	commit, err := bm.Client.RunInTransaction(bm.Context, func(origTx datastore.Transaction) error {
 		tx = &Transaction{bm: bm, tx: origTx}
 		return f(tx)
 	})
@@ -393,17 +393,17 @@ func (bm *Boom) RunInTransaction(ctx context.Context, f func(tx *Transaction) er
 	return commit, nil
 }
 
-func (bm *Boom) Run(ctx context.Context, q datastore.Query) *Iterator {
-	it := bm.Client.Run(ctx, q)
+func (bm *Boom) Run(q datastore.Query) *Iterator {
+	it := bm.Client.Run(bm.Context, q)
 	return &Iterator{bm: bm, it: it}
 }
 
-func (bm *Boom) Count(ctx context.Context, q datastore.Query) (int, error) {
-	return bm.Client.Count(ctx, q)
+func (bm *Boom) Count(q datastore.Query) (int, error) {
+	return bm.Client.Count(bm.Context, q)
 }
 
-func (bm *Boom) GetAll(ctx context.Context, q datastore.Query, dst interface{}) ([]datastore.Key, error) {
-	keys, err := bm.Client.GetAll(ctx, q, dst)
+func (bm *Boom) GetAll(q datastore.Query, dst interface{}) ([]datastore.Key, error) {
+	keys, err := bm.Client.GetAll(bm.Context, q, dst)
 	if err != nil {
 		return nil, err
 	}
@@ -422,4 +422,8 @@ func (bm *Boom) GetAll(ctx context.Context, q datastore.Query, dst interface{}) 
 func (bm *Boom) Batch() *Batch {
 	b := bm.Client.Batch()
 	return &Batch{bm: bm, b: b}
+}
+
+func (bm *Boom) DecodeCursor(s string) (datastore.Cursor, error) {
+	return bm.Client.DecodeCursor(s)
 }

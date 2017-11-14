@@ -21,13 +21,13 @@ func TestBoom_IteratorNext(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		list = append(list, &Data{})
 	}
-	_, err := bm.PutMulti(ctx, list)
+	_, err := bm.PutMulti(list)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	q := client.NewQuery(bm.Kind(&Data{}))
-	it := bm.Run(ctx, q)
+	it := bm.Run(q)
 
 	for {
 		obj := &Data{}

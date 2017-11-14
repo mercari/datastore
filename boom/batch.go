@@ -1,7 +1,6 @@
 package boom
 
 import (
-	"context"
 	"sync"
 
 	"go.mercari.io/datastore"
@@ -16,7 +15,7 @@ type Batch struct {
 	earlyErrors []error
 }
 
-func (b *Batch) Get(ctx context.Context, dst interface{}) chan error {
+func (b *Batch) Get(dst interface{}) chan error {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
 		b.m.Lock()
@@ -30,7 +29,7 @@ func (b *Batch) Get(ctx context.Context, dst interface{}) chan error {
 	return b.b.Get(keys[0], dst)
 }
 
-func (b *Batch) Put(ctx context.Context, src interface{}) chan *datastore.PutResult {
+func (b *Batch) Put(src interface{}) chan *datastore.PutResult {
 	c := make(chan *datastore.PutResult, 1)
 
 	keys, err := b.bm.extractKeys([]interface{}{src})
@@ -69,7 +68,7 @@ func (b *Batch) Put(ctx context.Context, src interface{}) chan *datastore.PutRes
 	return c
 }
 
-func (b *Batch) Delete(ctx context.Context, dst interface{}) chan error {
+func (b *Batch) Delete(dst interface{}) chan error {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
 		b.m.Lock()
@@ -83,8 +82,8 @@ func (b *Batch) Delete(ctx context.Context, dst interface{}) chan error {
 	return b.b.Delete(keys[0])
 }
 
-func (b *Batch) Exec(ctx context.Context) error {
-	err := b.b.Exec(ctx)
+func (b *Batch) Exec() error {
+	err := b.b.Exec(b.bm.Context)
 
 	b.putWait.Wait()
 

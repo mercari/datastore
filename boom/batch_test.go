@@ -24,7 +24,7 @@ func TestBoom_BatchGet(t *testing.T) {
 	for i := 0; i < size; i++ {
 		list = append(list, &Data{})
 	}
-	keys, err := bm.PutMulti(ctx, list)
+	keys, err := bm.PutMulti(list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,11 +33,11 @@ func TestBoom_BatchGet(t *testing.T) {
 	b := bm.Batch()
 	for _, key := range keys {
 		obj := &Data{ID: key.ID()}
-		b.Get(ctx, obj)
+		b.Get(obj)
 		list = append(list, obj)
 	}
 
-	err = b.Exec(ctx)
+	err = b.Exec()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,9 +63,9 @@ func TestBoom_BatchPutSingle(t *testing.T) {
 	bm := FromClient(ctx, client)
 
 	b := bm.Batch()
-	b.Put(ctx, &Data{})
+	b.Put(&Data{})
 
-	err := b.Exec(ctx)
+	err := b.Exec()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,11 +87,11 @@ func TestBoom_BatchPut(t *testing.T) {
 	b := bm.Batch()
 	for i := 0; i < size; i++ {
 		obj := &Data{}
-		b.Put(ctx, obj)
+		b.Put(obj)
 		list = append(list, obj)
 	}
 
-	err := b.Exec(ctx)
+	err := b.Exec()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func TestBoom_BatchDelete(t *testing.T) {
 	for i := 0; i < size; i++ {
 		list = append(list, &Data{})
 	}
-	keys, err := bm.PutMulti(ctx, list)
+	keys, err := bm.PutMulti(list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,15 +130,15 @@ func TestBoom_BatchDelete(t *testing.T) {
 	b := bm.Batch()
 	for _, key := range keys {
 		obj := &Data{ID: key.ID()}
-		b.Delete(ctx, obj)
+		b.Delete(obj)
 	}
 
-	err = b.Exec(ctx)
+	err = b.Exec()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = bm.GetMulti(ctx, list)
+	err = bm.GetMulti(list)
 	merr, ok := err.(datastore.MultiError)
 	if !ok {
 		t.Fatalf("unexpected: %v, %s", ok, err.Error())
@@ -159,9 +159,9 @@ func TestBoom_BatchEarlyError(t *testing.T) {
 
 	b := bm.Batch()
 	// invalid src
-	b.Put(ctx, 1)
+	b.Put(1)
 
-	err := b.Exec(ctx)
+	err := b.Exec()
 	if merr, ok := err.(datastore.MultiError); ok {
 		if v := len(merr); v != 1 {
 			t.Fatalf("unexpected: %v", v)

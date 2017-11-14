@@ -105,12 +105,12 @@ func TestBoom_KeyWithPT(t *testing.T) {
 
 		bm := FromClient(ctx, client)
 
-		_, err := bm.Put(ctx, &Data{111})
+		_, err := bm.Put(&Data{111})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = bm.Get(ctx, &Data{111})
+		err = bm.Get(&Data{111})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -122,12 +122,12 @@ func TestBoom_KeyWithPT(t *testing.T) {
 
 		bm := FromClient(ctx, client)
 
-		_, err := bm.Put(ctx, &Data{"a"})
+		_, err := bm.Put(&Data{"a"})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = bm.Get(ctx, &Data{"a"})
+		err = bm.Get(&Data{"a"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -172,7 +172,7 @@ func TestBoom_Put(t *testing.T) {
 
 	bm := FromClient(ctx, client)
 
-	key, err := bm.Put(ctx, &Data{111, "Str"})
+	key, err := bm.Put(&Data{111, "Str"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestBoom_PutWithIncomplete(t *testing.T) {
 	bm := FromClient(ctx, client)
 
 	obj := &Data{Str: "Str"}
-	key, err := bm.Put(ctx, obj)
+	key, err := bm.Put(obj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +251,7 @@ func TestBoom_Get(t *testing.T) {
 	}
 
 	obj := &Data{ID: 111}
-	err = bm.Get(ctx, obj)
+	err = bm.Get(obj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestBoom_DeleteByStruct(t *testing.T) {
 	}
 
 	obj := &Data{ID: 111}
-	err = bm.Delete(ctx, obj)
+	err = bm.Delete(obj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +307,7 @@ func TestBoom_DeleteByKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = bm.Delete(ctx, key)
+	err = bm.Delete(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,7 +336,7 @@ func TestBoom_Count(t *testing.T) {
 	}
 
 	q := client.NewQuery(bm.Kind(&Data{}))
-	cnt, err := bm.Count(ctx, q)
+	cnt, err := bm.Count(q)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,14 +363,14 @@ func TestBoom_GetAll(t *testing.T) {
 		list = append(list, &Data{})
 	}
 
-	_, err := bm.PutMulti(ctx, list)
+	_, err := bm.PutMulti(list)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	q := client.NewQuery(bm.Kind(&Data{}))
 	list = make([]*Data, 0)
-	_, err = bm.GetAll(ctx, q, &list)
+	_, err = bm.GetAll(q, &list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -398,7 +398,7 @@ func TestBoom_TagID(t *testing.T) {
 			ID int64 `datastore:"-" boom:"id"`
 		}
 
-		key, err := bm.Put(ctx, &Data{ID: 1})
+		key, err := bm.Put(&Data{ID: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -410,7 +410,7 @@ func TestBoom_TagID(t *testing.T) {
 			t.Errorf("unexpected: %v", v)
 		}
 
-		err = bm.Get(ctx, &Data{1})
+		err = bm.Get(&Data{1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -420,7 +420,7 @@ func TestBoom_TagID(t *testing.T) {
 			ID string `datastore:"-" boom:"id"`
 		}
 
-		key, err := bm.Put(ctx, &Data{ID: "a"})
+		key, err := bm.Put(&Data{ID: "a"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -431,7 +431,7 @@ func TestBoom_TagID(t *testing.T) {
 			t.Errorf("unexpected: %v", v)
 		}
 
-		err = bm.Get(ctx, &Data{"a"})
+		err = bm.Get(&Data{"a"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -451,7 +451,7 @@ func TestBoom_TagIDWithPropertyTranslator(t *testing.T) {
 			ID DataID `datastore:"-" boom:"id"`
 		}
 
-		key, err := bm.Put(ctx, &Data{ID: DataID(100)})
+		key, err := bm.Put(&Data{ID: DataID(100)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -463,7 +463,7 @@ func TestBoom_TagIDWithPropertyTranslator(t *testing.T) {
 			t.Errorf("unexpected: %v", v)
 		}
 
-		err = bm.Get(ctx, &Data{ID: DataID(100)})
+		err = bm.Get(&Data{ID: DataID(100)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -474,7 +474,7 @@ func TestBoom_TagIDWithPropertyTranslator(t *testing.T) {
 			ID           DataID `datastore:"-" boom:"id"`
 		}
 
-		key, err := bm.Put(ctx, &Data{ParentUserID: UserID(20), ID: DataID(100)})
+		key, err := bm.Put(&Data{ParentUserID: UserID(20), ID: DataID(100)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -492,7 +492,7 @@ func TestBoom_TagIDWithPropertyTranslator(t *testing.T) {
 			t.Errorf("unexpected: %v", v)
 		}
 
-		err = bm.Get(ctx, &Data{ParentUserID: UserID(20), ID: DataID(100)})
+		err = bm.Get(&Data{ParentUserID: UserID(20), ID: DataID(100)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -513,7 +513,7 @@ func TestBoom_TagParent(t *testing.T) {
 	}
 
 	parentKey := client.NameKey("Parent", "a", nil)
-	key, err := bm.Put(ctx, &Data{ParentKey: parentKey, ID: 1})
+	key, err := bm.Put(&Data{ParentKey: parentKey, ID: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -531,7 +531,7 @@ func TestBoom_TagParent(t *testing.T) {
 		t.Errorf("unexpected: %v", v)
 	}
 
-	err = bm.Get(ctx, &Data{ParentKey: parentKey, ID: 1})
+	err = bm.Get(&Data{ParentKey: parentKey, ID: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -556,7 +556,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			key, err := bm.Put(ctx, obj)
+			key, err := bm.Put(obj)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -564,7 +564,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			err = bm.Get(ctx, obj)
+			err = bm.Get(obj)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -579,7 +579,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			key, err := bm.Put(ctx, obj)
+			key, err := bm.Put(obj)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -587,7 +587,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			err = bm.Get(ctx, obj)
+			err = bm.Get(obj)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -609,7 +609,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			key, err := bm.Put(ctx, obj)
+			key, err := bm.Put(obj)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -617,7 +617,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			err = bm.Get(ctx, obj)
+			err = bm.Get(obj)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -632,7 +632,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			key, err := bm.Put(ctx, obj)
+			key, err := bm.Put(obj)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -640,7 +640,7 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 
-			err = bm.Get(ctx, obj)
+			err = bm.Get(obj)
 			if err != nil {
 				t.Fatal(err)
 			}

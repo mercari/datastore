@@ -23,24 +23,24 @@ func TestBoom_TransactionBatchGet(t *testing.T) {
 	for i := 0; i < size; i++ {
 		list = append(list, &Data{})
 	}
-	keys, err := bm.PutMulti(ctx, list)
+	keys, err := bm.PutMulti(list)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	list = nil
-	tx, err := bm.NewTransaction(ctx)
+	tx, err := bm.NewTransaction()
 	if err != nil {
 		t.Fatal(err)
 	}
 	b := tx.Batch()
 	for _, key := range keys {
 		obj := &Data{ID: key.ID()}
-		b.Get(ctx, obj)
+		b.Get(obj)
 		list = append(list, obj)
 	}
 
-	err = b.Exec(ctx)
+	err = b.Exec()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,18 +73,18 @@ func TestBoom_TransactionBatchPut(t *testing.T) {
 	bm := FromClient(ctx, client)
 
 	var list []*Data
-	tx, err := bm.NewTransaction(ctx)
+	tx, err := bm.NewTransaction()
 	if err != nil {
 		t.Fatal(err)
 	}
 	b := tx.Batch()
 	for i := 0; i < size; i++ {
 		obj := &Data{}
-		b.Put(ctx, obj)
+		b.Put(obj)
 		list = append(list, obj)
 	}
 
-	err = b.Exec(ctx)
+	err = b.Exec()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,27 +126,27 @@ func TestBoom_TransactionBatchDelete(t *testing.T) {
 	for i := 0; i < size; i++ {
 		list = append(list, &Data{})
 	}
-	keys, err := bm.PutMulti(ctx, list)
+	keys, err := bm.PutMulti(list)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tx, err := bm.NewTransaction(ctx)
+	tx, err := bm.NewTransaction()
 	if err != nil {
 		t.Fatal(err)
 	}
 	b := tx.Batch()
 	for _, key := range keys {
 		obj := &Data{ID: key.ID()}
-		b.Delete(ctx, obj)
+		b.Delete(obj)
 	}
 
-	err = b.Exec(ctx)
+	err = b.Exec()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = bm.GetMulti(ctx, list)
+	err = bm.GetMulti(list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestBoom_TransactionBatchDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = bm.GetMulti(ctx, list)
+	err = bm.GetMulti(list)
 	merr, ok := err.(datastore.MultiError)
 	if !ok {
 		t.Fatalf("unexpected: %v, %s", ok, err.Error())

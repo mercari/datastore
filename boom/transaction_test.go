@@ -17,12 +17,12 @@ func TestBoom_NewTransaction(t *testing.T) {
 
 	bm := FromClient(ctx, client)
 
-	key, err := bm.Put(ctx, &Data{Str: "Str1"})
+	key, err := bm.Put(&Data{Str: "Str1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tx, err := bm.NewTransaction(ctx)
+	tx, err := bm.NewTransaction()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,13 +71,13 @@ func TestBoom_RunInTransaction(t *testing.T) {
 
 	bm := FromClient(ctx, client)
 
-	key, err := bm.Put(ctx, &Data{Str: "Str1"})
+	key, err := bm.Put(&Data{Str: "Str1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var pObj *Data
-	_, err = bm.RunInTransaction(ctx, func(tx *Transaction) error {
+	_, err = bm.RunInTransaction(func(tx *Transaction) error {
 		obj := &Data{ID: key.ID()}
 		err = tx.Get(obj)
 		if err != nil {
@@ -124,7 +124,7 @@ func TestBoom_TxRollback(t *testing.T) {
 
 	bm := FromClient(ctx, client)
 
-	tx, err := bm.NewTransaction(ctx)
+	tx, err := bm.NewTransaction()
 	if err != nil {
 		t.Fatal(err)
 	}
