@@ -524,3 +524,20 @@ func TestAEDatastore_GeoPoint(t *testing.T) {
 		t.Errorf("unexpected: %v", v)
 	}
 }
+
+func TestAEDatastore_PutInterface(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	var e EntityInterface
+	e = &PutInterfaceTest{}
+
+	key := datastore.NewIncompleteKey(ctx, "Test", nil)
+	_, err = datastore.Put(ctx, key, e)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
