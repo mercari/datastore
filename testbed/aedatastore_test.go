@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"testing"
-
 	"sort"
 	"strings"
+	"testing"
 
 	netcontext "golang.org/x/net/context"
 	"google.golang.org/appengine"

@@ -316,3 +316,9 @@ func (d *datastoreImpl) DecodeCursor(s string) (w.Cursor, error) {
 func (d *datastoreImpl) Batch() *w.Batch {
 	return &w.Batch{Client: d}
 }
+
+func (d *datastoreImpl) SwapContext(ctx context.Context) context.Context {
+	origCtx := d.ctx
+	d.ctx = ctx
+	return origCtx
+}

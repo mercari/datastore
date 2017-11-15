@@ -4,12 +4,15 @@ targets=`find . -type f \( -name '*.go' -and -not -iwholename '*vendor*' -and -n
 packages=`go list ./...`
 
 # Apply tools
-./build-cmd/goimports -w $targets
+export PATH=$(pwd)/build-cmd:$PATH
+which goimports golint staticcheck gosimple unused jwg qbg
+goimports -w $targets
 go tool vet $targets
-# ./build-cmd/golint $packages
-./build-cmd/staticcheck $packages
-# ./build-cmd/gosimple $packages
-./build-cmd/unused $packages
+# golint $packages
+staticcheck $packages
+# gosimple $packages
+unused $packages
+go generate $packages
 
 # Testing in local env
 if [ "${CI:=''}" != "true" ]; then

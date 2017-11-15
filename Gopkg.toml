@@ -6,7 +6,9 @@ required = [
   "github.com/golang/lint/golint",
   "honnef.co/go/tools/cmd/gosimple",
   "honnef.co/go/tools/cmd/staticcheck",
-  "honnef.co/go/tools/cmd/unused"
+  "honnef.co/go/tools/cmd/unused",
+  "github.com/favclip/jwg",
+  "github.com/favclip/qbg"
 ]
 
 [[constraint]]

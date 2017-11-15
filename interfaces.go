@@ -34,6 +34,7 @@ type Client interface {
 	DecodeCursor(s string) (Cursor, error)
 
 	Batch() *Batch
+	SwapContext(ctx context.Context) context.Context
 }
 
 type Key interface {
