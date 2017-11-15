@@ -9,6 +9,24 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/favclip/genbase"
+  packages = ["."]
+  revision = "9308343633095f1e30c2e879e8a7af64f15273d0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/favclip/jwg"
+  packages = ["."]
+  revision = "2e0a6f4873bb5e8b5a6d13b6c1adbeec1a033d19"
+
+[[projects]]
+  name = "github.com/favclip/qbg"
+  packages = ["."]
+  revision = "ae8057dfe96fdd9e23c88bf9ef5b616f231900c0"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
   name = "github.com/golang/lint"
   packages = [".","golint"]
   revision = "6aaf7c34af0f4c36a57e0c429bace4d706d8e931"
@@ -94,6 +112,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6aa4735886e081e1f5b49ef5b5ecd75ab42fca7c1782d33002abe8f099642f2d"
+  inputs-digest = "55cc40219a1062231f3a69c8efda46c8e82842787296212cce55e905b57ac666"
   solver-name = "gps-cdcl"
   solver-version = 1

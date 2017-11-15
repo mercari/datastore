@@ -703,3 +703,22 @@ func TestCloudDatastore_GeoPoint(t *testing.T) {
 		t.Errorf("unexpected: %v", v)
 	}
 }
+
+func TestCloudDatastore_PutInterface(t *testing.T) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, "souzoh-p-vvakame")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	var e EntityInterface
+	e = &PutInterfaceTest{}
+
+	key := datastore.IncompleteKey("Test", nil)
+	_, err = client.Put(ctx, key, e)
+	if err != nil {
+		t.Fatal(err)
+	}
+}

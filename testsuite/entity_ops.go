@@ -224,3 +224,38 @@ func PutEntityType(t *testing.T, ctx context.Context, client datastore.Client) {
 		t.Fatal(err)
 	}
 }
+
+type EntityInterface interface {
+	Kind() string
+	ID() string
+}
+
+type PutInterfaceTest struct {
+	kind string
+	id   string
+}
+
+func (e *PutInterfaceTest) Kind() string {
+	return e.kind
+}
+func (e *PutInterfaceTest) ID() string {
+	return e.id
+}
+
+func PutInterface(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var e EntityInterface
+	e = &PutInterfaceTest{}
+
+	key := client.IncompleteKey("Test", nil)
+	_, err := client.Put(ctx, key, e)
+	if err != nil {
+		t.Fatal(err)
+	}
+}

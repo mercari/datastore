@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"testing"
-
 	"sort"
 	"strings"
+	"testing"
 
 	netcontext "golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -522,5 +521,22 @@ func TestAEDatastore_GeoPoint(t *testing.T) {
 	}
 	if v := obj.C[1].Lng; v != 8.8 {
 		t.Errorf("unexpected: %v", v)
+	}
+}
+
+func TestAEDatastore_PutInterface(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	var e EntityInterface
+	e = &PutInterfaceTest{}
+
+	key := datastore.NewIncompleteKey(ctx, "Test", nil)
+	_, err = datastore.Put(ctx, key, e)
+	if err != nil {
+		t.Fatal(err)
 	}
 }

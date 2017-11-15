@@ -18,6 +18,7 @@ var TestSuite = map[string]Test{
 	"PutAndGet_ObjectHasObjectSlice":            PutAndGet_ObjectHasObjectSlice,
 	"PutAndGet_ObjectHasObjectSliceWithFlatten": PutAndGet_ObjectHasObjectSliceWithFlatten,
 	"PutEntityType":                             PutEntityType,
+	"PutInterface":                              PutInterface,
 	"GeoPoint_PutAndGet":                        GeoPoint_PutAndGet,
 	"PLS_Basic":                                 PLS_Basic,
 	"KL_Basic":                                  KL_Basic,
