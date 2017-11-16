@@ -202,7 +202,7 @@ func TestAEDatastore_Transaction(t *testing.T) {
 		}
 
 		// should not updated
-		newS := &CloudDatastoreStruct{}
+		newS := &AEDatastoreStruct{}
 		err = datastore.Get(ctx, key, newS)
 		if err != nil {
 			t.Fatal(err.Error())
