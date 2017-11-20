@@ -51,6 +51,18 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mjibson/goon"
+  packages = ["."]
+  revision = "0cd9745d6b9c43c1de754769708fb2ac349d84b2"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
   revision = "a337091b0525af65de94df2eb7e98bd9962dcbe2"
@@ -77,7 +89,7 @@
   branch = "master"
   name = "golang.org/x/tools"
   packages = ["cmd/goimports","go/ast/astutil","go/buildutil","go/gcexportdata","go/gcimporter15","go/loader","go/types/typeutil","imports"]
-  revision = "05e91d06384e3a4eb0aba75560d254b8d5a7b431"
+  revision = "6d70fb2e85323e81c89374331d3d2b93304faa36"
 
 [[projects]]
   branch = "master"
@@ -88,7 +100,7 @@
 [[projects]]
   branch = "master"
   name = "google.golang.org/appengine"
-  packages = [".","aetest","datastore","internal","internal/app_identity","internal/base","internal/datastore","internal/log","internal/modules","internal/remote_api","internal/socket","internal/urlfetch","internal/user","log","socket","urlfetch","user"]
+  packages = [".","aetest","datastore","internal","internal/app_identity","internal/base","internal/datastore","internal/log","internal/memcache","internal/modules","internal/remote_api","internal/socket","internal/urlfetch","internal/user","log","memcache","socket","urlfetch","user"]
   revision = "9d8544a6b2c7df9cff240fcf92d7b2f59bc13416"
 
 [[projects]]
@@ -112,6 +124,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "55cc40219a1062231f3a69c8efda46c8e82842787296212cce55e905b57ac666"
+  inputs-digest = "16a6bac3bd103286a418f16927d49df8fdd0e6f0d423fc05be94a8181b3010c5"
   solver-name = "gps-cdcl"
   solver-version = 1

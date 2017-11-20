@@ -1,7 +1,7 @@
 #!/bin/sh -eux
 
-targets=`find . -type f \( -name '*.go' -and -not -iwholename '*vendor*' -and -not -iwholename '*testdata*' \)`
-packages=`go list ./...`
+targets=`find . -type f \( -name '*.go' -and -not -iwholename '*vendor*' -and -not -iwholename '*testdata*' -and -not -iwholename '*fixture*' -and -not -iwholename '*expected*' \)`
+packages=`go list ./... | grep -v expected`
 
 # Apply tools
 export PATH=$(pwd)/build-cmd:$PATH
