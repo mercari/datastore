@@ -287,6 +287,69 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 	return bm.Client.IDKey(kind, keyID, parent), nil
 }
 
+func (bm *Boom) AllocateID(src interface{}) (datastore.Key, error) {
+	srcs := []interface{}{src}
+	keys, err := bm.AllocateIDs(srcs)
+	if merr, ok := err.(datastore.MultiError); ok {
+		return nil, merr[0]
+	} else if err != nil {
+		return nil, err
+	}
+
+	return keys[0], nil
+}
+
+func (bm *Boom) AllocateIDs(src interface{}) ([]datastore.Key, error) {
+	v := reflect.Indirect(reflect.ValueOf(src))
+	if v.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("boom: value must be a slice or pointer-to-slice or incompletekey-slice or string-slice")
+	}
+	l := v.Len()
+
+	keys := make([]datastore.Key, 0, l)
+	structIndex := make([]int, 0, l)
+	for i := 0; i < l; i++ {
+		v := v.Index(i)
+		obj := v.Interface()
+
+		key, ok := obj.(datastore.Key)
+		if ok {
+			keys = append(keys, key)
+			continue
+		}
+
+		kind, ok := obj.(string)
+		if ok {
+			keys = append(keys, bm.Client.IncompleteKey(kind, nil))
+			continue
+		}
+
+		key, err := bm.KeyError(obj)
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+		structIndex = append(structIndex, i)
+	}
+
+	keys, err := bm.Client.AllocatedIDs(bm.Context, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sIdx := range structIndex {
+		v := v.Index(sIdx)
+		obj := v.Interface()
+
+		err = bm.setStructKey(obj, keys[sIdx])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return keys, nil
+}
+
 func (bm *Boom) Get(dst interface{}) error {
 	dsts := []interface{}{dst}
 	err := bm.GetMulti(dsts)
