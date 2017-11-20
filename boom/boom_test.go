@@ -94,7 +94,7 @@ func TestBoom_Key(t *testing.T) {
 	}
 }
 
-func TestBoom_KeyWithPT(t *testing.T) {
+func TestBoom_KeyWithPropertyTranslator(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
 
@@ -158,6 +158,103 @@ func TestBoom_KeyWithParent(t *testing.T) {
 	}
 	if v := key.ID(); v != 111 {
 		t.Errorf("unexpected: %v", v)
+	}
+}
+
+func TestBoom_AllocateID(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	type Data struct {
+		ID IntID `datastore:"-" boom:"id"`
+	}
+
+	bm := FromClient(ctx, client)
+
+	obj := &Data{}
+	key, err := bm.AllocateID(obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := key.Kind(); v != "Data" {
+		t.Errorf("unexpected: %v", v)
+	}
+	if v := key.ID(); v == 0 {
+		t.Errorf("unexpected: %v", v)
+	}
+	if v := int64(obj.ID); v != key.ID() {
+		t.Errorf("unexpected: %v", v)
+	}
+}
+
+func TestBoom_AllocateIDs(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	type Data struct {
+		ID IntID `datastore:"-" boom:"id"`
+	}
+
+	bm := FromClient(ctx, client)
+
+	type Spec struct {
+		From   interface{}
+		Kind   string
+		Assert func(key datastore.Key, spec Spec)
+	}
+
+	specs := []Spec{
+		// struct
+		{&Data{}, "Data", func(key datastore.Key, spec Spec) {
+			obj := spec.From.(*Data)
+			if v := int64(obj.ID); v != key.ID() {
+				t.Errorf("unexpected: %v", v)
+			}
+		}},
+		// key without parent
+		{client.IncompleteKey("User", nil), "User", nil},
+		// key with parent
+		{client.IncompleteKey("Todo", client.NameKey("User", "foo", nil)), "Todo", func(key datastore.Key, spec Spec) {
+			if v := key.ParentKey(); v == nil {
+				t.Fatalf("unexpected: %v", v)
+			}
+			if v := key.ParentKey().Kind(); v != "User" {
+				t.Errorf("unexpected: %v", v)
+			}
+			if v := key.ParentKey().Name(); v != "foo" {
+				t.Errorf("unexpected: %v", v)
+			}
+		}},
+		// string
+		{"Book", "Book", nil},
+	}
+
+	srcs := make([]interface{}, 0, len(specs))
+	for _, spec := range specs {
+		srcs = append(srcs, spec.From)
+	}
+
+	keys, err := bm.AllocateIDs(srcs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := len(keys); v != len(specs) {
+		t.Errorf("unexpected: %v", v)
+	}
+
+	for idx, spec := range specs {
+		key := keys[idx]
+		if v := key.Kind(); v != spec.Kind {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ID(); v == 0 {
+			t.Errorf("unexpected: %v", v)
+		}
+		if spec.Assert != nil {
+			spec.Assert(key, spec)
+		}
 	}
 }
 
