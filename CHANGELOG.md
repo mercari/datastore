@@ -1,3 +1,14 @@
+<a name="0.4.0"></a>
+# [0.4.0](https://github.com/mercari/datastore/compare/v0.3.0...v0.4.0) (2017-11-20)
+
+
+### Features
+
+* **boom:** implements AllocateID and AllocateIDs ([014e321](https://github.com/mercari/datastore/commit/014e321))
+* **core:** add datastore.Client#SwapContext ([eb26e60](https://github.com/mercari/datastore/commit/eb26e60))
+
+
+
 <a name="0.3.0"></a>
 # [0.3.0](https://github.com/mercari/datastore/compare/v0.2.0...v0.3.0) (2017-11-14)
 
