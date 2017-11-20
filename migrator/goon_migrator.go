@@ -34,7 +34,7 @@ func (walker *GoonWalker) isGoonFromContext(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.packageNameGoon {
+	} else if ident.Name != walker.PackageNameGoon {
 		return false
 	}
 	if selectorExpr.Sel.Name != "FromContext" {
@@ -51,7 +51,7 @@ func (walker *GoonWalker) isGoonRunInTransaction(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.goonVarName {
+	} else if ident.Name != walker.GoonVarName {
 		return false
 	}
 	if selectorExpr.Sel.Name != "RunInTransaction" {
@@ -95,7 +95,7 @@ func (walker *GoonWalker) RewriteSignature(c *astutil.Cursor) bool {
 	if walker.isGoonFromContextStmt(c.Node()) {
 		assignStmt := c.Node().(*ast.AssignStmt)
 		walker.willModify[assignStmt.Lhs[0]] = func(c *astutil.Cursor) bool {
-			c.Replace(ast.NewIdent(walker.boomVarName))
+			c.Replace(ast.NewIdent(walker.BoomVarName))
 			c.InsertAfter(ast.NewIdent("_"))
 			return true
 		}
@@ -103,7 +103,7 @@ func (walker *GoonWalker) RewriteSignature(c *astutil.Cursor) bool {
 	if walker.isGoonRunInTransactionStmt(c.Node()) {
 		assignStmt := c.Node().(*ast.AssignStmt)
 		walker.willModify[assignStmt.Lhs[0]] = func(c *astutil.Cursor) bool {
-			c.InsertBefore(ast.NewIdent(walker.commitVarName))
+			c.InsertBefore(ast.NewIdent(walker.CommitVarName))
 			return true
 		}
 		callExpr := assignStmt.Rhs[0].(*ast.CallExpr)
@@ -111,8 +111,8 @@ func (walker *GoonWalker) RewriteSignature(c *astutil.Cursor) bool {
 		funcArg := funcLit.Type.Params.List[0]
 		walker.willModify[funcArg.Names[0]] = func(c *astutil.Cursor) bool {
 			ident := c.Node().(*ast.Ident)
-			if ident.Name == walker.goonTxName {
-				c.Replace(ast.NewIdent(walker.txVarName))
+			if ident.Name == walker.GoonTxName {
+				c.Replace(ast.NewIdent(walker.TxVarName))
 			}
 
 			return true
@@ -120,7 +120,7 @@ func (walker *GoonWalker) RewriteSignature(c *astutil.Cursor) bool {
 		walker.willModify[funcArg.Type] = func(c *astutil.Cursor) bool {
 			txType := &ast.StarExpr{
 				X: &ast.SelectorExpr{
-					X:   ast.NewIdent(walker.packageNameBoom),
+					X:   ast.NewIdent(walker.PackageNameBoom),
 					Sel: ast.NewIdent("Transaction"),
 				},
 			}
@@ -139,10 +139,10 @@ func (walker *GoonWalker) RewriteIdentInRunInTransaction(c *astutil.Cursor) bool
 		switch c.Name() {
 		case "X":
 			if sel, ok := c.Node().(*ast.Ident); ok {
-				if sel.Name == walker.goonTxName {
+				if sel.Name == walker.GoonTxName {
 					switch selectorExpr.Sel.Name {
 					case "Put", "PutMulti", "Get", "GetMulti", "Delete", "DeleteMulti", "NewQuery":
-						c.Replace(ast.NewIdent(walker.txVarName))
+						c.Replace(ast.NewIdent(walker.TxVarName))
 					}
 				}
 			}
@@ -157,30 +157,30 @@ func (walker *GoonWalker) RewriteIdent(c *astutil.Cursor) bool {
 		switch c.Name() {
 		case "X":
 			if ident, ok := c.Node().(*ast.Ident); ok {
-				if ident.Name == walker.goonVarName {
+				if ident.Name == walker.GoonVarName {
 					switch selectorExpr.Sel.Name {
 					case "Put", "PutMulti", "Get", "GetMulti", "Delete", "DeleteMulti":
-						c.Replace(ast.NewIdent(walker.boomVarName))
+						c.Replace(ast.NewIdent(walker.BoomVarName))
 					case "GetAll", "Count", "Run":
-						c.Replace(ast.NewIdent(walker.boomVarName))
+						c.Replace(ast.NewIdent(walker.BoomVarName))
 					case "Key", "KeyError", "Kind":
-						c.Replace(ast.NewIdent(walker.boomVarName))
+						c.Replace(ast.NewIdent(walker.BoomVarName))
 					case "RunInTransaction":
-						c.Replace(ast.NewIdent(walker.boomVarName))
+						c.Replace(ast.NewIdent(walker.BoomVarName))
 					}
-				} else if ident.Name == walker.queryVarName {
+				} else if ident.Name == walker.QueryVarName {
 					switch selectorExpr.Sel.Name {
 					case "GetAll", "Run":
-						c.Replace(ast.NewIdent(walker.boomVarName))
+						c.Replace(ast.NewIdent(walker.BoomVarName))
 					}
-				} else if ident.Name == walker.packageNameGoon {
-					c.Replace(ast.NewIdent(walker.packageNameBoom))
+				} else if ident.Name == walker.PackageNameGoon {
+					c.Replace(ast.NewIdent(walker.PackageNameBoom))
 				}
 			}
 		case "Sel":
 			if x, ok := selectorExpr.X.(*ast.Ident); ok {
 				if sel, ok := c.Node().(*ast.Ident); ok {
-					if x.Name == walker.packageNameGoon && sel.Name == "Goon" {
+					if x.Name == walker.PackageNameGoon && sel.Name == "Goon" {
 						c.Replace(ast.NewIdent("Boom"))
 					}
 				}

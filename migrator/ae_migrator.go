@@ -21,7 +21,7 @@ func (walker *AEWalker) isDatastoreNewIncompleteKeyIdent(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.packageNameAEDatastore {
+	} else if ident.Name != walker.PackageNameAEDatastore {
 		return false
 	}
 	if selectorExpr.Sel.Name != "NewIncompleteKey" {
@@ -38,7 +38,7 @@ func (walker *AEWalker) isDatastoreNewKeyIdent(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.packageNameAEDatastore {
+	} else if ident.Name != walker.PackageNameAEDatastore {
 		return false
 	}
 	if selectorExpr.Sel.Name != "NewKey" {
@@ -55,7 +55,7 @@ func (walker *AEWalker) isDatastoreSaveOrLoadStruct(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.packageNameAEDatastore {
+	} else if ident.Name != walker.PackageNameAEDatastore {
 		return false
 	}
 	if selectorExpr.Sel.Name != "SaveStruct" && selectorExpr.Sel.Name != "LoadStruct" {
@@ -72,7 +72,7 @@ func (walker *AEWalker) isDatastoreRunInTransaction(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.packageNameAEDatastore {
+	} else if ident.Name != walker.PackageNameAEDatastore {
 		return false
 	}
 	if selectorExpr.Sel.Name != "RunInTransaction" {
@@ -106,7 +106,7 @@ func (walker *AEWalker) isTxNoCtxExpr(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.txVarName {
+	} else if ident.Name != walker.TxVarName {
 		return false
 	}
 	switch selectorExpr.Sel.Name {
@@ -124,7 +124,7 @@ func (walker *AEWalker) isQueryGetAll(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.queryVarName {
+	} else if ident.Name != walker.QueryVarName {
 		return false
 	}
 	if selectorExpr.Sel.Name != "GetAll" {
@@ -141,7 +141,7 @@ func (walker *AEWalker) isQueryRun(node ast.Node) bool {
 	}
 	if ident, ok := selectorExpr.X.(*ast.Ident); !ok {
 		return false
-	} else if ident.Name != walker.queryVarName {
+	} else if ident.Name != walker.QueryVarName {
 		return false
 	}
 	if selectorExpr.Sel.Name != "Run" {
@@ -159,7 +159,7 @@ func (walker *AEWalker) RewriteSignature(c *astutil.Cursor) bool {
 			case walker.isDatastoreNewIncompleteKeyIdent(callExpr.Fun):
 				if ident, ok := c.Node().(*ast.Ident); ok {
 					// remove unnecessary ctx argument
-					if ident.Name == walker.contextVarName && callExpr.Args[0] == c.Node() {
+					if ident.Name == walker.ContextVarName && callExpr.Args[0] == c.Node() {
 						c.Delete()
 					}
 				}
@@ -167,7 +167,7 @@ func (walker *AEWalker) RewriteSignature(c *astutil.Cursor) bool {
 			case walker.isDatastoreNewKeyIdent(callExpr.Fun):
 				if ident, ok := c.Node().(*ast.Ident); ok {
 					// remove unnecessary ctx argument
-					if callExpr.Args[0] == c.Node() && ident.Name == walker.contextVarName {
+					if callExpr.Args[0] == c.Node() && ident.Name == walker.ContextVarName {
 						c.Delete()
 					}
 				} else if lit, ok := c.Node().(*ast.BasicLit); ok {
@@ -199,19 +199,19 @@ func (walker *AEWalker) RewriteSignature(c *astutil.Cursor) bool {
 			case walker.isTxNoCtxExpr(callExpr.Fun):
 				// remove unnecessary ctx argument
 				if ident, ok := c.Node().(*ast.Ident); ok {
-					if callExpr.Args[0] == c.Node() && ident.Name == walker.contextVarName {
+					if callExpr.Args[0] == c.Node() && ident.Name == walker.ContextVarName {
 						c.Delete()
 					}
 				}
 
 			case walker.isDatastoreSaveOrLoadStruct(callExpr.Fun):
 				// add ctx to 1st argument
-				c.InsertBefore(ast.NewIdent(walker.contextVarName))
+				c.InsertBefore(ast.NewIdent(walker.ContextVarName))
 
 			case walker.isQueryGetAll(callExpr.Fun), walker.isQueryRun(callExpr.Fun):
 				// add q to 2nd argument
 				if callExpr.Args[0] == c.Node() {
-					c.InsertAfter(ast.NewIdent(walker.queryVarName))
+					c.InsertAfter(ast.NewIdent(walker.QueryVarName))
 				}
 			}
 		}
@@ -219,19 +219,19 @@ func (walker *AEWalker) RewriteSignature(c *astutil.Cursor) bool {
 	if walker.isDatastoreRunInTransactionStmt(c.Node()) {
 		assignStmt := c.Node().(*ast.AssignStmt)
 		walker.willModify[assignStmt.Lhs[0]] = func(c *astutil.Cursor) bool {
-			c.InsertBefore(ast.NewIdent(walker.commitVarName))
+			c.InsertBefore(ast.NewIdent(walker.CommitVarName))
 			return true
 		}
 		callExpr := assignStmt.Rhs[0].(*ast.CallExpr)
 		funcLit := callExpr.Args[1].(*ast.FuncLit)
 		funcArg := funcLit.Type.Params.List[0]
 		walker.willModify[funcArg.Names[0]] = func(c *astutil.Cursor) bool {
-			c.Replace(ast.NewIdent(walker.txVarName))
+			c.Replace(ast.NewIdent(walker.TxVarName))
 			return true
 		}
 		walker.willModify[funcArg.Type] = func(c *astutil.Cursor) bool {
 			txType := &ast.SelectorExpr{
-				X:   ast.NewIdent(walker.packageNameAEDatastore),
+				X:   ast.NewIdent(walker.PackageNameAEDatastore),
 				Sel: ast.NewIdent("Transaction"),
 			}
 			c.Replace(txType)
@@ -252,10 +252,10 @@ func (walker *AEWalker) RewriteIdentInRunInTransaction(c *astutil.Cursor) bool {
 		switch c.Name() {
 		case "X":
 			if sel, ok := c.Node().(*ast.Ident); ok {
-				if sel.Name == walker.packageNameAEDatastore {
+				if sel.Name == walker.PackageNameAEDatastore {
 					switch selectorExpr.Sel.Name {
 					case "Put", "PutMulti", "Get", "GetMulti", "Delete", "DeleteMulti", "NewQuery":
-						c.Replace(ast.NewIdent(walker.txVarName))
+						c.Replace(ast.NewIdent(walker.TxVarName))
 					}
 				}
 			}
@@ -275,24 +275,24 @@ func (walker *AEWalker) RewriteIdent(c *astutil.Cursor) bool {
 		switch c.Name() {
 		case "X":
 			if sel, ok := c.Node().(*ast.Ident); ok {
-				if sel.Name == walker.packageNameAE && selectorExpr.Sel.Name == "MultiError" {
-					c.Replace(ast.NewIdent(walker.packageNameAEDatastore))
+				if sel.Name == walker.PackageNameAE && selectorExpr.Sel.Name == "MultiError" {
+					c.Replace(ast.NewIdent(walker.PackageNameAEDatastore))
 
-				} else if sel.Name == walker.packageNameAE && selectorExpr.Sel.Name == "GeoPoint" {
-					c.Replace(ast.NewIdent(walker.packageNameAEDatastore))
+				} else if sel.Name == walker.PackageNameAE && selectorExpr.Sel.Name == "GeoPoint" {
+					c.Replace(ast.NewIdent(walker.PackageNameAEDatastore))
 
-				} else if sel.Name == walker.packageNameAEDatastore && selectorExpr.Sel.Name == "Done" {
+				} else if sel.Name == walker.PackageNameAEDatastore && selectorExpr.Sel.Name == "Done" {
 					c.Replace(ast.NewIdent("iterator"))
-					walker.useIterator = true
+					walker.UseIterator = true
 
-				} else if sel.Name == walker.packageNameAEDatastore {
+				} else if sel.Name == walker.PackageNameAEDatastore {
 					switch selectorExpr.Sel.Name {
 					case "Put", "PutMulti", "Get", "GetMulti", "Delete", "DeleteMulti", "NewQuery":
-						c.Replace(ast.NewIdent(walker.clientVarName))
+						c.Replace(ast.NewIdent(walker.ClientVarName))
 					case "NewIncompleteKey":
-						c.Replace(ast.NewIdent(walker.clientVarName))
+						c.Replace(ast.NewIdent(walker.ClientVarName))
 					case "NewKey":
-						c.Replace(ast.NewIdent(walker.clientVarName))
+						c.Replace(ast.NewIdent(walker.ClientVarName))
 					case "RunInTransaction":
 						// TODO 複雑な変換が必要… *ast.AssignStmt から捕まえないとダメそう
 						// 1. RunInTransactionの返り値が2つに増える 1つ目は無視
@@ -301,18 +301,18 @@ func (walker *AEWalker) RewriteIdent(c *astutil.Cursor) bool {
 						//   ネストした構造の場合もあるので変数名は変えないほうが無難…？
 						//   第一引数のctxをreceiverにするのが楽なのかもしれない
 						// 4. client.Get 系を tx.Get に 第一引数のctxも削除
-						c.Replace(ast.NewIdent(walker.clientVarName))
+						c.Replace(ast.NewIdent(walker.ClientVarName))
 					}
-				} else if sel.Name == walker.queryVarName {
+				} else if sel.Name == walker.QueryVarName {
 					switch selectorExpr.Sel.Name {
 					case "GetAll", "Run":
-						c.Replace(ast.NewIdent(walker.clientVarName))
+						c.Replace(ast.NewIdent(walker.ClientVarName))
 					}
 				}
 			}
 		case "Sel":
 			if left, ok := selectorExpr.X.(*ast.Ident); ok {
-				if left.Name == walker.clientVarName {
+				if left.Name == walker.ClientVarName {
 					if right, ok := c.Node().(*ast.Ident); ok {
 						switch right.Name {
 						case "NewIncompleteKey":
@@ -326,7 +326,7 @@ func (walker *AEWalker) RewriteIdent(c *astutil.Cursor) bool {
 		if sel, ok := starExpr.X.(*ast.SelectorExpr); ok {
 			if ident, ok := sel.X.(*ast.Ident); ok {
 				// TODO なんだっけこれ…
-				if ident.Name == walker.packageNameAEDatastore {
+				if ident.Name == walker.PackageNameAEDatastore {
 					c.Replace(sel)
 				}
 			}

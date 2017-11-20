@@ -15,21 +15,31 @@ func TestMigrator_LKGCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fileNames := make([]string, 0, len(fInfos))
-	for _, f := range fInfos {
-		t.Log(f.Name())
-		fileNames = append(fileNames, filepath.Join("./fixture", f.Name()))
-	}
+	for idx, fInfo := range fInfos {
+		t.Run(fInfo.Name(), func(t *testing.T) {
+			w := &Walker{
+				PackageNameAE:          "appengine",
+				PackageNameAEDatastore: "datastore",
+				PackageNameGoon:        "goon",
+				PackageNameBoom:        "boom",
+				PackageNameContext:     "context",
+				ClientVarName:          "client",
+				ContextVarName:         "ctx",
+				QueryVarName:           "q",
+				TxVarName:              "tx",
+				CommitVarName:          "commit",
+				GoonVarName:            "g",
+				BoomVarName:            "bm",
+				GoonTxName:             "tg",
+			}
 
-	fset, fs, err := Main(fileNames)
-	if err != nil {
-		t.Fatal(err)
-	}
+			fset, f, err := MigrateFile(w, filepath.Join("./fixture", fInfo.Name()))
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	for idx, f := range fs {
-		t.Run(fInfos[idx].Name(), func(t *testing.T) {
-			buf := bytes.NewBufferString("")
-			err = format.Node(buf, fset, f)
+			var buf bytes.Buffer
+			err = format.Node(&buf, fset, f)
 			if err != nil {
 				t.Fatal(err)
 			}
