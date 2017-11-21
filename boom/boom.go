@@ -471,6 +471,10 @@ func (bm *Boom) GetAll(q datastore.Query, dst interface{}) ([]datastore.Key, err
 		return nil, err
 	}
 
+	if dst == nil {
+		return keys, nil
+	}
+
 	v := reflect.Indirect(reflect.ValueOf(dst))
 	for idx, key := range keys {
 		err = bm.setStructKey(v.Index(idx).Interface(), key)

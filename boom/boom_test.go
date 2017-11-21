@@ -466,17 +466,28 @@ func TestBoom_GetAll(t *testing.T) {
 	}
 
 	q := client.NewQuery(bm.Kind(&Data{}))
-	list = make([]*Data, 0)
-	_, err = bm.GetAll(q, &list)
-	if err != nil {
-		t.Fatal(err)
-	}
+	{
+		list = make([]*Data, 0)
+		_, err = bm.GetAll(q, &list)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if v := len(list); v != size {
-		t.Errorf("unexpected: %v", v)
+		if v := len(list); v != size {
+			t.Errorf("unexpected: %v", v)
+		}
+		for _, obj := range list {
+			if v := obj.ID; v == 0 {
+				t.Errorf("unexpected: %v", v)
+			}
+		}
 	}
-	for _, obj := range list {
-		if v := obj.ID; v == 0 {
+	{
+		keys, err := bm.GetAll(q.KeysOnly(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if v := len(keys); v != size {
 			t.Errorf("unexpected: %v", v)
 		}
 	}

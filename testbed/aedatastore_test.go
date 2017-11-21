@@ -273,14 +273,26 @@ func TestAEDatastore_Query(t *testing.T) {
 	}
 
 	q := datastore.NewQuery("Data").Filter("Str =", "Data2")
-	var list []*Data
-	_, err = q.GetAll(ctx, &list)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	{
+		var list []*Data
+		_, err = q.GetAll(ctx, &list)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
 
-	if v := len(list); v != 1 {
-		t.Fatalf("unexpected: %v", v)
+		if v := len(list); v != 1 {
+			t.Fatalf("unexpected: %v", v)
+		}
+	}
+	{
+		keys, err := q.KeysOnly().GetAll(ctx, nil)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+
+		if v := len(keys); v != 1 {
+			t.Fatalf("unexpected: %v", v)
+		}
 	}
 }
 

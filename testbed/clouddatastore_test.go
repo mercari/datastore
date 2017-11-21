@@ -352,14 +352,26 @@ func TestCloudDatastore_Query(t *testing.T) {
 	}
 
 	q := datastore.NewQuery("Data").Filter("Str =", "Data2")
-	var list []*Data
-	_, err = client.GetAll(ctx, q, &list)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	{
+		var list []*Data
+		_, err = client.GetAll(ctx, q, &list)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
 
-	if v := len(list); v != 1 {
-		t.Fatalf("unexpected: %v", v)
+		if v := len(list); v != 1 {
+			t.Fatalf("unexpected: %v", v)
+		}
+	}
+	{
+		keys, err := client.GetAll(ctx, q.KeysOnly(), nil)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+
+		if v := len(keys); v != 1 {
+			t.Fatalf("unexpected: %v", v)
+		}
 	}
 }
 
