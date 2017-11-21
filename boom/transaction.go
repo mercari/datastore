@@ -19,6 +19,18 @@ type setKeyLater struct {
 	src        interface{}
 }
 
+func (tx *Transaction) Kind(src interface{}) string {
+	return tx.bm.Kind(src)
+}
+
+func (tx *Transaction) Key(src interface{}) datastore.Key {
+	return tx.bm.Key(src)
+}
+
+func (tx *Transaction) KeyError(src interface{}) (datastore.Key, error) {
+	return tx.bm.KeyError(src)
+}
+
 func (tx *Transaction) Get(dst interface{}) error {
 	dsts := []interface{}{dst}
 	err := tx.GetMulti(dsts)
