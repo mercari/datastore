@@ -13,9 +13,11 @@ func (it *Iterator) Next(dst interface{}) (datastore.Key, error) {
 		return nil, err
 	}
 
-	err = it.bm.setStructKey(dst, key)
-	if err != nil {
-		return nil, err
+	if dst != nil {
+		err = it.bm.setStructKey(dst, key)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return key, nil

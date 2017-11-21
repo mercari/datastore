@@ -48,3 +48,35 @@ func TestBoom_IteratorNext(t *testing.T) {
 		}
 	}
 }
+
+func TestBoom_IteratorNextKeysOnly(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	type Data struct {
+		ID int64 `datastore:"-" boom:"id"`
+	}
+
+	bm := FromClient(ctx, client)
+
+	var list []*Data
+	for i := 0; i < 100; i++ {
+		list = append(list, &Data{})
+	}
+	_, err := bm.PutMulti(list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := client.NewQuery(bm.Kind(&Data{})).KeysOnly()
+	it := bm.Run(q)
+
+	for {
+		_, err = it.Next(nil)
+		if err == iterator.Done {
+			break
+		} else if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
