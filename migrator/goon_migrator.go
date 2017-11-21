@@ -10,6 +10,58 @@ type GoonWalker struct {
 	*Walker
 }
 
+func (walker *GoonWalker) isGoonGoonType(expr ast.Expr) bool {
+	starExpr, ok := expr.(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+
+	selectExpr, ok := starExpr.X.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+
+	ident, ok := selectExpr.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	if ident.Name != walker.PackageNameGoon {
+		return false
+	}
+
+	if selectExpr.Sel.Name != "Goon" {
+		return false
+	}
+
+	return true
+}
+
+func (walker *GoonWalker) isBoomBoomType(expr ast.Expr) bool {
+	starExpr, ok := expr.(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+
+	selectExpr, ok := starExpr.X.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+
+	ident, ok := selectExpr.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	if ident.Name != walker.PackageNameBoom {
+		return false
+	}
+
+	if selectExpr.Sel.Name != "Boom" {
+		return false
+	}
+
+	return true
+}
+
 func (walker *GoonWalker) isGoonFromContextStmt(node ast.Node) bool {
 	assignStmt, ok := node.(*ast.AssignStmt)
 	if !ok {
@@ -167,6 +219,8 @@ func (walker *GoonWalker) RewriteIdent(c *astutil.Cursor) bool {
 						c.Replace(ast.NewIdent(walker.BoomVarName))
 					case "RunInTransaction":
 						c.Replace(ast.NewIdent(walker.BoomVarName))
+					case "Context":
+						c.Replace(ast.NewIdent(walker.BoomVarName))
 					}
 				} else if ident.Name == walker.QueryVarName {
 					switch selectorExpr.Sel.Name {
@@ -180,9 +234,17 @@ func (walker *GoonWalker) RewriteIdent(c *astutil.Cursor) bool {
 		case "Sel":
 			if x, ok := selectorExpr.X.(*ast.Ident); ok {
 				if sel, ok := c.Node().(*ast.Ident); ok {
-					if x.Name == walker.PackageNameGoon && sel.Name == "Goon" {
+					if (x.Name == walker.PackageNameGoon || x.Name == walker.PackageNameBoom) && sel.Name == "Goon" {
 						c.Replace(ast.NewIdent("Boom"))
 					}
+				}
+			}
+		}
+	} else if ident, ok := c.Node().(*ast.Ident); ok {
+		if ident.Name == walker.GoonVarName {
+			if obj := ident.Obj; obj != nil && obj.Kind == ast.Var {
+				if field, ok := obj.Decl.(*ast.Field); ok && (walker.isGoonGoonType(field.Type) || walker.isBoomBoomType(field.Type)) {
+					c.Replace(ast.NewIdent(walker.BoomVarName))
 				}
 			}
 		}

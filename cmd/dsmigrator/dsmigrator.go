@@ -7,8 +7,9 @@ import (
 	"go/format"
 	"log"
 
-	"go.mercari.io/datastore/migrator"
 	"io/ioutil"
+
+	"go.mercari.io/datastore/migrator"
 )
 
 var (
