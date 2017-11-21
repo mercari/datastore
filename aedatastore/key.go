@@ -108,6 +108,32 @@ func (k *keyImpl) Encode() string {
 	return toOriginalKey(k).Encode()
 }
 
+func (k *keyImpl) Equal(o w.Key) bool {
+	var a w.Key = k
+	var b = o
+	for {
+		if a == nil && b == nil {
+			return true
+		} else if a != nil && b == nil {
+			return false
+		} else if a == nil && b != nil {
+			return false
+		}
+		if a.Kind() != b.Kind() || a.Name() != b.Name() || a.ID() != b.ID() || a.Namespace() != b.Namespace() {
+			return false
+		}
+
+		// NOTE Don't checking appID. align to Cloud Datastore API.
+
+		a = a.ParentKey()
+		b = b.ParentKey()
+	}
+}
+
+func (k *keyImpl) Incomplete() bool {
+	return k.Name() == "" && k.ID() == 0
+}
+
 func (p *pendingKeyImpl) StoredContext() context.Context {
 	return context.WithValue(p.ctx, contextPendingKey{}, p)
 }

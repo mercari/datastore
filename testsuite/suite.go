@@ -20,6 +20,8 @@ var TestSuite = map[string]Test{
 	"PutEntityType":                             PutEntityType,
 	"PutInterface":                              PutInterface,
 	"GeoPoint_PutAndGet":                        GeoPoint_PutAndGet,
+	"Key_Equal":                                 Key_Equal,
+	"Key_Incomplete":                            Key_Incomplete,
 	"PLS_Basic":                                 PLS_Basic,
 	"KL_Basic":                                  KL_Basic,
 	"PropertyTranslater_PutAndGet":              PropertyTranslater_PutAndGet,

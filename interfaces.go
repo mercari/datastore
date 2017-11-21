@@ -50,6 +50,8 @@ type Key interface {
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(buf []byte) error
 	Encode() string
+	Equal(o Key) bool
+	Incomplete() bool
 }
 
 type PendingKey interface {
