@@ -1,3 +1,14 @@
+<a name="0.5.1"></a>
+## [0.5.1](https://github.com/mercari/datastore/compare/v0.5.0...v0.5.1) (2017-11-21)
+
+
+### Bug Fixes
+
+* **boom:** fix *boom.Boom#GetAll with KeysOnly query ([420bb37](https://github.com/mercari/datastore/commit/420bb37))
+* **boom:** fix *boom.Iterator#Next with KeysOnly query ([e8bbeed](https://github.com/mercari/datastore/commit/e8bbeed))
+
+
+
 <a name="0.5.0"></a>
 # [0.5.0](https://github.com/mercari/datastore/compare/v0.4.0...v0.5.0) (2017-11-21)
 
