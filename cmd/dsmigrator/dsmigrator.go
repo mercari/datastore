@@ -8,9 +8,12 @@ import (
 	"log"
 
 	"go.mercari.io/datastore/migrator"
+	"io/ioutil"
 )
 
 var (
+	rewrite = flag.Bool("r", false, "TODO")
+
 	packageNameAE          = flag.String("package-name-ae", "appengine", "TODO")
 	packageNameAEDatastore = flag.String("package-name-ae-datastore", "datastore", "TODO")
 	packageNameGoon        = flag.String("package-name-goon", "goon", "TODO")
@@ -57,14 +60,19 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// 組み替えたASTを文字列に変換する
 		var buf bytes.Buffer
 		err = format.Node(&buf, fset, f)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		// TODO 元ファイルを上書きする
-		fmt.Println(buf.String())
+		if *rewrite {
+			err = ioutil.WriteFile(targetFile, buf.Bytes(), 0644)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			fmt.Println(buf.String())
+		}
 	}
 }
