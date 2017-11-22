@@ -18,6 +18,8 @@ var TestSuite = map[string]Test{
 	"PutAndGet_ObjectHasObjectSlice":            PutAndGet_ObjectHasObjectSlice,
 	"PutAndGet_ObjectHasObjectSliceWithFlatten": PutAndGet_ObjectHasObjectSliceWithFlatten,
 	"PutEntityType":                             PutEntityType,
+	"PutAndGetNilKey":                           PutAndGetNilKey,
+	"PutAndGetNilKeySlice":                      PutAndGetNilKeySlice,
 	"PutInterface":                              PutInterface,
 	"GeoPoint_PutAndGet":                        GeoPoint_PutAndGet,
 	"Key_Equal":                                 Key_Equal,

@@ -68,74 +68,80 @@ func saveStructProperty(ctx context.Context, props *[]Property, name string, opt
 		return nil
 	}
 
-	switch x := v.Interface().(type) {
-	case Key, time.Time, GeoPoint:
-		p.Value = x
-	case PropertyTranslator:
-		v, err := x.ToPropertyValue(ctx)
-		if err != nil {
-			return err
-		}
-		p.Value = v
-	default:
-		switch v.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			p.Value = v.Int()
-		case reflect.Bool:
-			p.Value = v.Bool()
-		case reflect.String:
-			p.Value = v.String()
-		case reflect.Float32, reflect.Float64:
-			p.Value = v.Float()
-		case reflect.Slice:
-			if v.Type().Elem().Kind() == reflect.Uint8 {
-				p.Value = v.Bytes()
-			} else {
-				return saveSliceProperty(ctx, props, name, opts, v)
-			}
-		case reflect.Ptr:
-			if v.Type().Elem().Kind() != reflect.Struct {
-				return fmt.Errorf("datastore: unsupported struct field type: %s", v.Type())
-			}
-			if v.IsNil() {
-				return nil
-			}
-			v = v.Elem()
-			fallthrough
-		case reflect.Struct:
-			if !v.CanAddr() {
-				return fmt.Errorf("datastore: unsupported struct field: value is unaddressable")
-			}
-			vi := v.Addr().Interface()
+	if v.Type().AssignableTo(typeOfKey) {
+		p.Value = v.Interface()
 
-			sub, err := newStructPLS(vi)
-			if err != nil {
-				return fmt.Errorf("datastore: unsupported struct field: %v", err)
-			}
-
-			if opts.flatten {
-				return sub.save(ctx, props, opts, name+".")
-			}
-
-			var subProps []Property
-			err = sub.save(ctx, &subProps, opts, "")
+	} else {
+		switch x := v.Interface().(type) {
+		case time.Time, GeoPoint:
+			p.Value = x
+		case PropertyTranslator:
+			v, err := x.ToPropertyValue(ctx)
 			if err != nil {
 				return err
 			}
-			subKey, err := sub.key(v)
-			if err != nil {
-				return err
-			}
+			p.Value = v
+		default:
+			switch v.Kind() {
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				p.Value = v.Int()
+			case reflect.Bool:
+				p.Value = v.Bool()
+			case reflect.String:
+				p.Value = v.String()
+			case reflect.Float32, reflect.Float64:
+				p.Value = v.Float()
+			case reflect.Slice:
+				if v.Type().Elem().Kind() == reflect.Uint8 {
+					p.Value = v.Bytes()
+				} else {
+					return saveSliceProperty(ctx, props, name, opts, v)
+				}
+			case reflect.Ptr:
+				if v.Type().Elem().Kind() != reflect.Struct {
+					return fmt.Errorf("datastore: unsupported struct field type: %s", v.Type())
+				}
+				if v.IsNil() {
+					return nil
+				}
+				v = v.Elem()
+				fallthrough
+			case reflect.Struct:
+				if !v.CanAddr() {
+					return fmt.Errorf("datastore: unsupported struct field: value is unaddressable")
+				}
+				vi := v.Addr().Interface()
 
-			p.Value = &Entity{
-				Key:        subKey,
-				Properties: subProps,
+				sub, err := newStructPLS(vi)
+				if err != nil {
+					return fmt.Errorf("datastore: unsupported struct field: %v", err)
+				}
+
+				if opts.flatten {
+					return sub.save(ctx, props, opts, name+".")
+				}
+
+				var subProps []Property
+				err = sub.save(ctx, &subProps, opts, "")
+				if err != nil {
+					return err
+				}
+				subKey, err := sub.key(v)
+				if err != nil {
+					return err
+				}
+
+				p.Value = &Entity{
+					Key:        subKey,
+					Properties: subProps,
+				}
 			}
 		}
+		if p.Value == nil {
+			return fmt.Errorf("datastore: unsupported struct field type: %v", v.Type())
+		}
 	}
-	if p.Value == nil {
-		return fmt.Errorf("datastore: unsupported struct field type: %v", v.Type())
-	}
+
 	*props = append(*props, p)
 	return nil
 }

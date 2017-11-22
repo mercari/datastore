@@ -225,6 +225,82 @@ func PutEntityType(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
+func PutAndGetNilKey(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	type Data struct {
+		KeyA datastore.Key
+		KeyB datastore.Key
+	}
+
+	key := client.IncompleteKey("Test", nil)
+	key, err := client.Put(ctx, key, &Data{
+		KeyA: client.NameKey("Test", "a", nil),
+		KeyB: nil,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := &Data{}
+	err = client.Get(ctx, key, obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := obj.KeyA; v == nil {
+		t.Errorf("unexpected: %v", v)
+	}
+	if v := obj.KeyB; v != nil {
+		t.Errorf("unexpected: %v", v)
+	}
+}
+
+func PutAndGetNilKeySlice(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	type Data struct {
+		Keys []datastore.Key
+	}
+
+	key := client.IncompleteKey("Test", nil)
+	key, err := client.Put(ctx, key, &Data{
+		Keys: []datastore.Key{
+			client.NameKey("Test", "a", nil),
+			nil,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := &Data{}
+	err = client.Get(ctx, key, obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := len(obj.Keys); v != 2 {
+		t.Fatalf("unexpected: %v", v)
+	}
+	if v := obj.Keys[0]; v == nil {
+		t.Errorf("unexpected: %v", v)
+	}
+	if v := obj.Keys[1]; v != nil {
+		t.Errorf("unexpected: %v", v)
+	}
+}
+
 type EntityInterface interface {
 	Kind() string
 	ID() string

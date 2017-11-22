@@ -356,6 +356,23 @@ func setVal(ctx context.Context, v reflect.Value, p Property) error {
 		default:
 			return typeMismatchReason(p, v)
 		}
+	case reflect.Interface:
+		switch v.Type() {
+		case typeOfKey:
+			x, ok := pValue.(Key)
+			if !ok && pValue != nil {
+				return typeMismatchReason(p, v)
+			}
+			if x == nil {
+				if !v.IsNil() {
+					v.Set(reflect.ValueOf(nil))
+				}
+			} else {
+				v.Set(reflect.ValueOf(x))
+			}
+		default:
+			return typeMismatchReason(p, v)
+		}
 	case reflect.Struct:
 		switch v.Type() {
 		case typeOfTime:
