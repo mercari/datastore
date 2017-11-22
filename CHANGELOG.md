@@ -1,3 +1,13 @@
+<a name="0.5.2"></a>
+## [0.5.2](https://github.com/mercari/datastore/compare/v0.5.1...v0.5.2) (2017-11-22)
+
+
+### Bug Fixes
+
+* **core:** fix datastore.Key or []datastore.Key Save & Load handling ([29f465d](https://github.com/mercari/datastore/commit/29f465d))
+
+
+
 <a name="0.5.1"></a>
 ## [0.5.1](https://github.com/mercari/datastore/compare/v0.5.0...v0.5.1) (2017-11-21)
 
