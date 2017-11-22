@@ -135,7 +135,9 @@ func (bm *Boom) setStructKey(src interface{}, key datastore.Key) error {
 			} else {
 				vfType := vf.Type()
 				if vfType.ConvertibleTo(typeOfKey) {
-					vf.Set(reflect.ValueOf(key.ParentKey()).Convert(vfType))
+					if key.ParentKey() != nil {
+						vf.Set(reflect.ValueOf(key.ParentKey()).Convert(vfType))
+					}
 					parentSet = true
 				}
 			}
@@ -265,7 +267,7 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 					}
 				} else {
 					vfType := vf.Type()
-					if vfType.ConvertibleTo(typeOfKey) {
+					if !vf.IsNil() && vfType.ConvertibleTo(typeOfKey) {
 						if parent != nil {
 							return nil, fmt.Errorf("boom: Only one field may be marked parent")
 						}

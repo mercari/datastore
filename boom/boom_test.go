@@ -645,6 +645,34 @@ func TestBoom_TagParent(t *testing.T) {
 	}
 }
 
+func TestBoom_TagParentWithNilParent(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	ctx = context.WithValue(ctx, contextClient{}, client)
+
+	bm := FromClient(ctx, client)
+
+	type Data struct {
+		ParentKey datastore.Key `datastore:"-" boom:"parent"`
+		ID        int64         `datastore:"-" boom:"id"`
+	}
+
+	key, err := bm.Put(&Data{ParentKey: nil, ID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := key.ParentKey(); v != nil {
+		t.Errorf("unexpected: %v", v)
+	}
+
+	err = bm.Get(&Data{ID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestBoom_TagKind(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
