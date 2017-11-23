@@ -432,7 +432,7 @@ func TestBoom_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	q := client.NewQuery(bm.Kind(&Data{}))
+	q := bm.NewQuery(bm.Kind(&Data{}))
 	cnt, err := bm.Count(q)
 	if err != nil {
 		t.Fatal(err)
@@ -465,7 +465,7 @@ func TestBoom_GetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	q := client.NewQuery(bm.Kind(&Data{}))
+	q := bm.NewQuery(bm.Kind(&Data{}))
 	{
 		list = make([]*Data, 0)
 		_, err = bm.GetAll(q, &list)

@@ -26,7 +26,7 @@ func TestBoom_IteratorNext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	q := client.NewQuery(bm.Kind(&Data{}))
+	q := bm.NewQuery(bm.Kind(&Data{}))
 	it := bm.Run(q)
 
 	for {
@@ -68,7 +68,7 @@ func TestBoom_IteratorNextKeysOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	q := client.NewQuery(bm.Kind(&Data{})).KeysOnly()
+	q := bm.NewQuery(bm.Kind(&Data{})).KeysOnly()
 	it := bm.Run(q)
 
 	for {
