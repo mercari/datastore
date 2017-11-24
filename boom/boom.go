@@ -496,3 +496,7 @@ func (bm *Boom) Batch() *Batch {
 func (bm *Boom) DecodeCursor(s string) (datastore.Cursor, error) {
 	return bm.Client.DecodeCursor(s)
 }
+
+func (bm *Boom) NewQuery(k string) datastore.Query {
+	return bm.Client.NewQuery(k)
+}
