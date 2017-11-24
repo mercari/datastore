@@ -1,3 +1,15 @@
+<a name="0.5.3"></a>
+## [0.5.3](https://github.com/mercari/datastore/compare/v0.5.2...v0.5.3) (2017-11-24)
+
+
+### Bug Fixes
+
+* **ae,cloud:** fix datastore.PropertyList handling when Put & Get ([0355f35](https://github.com/mercari/datastore/commit/0355f35))
+* **ae,cloud:** fix struct (without pointer) handling when Put & Get ([de3eb4c](https://github.com/mercari/datastore/commit/de3eb4c))
+* **boom:** fix nil parent key handling ([7dc317b](https://github.com/mercari/datastore/commit/7dc317b))
+
+
+
 <a name="0.5.2"></a>
 ## [0.5.2](https://github.com/mercari/datastore/compare/v0.5.1...v0.5.2) (2017-11-22)
 
