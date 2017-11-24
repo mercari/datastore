@@ -21,6 +21,8 @@ var TestSuite = map[string]Test{
 	"PutAndGetNilKey":                           PutAndGetNilKey,
 	"PutAndGetNilKeySlice":                      PutAndGetNilKeySlice,
 	"PutInterface":                              PutInterface,
+	"PutAndGetPropertyList":                     PutAndGetPropertyList,
+	"PutAndGetMultiPropertyListSlice":           PutAndGetMultiPropertyListSlice,
 	"GeoPoint_PutAndGet":                        GeoPoint_PutAndGet,
 	"Key_Equal":                                 Key_Equal,
 	"Key_Incomplete":                            Key_Incomplete,

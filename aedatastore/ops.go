@@ -33,7 +33,7 @@ func getMultiOps(ctx context.Context, keys []w.Key, dst interface{}, ops getOps)
 
 	var merr []error
 	origMerr, catchMerr := err.(appengine.MultiError)
-	if catchMerr {
+	if catchMerr || err == nil {
 		merr = make([]error, len(keys))
 	} else if err != nil {
 		return toWrapperError(err)
@@ -92,7 +92,11 @@ func putMultiOps(ctx context.Context, keys []w.Key, src interface{}, ops putOps)
 
 	var origPss []datastore.PropertyList
 	for idx, key := range keys {
-		src := v.Index(idx).Interface()
+		elem := v.Index(idx)
+		if reflect.PtrTo(elem.Type()).Implements(typeOfPropertyLoadSaver) {
+			elem = elem.Addr()
+		}
+		src := elem.Interface()
 		e, err := w.SaveEntity(ctx, key, src)
 		if err != nil {
 			return nil, nil, toWrapperError(err)
