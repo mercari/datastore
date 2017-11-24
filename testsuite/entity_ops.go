@@ -454,3 +454,94 @@ func PutAndGetMultiPropertyListSlice(t *testing.T, ctx context.Context, client d
 		t.Fatalf("unexpected: %v", v)
 	}
 }
+
+func PutAndGetBareStruct(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	type Data struct {
+		Name string
+	}
+
+	var err error
+
+	key := client.IncompleteKey("Test", nil)
+	// passed Data, would be error.
+	_, err = client.Put(ctx, key, Data{Name: "A"})
+	if err != datastore.ErrInvalidEntityType {
+		t.Fatal(err)
+	}
+
+	// ok! *Data
+	key, err = client.Put(ctx, key, &Data{Name: "A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// ok! but struct are copied. can't watching Get result.
+	obj := Data{}
+	err = client.Get(ctx, key, obj)
+	if err != datastore.ErrInvalidEntityType {
+		t.Fatal(err)
+	}
+
+	if v := obj.Name; v != "" {
+		t.Errorf("unexpected: '%v'", v)
+	}
+}
+
+func PutAndGetMultiBareStruct(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	type Data struct {
+		Name string
+	}
+
+	var list []Data
+	var keys []datastore.Key
+	{
+		obj := Data{Name: "A"}
+		key := client.IncompleteKey("Test", nil)
+
+		list = append(list, obj)
+		keys = append(keys, key)
+	}
+
+	var err error
+
+	// ok!
+	keys, err = client.PutMulti(ctx, keys, list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// passed []Data with length 0, would be error.
+	list = make([]Data, 0)
+	err = client.GetMulti(ctx, keys, list)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// ok! []Data with length == len(keys)
+	list = make([]Data, len(keys))
+	err = client.GetMulti(ctx, keys, list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := len(list); v != 1 {
+		t.Fatalf("unexpected: '%v'", v)
+	}
+	if v := list[0].Name; v != "A" {
+		t.Errorf("unexpected: '%v'", v)
+	}
+}
