@@ -326,6 +326,14 @@ func (d *datastoreImpl) Batch() *w.Batch {
 	return &w.Batch{Client: d}
 }
 
+func (d *datastoreImpl) AppendCacheStrategy(strategy w.CacheStrategy) {
+	panic("not implemented")
+}
+
+func (d *datastoreImpl) RemoveCacheStrategy(strategy w.CacheStrategy) bool {
+	panic("not implemented")
+}
+
 func (d *datastoreImpl) SwapContext(ctx context.Context) context.Context {
 	origCtx := d.ctx
 	d.ctx = ctx

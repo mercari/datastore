@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	w "go.mercari.io/datastore"
+	"go.mercari.io/datastore/internal/shared"
 )
 
 var _ w.Client = (*datastoreImpl)(nil)
@@ -15,8 +16,9 @@ var typeOfPropertyLoadSaver = reflect.TypeOf((*w.PropertyLoadSaver)(nil)).Elem()
 var typeOfPropertyList = reflect.TypeOf(w.PropertyList(nil))
 
 type datastoreImpl struct {
-	ctx    context.Context
-	client *datastore.Client
+	ctx             context.Context
+	client          *datastore.Client
+	cacheStrategies []w.CacheStrategy
 }
 
 func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dst interface{}) error {
@@ -31,8 +33,14 @@ func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dst interface{}) err
 }
 
 func (d *datastoreImpl) GetMulti(ctx context.Context, keys []w.Key, dst interface{}) error {
-	return getMultiOps(ctx, keys, dst, func(keys []*datastore.Key, dst []datastore.PropertyList) error {
-		return d.client.GetMulti(ctx, keys, dst)
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+
+	return shared.GetMultiOps(ctx, keys, dst, func(keys []w.Key, dst []w.PropertyList) error {
+		return cb.GetMultiWithoutTx(cacheInfo, keys, dst)
 	})
 }
 
@@ -48,14 +56,15 @@ func (d *datastoreImpl) Put(ctx context.Context, key w.Key, src interface{}) (w.
 }
 
 func (d *datastoreImpl) PutMulti(ctx context.Context, keys []w.Key, src interface{}) ([]w.Key, error) {
-	keys, _, err := putMultiOps(ctx, keys, src, func(keys []*datastore.Key, src []datastore.PropertyList) ([]w.Key, []w.PendingKey, error) {
-		keys, err := d.client.PutMulti(ctx, keys, src)
-		if err != nil {
-			return nil, nil, err
-		}
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
 
-		wKeys := toWrapperKeys(keys)
-		return wKeys, nil, nil
+	keys, _, err := shared.PutMultiOps(ctx, keys, src, func(keys []w.Key, src []w.PropertyList) ([]w.Key, []w.PendingKey, error) {
+		keys, err := cb.PutMultiWithoutTx(cacheInfo, keys, src)
+		return keys, nil, err
 	})
 	if err != nil {
 		return nil, err
@@ -76,8 +85,14 @@ func (d *datastoreImpl) Delete(ctx context.Context, key w.Key) error {
 }
 
 func (d *datastoreImpl) DeleteMulti(ctx context.Context, keys []w.Key) error {
-	return deleteMultiOps(ctx, keys, func(keys []*datastore.Key) error {
-		return d.client.DeleteMulti(ctx, keys)
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+
+	return shared.DeleteMultiOps(ctx, keys, func(keys []w.Key) error {
+		return cb.DeleteMultiWithoutTx(cacheInfo, keys)
 	})
 }
 
@@ -105,9 +120,13 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 }
 
 func (d *datastoreImpl) Run(ctx context.Context, q w.Query) w.Iterator {
-	qImpl := q.(*queryImpl)
-	t := d.client.Run(ctx, qImpl.q)
-	return &iteratorImpl{client: d, q: qImpl, t: t, firstError: qImpl.firstError}
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+
+	return cb.Run(cb.Info, q, q.Dump())
 }
 
 func (d *datastoreImpl) AllocatedIDs(ctx context.Context, keys []w.Key) ([]w.Key, error) {
@@ -152,7 +171,7 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 	var dv reflect.Value
 	var elemType reflect.Type
 	var isPtrStruct bool
-	if !qImpl.keysOnly {
+	if !qImpl.dump.KeysOnly {
 		dv = reflect.ValueOf(dst)
 		if dv.Kind() != reflect.Ptr || dv.IsNil() {
 			return nil, w.ErrInvalidEntityType
@@ -181,17 +200,19 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 
 	// TODO add reflect.Map support
 
-	var origPss []datastore.PropertyList
-	origKeys, err := d.client.GetAll(ctx, qImpl.q, &origPss)
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+	var wPss []w.PropertyList
+	wKeys, err := cb.GetAll(cacheInfo, q, q.Dump(), &wPss)
 	if err != nil {
-		return nil, toWrapperError(err)
+		return nil, err
 	}
 
-	wKeys := toWrapperKeys(origKeys)
-
-	if !qImpl.keysOnly {
-		for idx, origPs := range origPss {
-			ps := toWrapperPropertyList(origPs)
+	if !qImpl.dump.KeysOnly {
+		for idx, ps := range wPss {
 
 			elem := reflect.New(elemType)
 
@@ -230,7 +251,7 @@ func (d *datastoreImpl) IDKey(kind string, id int64, parent w.Key) w.Key {
 
 func (d *datastoreImpl) NewQuery(kind string) w.Query {
 	q := datastore.NewQuery(kind)
-	return &queryImpl{ctx: d.ctx, q: q}
+	return &queryImpl{ctx: d.ctx, q: q, dump: &w.QueryDump{}}
 }
 
 func (d *datastoreImpl) Close() error {
@@ -257,6 +278,25 @@ func (d *datastoreImpl) DecodeCursor(s string) (w.Cursor, error) {
 
 func (d *datastoreImpl) Batch() *w.Batch {
 	return &w.Batch{Client: d}
+}
+
+func (d *datastoreImpl) AppendCacheStrategy(strategy w.CacheStrategy) {
+	d.cacheStrategies = append(d.cacheStrategies, strategy)
+}
+
+func (d *datastoreImpl) RemoveCacheStrategy(strategy w.CacheStrategy) bool {
+	list := make([]w.CacheStrategy, 0, len(d.cacheStrategies))
+	found := false
+	for _, old := range d.cacheStrategies {
+		if old == strategy {
+			found = true
+			continue
+		}
+		list = append(list, old)
+	}
+	d.cacheStrategies = list
+
+	return found
 }
 
 func (d *datastoreImpl) SwapContext(ctx context.Context) context.Context {

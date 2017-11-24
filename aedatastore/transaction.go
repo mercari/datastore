@@ -109,7 +109,7 @@ func (tx *transactionImpl) Get(key w.Key, dst interface{}) error {
 
 func (tx *transactionImpl) GetMulti(keys []w.Key, dst interface{}) error {
 	ext := getTxExtractor(tx.client.ctx)
-	if tx == nil {
+	if ext == nil {
 		return errors.New("unexpected context")
 	}
 	return getMultiOps(tx.client.ctx, keys, dst, func(keys []*datastore.Key, dst []datastore.PropertyList) error {
@@ -130,7 +130,7 @@ func (tx *transactionImpl) Put(key w.Key, src interface{}) (w.PendingKey, error)
 
 func (tx *transactionImpl) PutMulti(keys []w.Key, src interface{}) ([]w.PendingKey, error) {
 	ext := getTxExtractor(tx.client.ctx)
-	if tx == nil {
+	if ext == nil {
 		return nil, errors.New("unexpected context")
 	}
 	_, pKeys, err := putMultiOps(tx.client.ctx, keys, src, func(keys []*datastore.Key, src []datastore.PropertyList) ([]w.Key, []w.PendingKey, error) {
@@ -163,7 +163,7 @@ func (tx *transactionImpl) Delete(key w.Key) error {
 
 func (tx *transactionImpl) DeleteMulti(keys []w.Key) error {
 	ext := getTxExtractor(tx.client.ctx)
-	if tx == nil {
+	if ext == nil {
 		return errors.New("unexpected context")
 	}
 	return deleteMultiOps(tx.client.ctx, keys, func(keys []*datastore.Key) error {
@@ -173,7 +173,7 @@ func (tx *transactionImpl) DeleteMulti(keys []w.Key) error {
 
 func (tx *transactionImpl) Commit() (w.Commit, error) {
 	ext := getTxExtractor(tx.client.ctx)
-	if tx == nil {
+	if ext == nil {
 		return nil, errors.New("unexpected context")
 	}
 
@@ -187,7 +187,7 @@ func (tx *transactionImpl) Commit() (w.Commit, error) {
 
 func (tx *transactionImpl) Rollback() error {
 	ext := getTxExtractor(tx.client.ctx)
-	if tx == nil {
+	if ext == nil {
 		return errors.New("unexpected context")
 	}
 

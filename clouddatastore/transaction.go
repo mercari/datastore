@@ -2,10 +2,10 @@ package clouddatastore
 
 import (
 	"context"
-	"errors"
 
 	"cloud.google.com/go/datastore"
 	w "go.mercari.io/datastore"
+	"go.mercari.io/datastore/internal/shared"
 )
 
 var _ w.Transaction = (*transactionImpl)(nil)
@@ -42,12 +42,14 @@ func (tx *transactionImpl) Get(key w.Key, dst interface{}) error {
 }
 
 func (tx *transactionImpl) GetMulti(keys []w.Key, dst interface{}) error {
-	baseTx := getTx(tx.client.ctx)
-	if tx == nil {
-		return errors.New("unexpected context")
+	cacheInfo := &w.CacheInfo{
+		Context: tx.client.ctx,
+		Client:  tx.client,
 	}
-	return getMultiOps(tx.client.ctx, keys, dst, func(keys []*datastore.Key, dst []datastore.PropertyList) error {
-		return baseTx.GetMulti(keys, dst)
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+
+	return shared.GetMultiOps(tx.client.ctx, keys, dst, func(keys []w.Key, dst []w.PropertyList) error {
+		return cb.GetMultiWithTx(cacheInfo, keys, dst)
 	})
 }
 
@@ -63,20 +65,17 @@ func (tx *transactionImpl) Put(key w.Key, src interface{}) (w.PendingKey, error)
 }
 
 func (tx *transactionImpl) PutMulti(keys []w.Key, src interface{}) ([]w.PendingKey, error) {
-	baseTx := getTx(tx.client.ctx)
-	if tx == nil {
-		return nil, errors.New("unexpected context")
+	cacheInfo := &w.CacheInfo{
+		Context: tx.client.ctx,
+		Client:  tx.client,
 	}
-	_, pKeys, err := putMultiOps(tx.client.ctx, keys, src, func(keys []*datastore.Key, src []datastore.PropertyList) ([]w.Key, []w.PendingKey, error) {
-		pKeys, err := baseTx.PutMulti(keys, src)
-		if err != nil {
-			return nil, nil, err
-		}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
 
-		wPKeys := toWrapperPendingKeys(pKeys)
-
-		return nil, wPKeys, nil
+	_, pKeys, err := shared.PutMultiOps(tx.client.ctx, keys, src, func(keys []w.Key, src []w.PropertyList) ([]w.Key, []w.PendingKey, error) {
+		pKeys, err := cb.PutMultiWithTx(cacheInfo, keys, src)
+		return nil, pKeys, err
 	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -96,18 +95,20 @@ func (tx *transactionImpl) Delete(key w.Key) error {
 }
 
 func (tx *transactionImpl) DeleteMulti(keys []w.Key) error {
-	baseTx := getTx(tx.client.ctx)
-	if tx == nil {
-		return errors.New("unexpected context")
+	cacheInfo := &w.CacheInfo{
+		Context: tx.client.ctx,
+		Client:  tx.client,
 	}
-	return deleteMultiOps(tx.client.ctx, keys, func(keys []*datastore.Key) error {
-		return baseTx.DeleteMulti(keys)
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+
+	return shared.DeleteMultiOps(tx.client.ctx, keys, func(keys []w.Key) error {
+		return cb.DeleteMultiWithTx(cacheInfo, keys)
 	})
 }
 
 func (tx *transactionImpl) Commit() (w.Commit, error) {
 	baseTx := getTx(tx.client.ctx)
-	if tx == nil {
+	if baseTx == nil {
 		return nil, nil
 	}
 

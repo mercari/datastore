@@ -137,6 +137,10 @@ func (q *queryImpl) End(c w.Cursor) w.Query {
 	return q
 }
 
+func (q *queryImpl) Dump() *w.QueryDump {
+	panic("not implemented")
+}
+
 func (t *iteratorImpl) Next(dst interface{}) (w.Key, error) {
 	if t.firstError != nil {
 		return nil, t.firstError
