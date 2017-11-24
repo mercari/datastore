@@ -940,3 +940,34 @@ func TestCloudDatastore_PutAndGetMultiBareStruct(t *testing.T) {
 		t.Errorf("unexpected: '%v'", v)
 	}
 }
+
+func TestCloudDatastore_PutAndGetStringSynonym(t *testing.T) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, "souzoh-p-vvakame")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	type Email string
+
+	type Data struct {
+		Email Email
+	}
+
+	key, err := client.Put(ctx, datastore.IncompleteKey("Data", nil), &Data{Email: "test@example.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := &Data{}
+	err = client.Get(ctx, key, obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := obj.Email; v != "test@example.com" {
+		t.Errorf("unexpected: '%v'", v)
+	}
+}

@@ -750,3 +750,32 @@ func TestAEDatastore_PutAndGetMultiBareStruct(t *testing.T) {
 		t.Errorf("unexpected: '%v'", v)
 	}
 }
+
+func TestAEDatastore_PutAndGetStringSynonym(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	type Email string
+
+	type Data struct {
+		Email Email
+	}
+
+	key, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Data", nil), &Data{Email: "test@example.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := &Data{}
+	err = datastore.Get(ctx, key, obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := obj.Email; v != "test@example.com" {
+		t.Errorf("unexpected: '%v'", v)
+	}
+}
