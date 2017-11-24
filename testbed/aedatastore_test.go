@@ -665,3 +665,88 @@ func TestAEDatastore_PutAndGetMultiPropertyListSlice(t *testing.T) {
 		t.Fatalf("unexpected: %v", v)
 	}
 }
+
+func TestAEDatastore_PutAndGetBareStruct(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	type Data struct {
+		Name string
+	}
+
+	key := datastore.NewIncompleteKey(ctx, "Test", nil)
+	// passed Data, would be error.
+	_, err = datastore.Put(ctx, key, Data{Name: "A"})
+	if err != datastore.ErrInvalidEntityType {
+		t.Fatal(err)
+	}
+
+	// ok! *Data
+	key, err = datastore.Put(ctx, key, &Data{Name: "A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// ok! but struct are copied. can't watching Get result.
+	obj := Data{}
+	err = datastore.Get(ctx, key, obj)
+	if err != datastore.ErrInvalidEntityType {
+		t.Fatal(err)
+	}
+
+	if v := obj.Name; v != "" {
+		t.Errorf("unexpected: '%v'", v)
+	}
+}
+
+func TestAEDatastore_PutAndGetMultiBareStruct(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	type Data struct {
+		Name string
+	}
+
+	var list []Data
+	var keys []*datastore.Key
+	{
+		obj := Data{Name: "A"}
+		key := datastore.NewIncompleteKey(ctx, "Test", nil)
+
+		list = append(list, obj)
+		keys = append(keys, key)
+	}
+
+	// ok!
+	keys, err = datastore.PutMulti(ctx, keys, list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// passed []Data with length 0, would be error.
+	list = make([]Data, 0)
+	err = datastore.GetMulti(ctx, keys, list)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// ok! []Data with length == len(keys)
+	list = make([]Data, len(keys))
+	err = datastore.GetMulti(ctx, keys, list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := len(list); v != 1 {
+		t.Fatalf("unexpected: '%v'", v)
+	}
+	if v := list[0].Name; v != "A" {
+		t.Errorf("unexpected: '%v'", v)
+	}
+}

@@ -93,7 +93,7 @@ func putMultiOps(ctx context.Context, keys []w.Key, src interface{}, ops putOps)
 	var origPss []datastore.PropertyList
 	for idx, key := range keys {
 		elem := v.Index(idx)
-		if reflect.PtrTo(elem.Type()).Implements(typeOfPropertyLoadSaver) {
+		if reflect.PtrTo(elem.Type()).Implements(typeOfPropertyLoadSaver) || elem.Type().Kind() == reflect.Struct {
 			elem = elem.Addr()
 		}
 		src := elem.Interface()
