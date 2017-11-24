@@ -335,3 +335,122 @@ func PutInterface(t *testing.T, ctx context.Context, client datastore.Client) {
 		t.Fatal(err)
 	}
 }
+
+func PutAndGetPropertyList(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var ps datastore.PropertyList
+	ps = append(ps, datastore.Property{
+		Name:  "A",
+		Value: "A-Value",
+	})
+	ps = append(ps, datastore.Property{
+		Name:  "B",
+		Value: true,
+	})
+
+	key := client.IncompleteKey("Test", nil)
+	var err error
+
+	// passed datastore.PropertyList, would be error.
+	_, err = client.Put(ctx, key, ps)
+	if err != datastore.ErrInvalidEntityType {
+		t.Fatal(err)
+	}
+
+	// ok!
+	key, err = client.Put(ctx, key, &ps)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// passed datastore.PropertyList, would be error.
+	ps = datastore.PropertyList{}
+	err = client.Get(ctx, key, ps)
+	if err != datastore.ErrInvalidEntityType {
+		t.Fatal(err)
+	}
+
+	// ok!
+	ps = datastore.PropertyList{}
+	err = client.Get(ctx, key, &ps)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := len(ps); v != 2 {
+		t.Fatalf("unexpected: %v", v)
+	}
+}
+
+func PutAndGetMultiPropertyListSlice(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var pss []datastore.PropertyList
+	var keys []datastore.Key
+	{
+		var ps datastore.PropertyList
+		ps = append(ps, datastore.Property{
+			Name:  "A",
+			Value: "A-Value",
+		})
+		ps = append(ps, datastore.Property{
+			Name:  "B",
+			Value: true,
+		})
+
+		key := client.IncompleteKey("Test", nil)
+
+		pss = append(pss, ps)
+		keys = append(keys, key)
+	}
+
+	var err error
+
+	// passed *[]datastore.PropertyList, would be error.
+	_, err = client.PutMulti(ctx, keys, &pss)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// ok! []datastore.PropertyList
+	keys, err = client.PutMulti(ctx, keys, pss)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// passed *[]datastore.PropertyList, would be error.
+	pss = make([]datastore.PropertyList, len(keys))
+	err = client.GetMulti(ctx, keys, &pss)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// passed []datastore.PropertyList with length 0, would be error.
+	pss = make([]datastore.PropertyList, 0)
+	err = client.GetMulti(ctx, keys, pss)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// ok! []datastore.PropertyList with length == len(keys)
+	pss = make([]datastore.PropertyList, len(keys))
+	err = client.GetMulti(ctx, keys, pss)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := len(pss); v != 1 {
+		t.Fatalf("unexpected: %v", v)
+	}
+}
