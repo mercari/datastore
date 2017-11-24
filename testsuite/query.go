@@ -187,6 +187,45 @@ outer:
 	}
 }
 
+func Query_NextByPropertyList(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	type Data struct {
+		Name string
+	}
+
+	_, err := client.Put(ctx, client.IncompleteKey("Data", nil), &Data{Name: "A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := client.NewQuery("Data")
+
+	{ // passed datastore.PropertyList, would be error.
+		iter := client.Run(ctx, q)
+
+		var ps datastore.PropertyList
+		_, err = iter.Next(ps)
+		if err == nil {
+			t.Fatal(err)
+		}
+	}
+	{ // ok! *datastore.PropertyList
+		iter := client.Run(ctx, q)
+
+		var ps datastore.PropertyList
+		_, err = iter.Next(&ps)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func Query_GetAllByPropertyListSlice(t *testing.T, ctx context.Context, client datastore.Client) {
 	defer func() {
 		err := client.Close()

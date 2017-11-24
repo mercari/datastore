@@ -972,6 +972,46 @@ func TestCloudDatastore_PutAndGetStringSynonym(t *testing.T) {
 	}
 }
 
+func TestCloudDatastore_QueryNextByPropertyList(t *testing.T) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, "souzoh-p-vvakame")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	type Data struct {
+		Name string
+	}
+
+	_, err = client.Put(ctx, datastore.IncompleteKey("Data", nil), &Data{Name: "A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := datastore.NewQuery("Data")
+
+	{ // passed datastore.PropertyList, would be error.
+		iter := client.Run(ctx, q)
+
+		var ps datastore.PropertyList
+		_, err = iter.Next(ps)
+		if err == nil {
+			t.Fatal(err)
+		}
+	}
+	{ // ok! *datastore.PropertyList
+		iter := client.Run(ctx, q)
+
+		var ps datastore.PropertyList
+		_, err = iter.Next(&ps)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestCloudDatastore_GetAllByPropertyListSlice(t *testing.T) {
 	ctx := context.Background()
 	client, err := datastore.NewClient(ctx, "souzoh-p-vvakame")

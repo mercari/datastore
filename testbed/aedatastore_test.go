@@ -780,6 +780,44 @@ func TestAEDatastore_PutAndGetStringSynonym(t *testing.T) {
 	}
 }
 
+func TestAEDatastore_QueryNextByPropertyList(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	type Data struct {
+		Name string
+	}
+
+	_, err = datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Data", nil), &Data{Name: "A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := datastore.NewQuery("Data")
+
+	{ // passed datastore.PropertyList, would be error.
+		iter := q.Run(ctx)
+
+		var ps datastore.PropertyList
+		_, err = iter.Next(ps)
+		if err == nil {
+			t.Fatal(err)
+		}
+	}
+	{ // ok! *datastore.PropertyList
+		iter := q.Run(ctx)
+
+		var ps datastore.PropertyList
+		_, err = iter.Next(&ps)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestAEDatastore_GetAllByPropertyListSlice(t *testing.T) {
 	ctx, close, err := newContext()
 	if err != nil {
