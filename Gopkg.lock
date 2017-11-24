@@ -9,6 +9,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/MakeNowJust/heredoc"
+  packages = ["."]
+  revision = "e9091a26100e9cfb2b6a8f470085bfa541931a91"
+
+[[projects]]
+  branch = "master"
   name = "github.com/favclip/genbase"
   packages = ["."]
   revision = "9308343633095f1e30c2e879e8a7af64f15273d0"
@@ -112,6 +118,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "55cc40219a1062231f3a69c8efda46c8e82842787296212cce55e905b57ac666"
+  inputs-digest = "5c0efa69ae401ae515dfecd15503b638ded692ba51a4e7aa425fbecf0ac27971"
   solver-name = "gps-cdcl"
   solver-version = 1
