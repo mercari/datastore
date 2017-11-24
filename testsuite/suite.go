@@ -35,6 +35,7 @@ var TestSuite = map[string]Test{
 	"Query_Count":                               Query_Count,
 	"Query_GetAll":                              Query_GetAll,
 	"Query_Cursor":                              Query_Cursor,
+	"Query_GetAllByPropertyListSlice":           Query_GetAllByPropertyListSlice,
 	"Filter_Basic":                              Filter_Basic,
 	"Filter_PropertyTranslater":                 Filter_PropertyTranslater,
 	"Transaction_Commit":                        Transaction_Commit,

@@ -187,6 +187,41 @@ outer:
 	}
 }
 
+func Query_GetAllByPropertyListSlice(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	type Data struct {
+		Name string
+	}
+
+	_, err := client.Put(ctx, client.IncompleteKey("Data", nil), &Data{Name: "A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := client.NewQuery("Data")
+	var psList []datastore.PropertyList
+
+	// passed []datastore.PropertyList, would be error.
+	psList = nil
+	_, err = client.GetAll(ctx, q, psList)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// ok! *[]datastore.PropertyList
+	psList = nil
+	_, err = client.GetAll(ctx, q, &psList)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func Filter_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
 	defer func() {
 		err := client.Close()

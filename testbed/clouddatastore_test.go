@@ -971,3 +971,39 @@ func TestCloudDatastore_PutAndGetStringSynonym(t *testing.T) {
 		t.Errorf("unexpected: '%v'", v)
 	}
 }
+
+func TestCloudDatastore_GetAllByPropertyListSlice(t *testing.T) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, "souzoh-p-vvakame")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	type Data struct {
+		Name string
+	}
+
+	_, err = client.Put(ctx, datastore.IncompleteKey("Data", nil), &Data{Name: "A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := datastore.NewQuery("Data")
+	var psList []datastore.PropertyList
+
+	// passed []datastore.PropertyList, would be error.
+	psList = nil
+	_, err = client.GetAll(ctx, q, psList)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// ok! *[]datastore.PropertyList
+	psList = nil
+	_, err = client.GetAll(ctx, q, &psList)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
