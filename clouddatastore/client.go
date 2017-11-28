@@ -3,7 +3,6 @@ package clouddatastore
 import (
 	"context"
 	"errors"
-	"reflect"
 
 	"cloud.google.com/go/datastore"
 	w "go.mercari.io/datastore"
@@ -11,9 +10,6 @@ import (
 )
 
 var _ w.Client = (*datastoreImpl)(nil)
-
-var typeOfPropertyLoadSaver = reflect.TypeOf((*w.PropertyLoadSaver)(nil)).Elem()
-var typeOfPropertyList = reflect.TypeOf(w.PropertyList(nil))
 
 type datastoreImpl struct {
 	ctx             context.Context
@@ -103,13 +99,13 @@ func (d *datastoreImpl) NewTransaction(ctx context.Context) (w.Transaction, erro
 	}
 
 	txCtx := context.WithValue(ctx, contextTransaction{}, tx)
-	return &transactionImpl{client: &datastoreImpl{ctx: txCtx, client: d.client}}, nil
+	return &transactionImpl{client: &datastoreImpl{ctx: txCtx, client: d.client, cacheStrategies: d.cacheStrategies}}, nil
 }
 
 func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transaction) error) (w.Commit, error) {
 	commit, err := d.client.RunInTransaction(ctx, func(baseTx *datastore.Transaction) error {
 		txCtx := context.WithValue(ctx, contextTransaction{}, baseTx)
-		tx := &transactionImpl{client: &datastoreImpl{ctx: txCtx, client: d.client}}
+		tx := &transactionImpl{client: &datastoreImpl{ctx: txCtx, client: d.client, cacheStrategies: d.cacheStrategies}}
 		return f(tx)
 	})
 	if err != nil {
@@ -168,67 +164,15 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 		return nil, qImpl.firstError
 	}
 
-	var dv reflect.Value
-	var elemType reflect.Type
-	var isPtrStruct bool
-	if !qImpl.dump.KeysOnly {
-		dv = reflect.ValueOf(dst)
-		if dv.Kind() != reflect.Ptr || dv.IsNil() {
-			return nil, w.ErrInvalidEntityType
-		}
-		dv = dv.Elem()
-		if dv.Kind() != reflect.Slice {
-			return nil, w.ErrInvalidEntityType
-		}
-		if dv.Type() == typeOfPropertyList {
-			return nil, w.ErrInvalidEntityType
-		}
-		elemType = dv.Type().Elem()
-		if reflect.PtrTo(elemType).Implements(typeOfPropertyLoadSaver) {
-			// ok
-		} else {
-			switch elemType.Kind() {
-			case reflect.Ptr:
-				isPtrStruct = true
-				elemType = elemType.Elem()
-				if elemType.Kind() != reflect.Struct {
-					return nil, w.ErrInvalidEntityType
-				}
-			}
-		}
-	}
-
-	// TODO add reflect.Map support
-
 	cacheInfo := &w.CacheInfo{
 		Context: ctx,
 		Client:  d,
 	}
 	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
-	var wPss []w.PropertyList
-	wKeys, err := cb.GetAll(cacheInfo, q, q.Dump(), &wPss)
-	if err != nil {
-		return nil, err
-	}
 
-	if !qImpl.dump.KeysOnly {
-		for idx, ps := range wPss {
-
-			elem := reflect.New(elemType)
-
-			if err = w.LoadEntity(ctx, elem.Interface(), &w.Entity{Key: wKeys[idx], Properties: ps}); err != nil {
-				return nil, err
-			}
-
-			if !isPtrStruct {
-				elem = elem.Elem()
-			}
-
-			dv.Set(reflect.Append(dv, elem))
-		}
-	}
-
-	return wKeys, nil
+	return shared.GetAllOps(ctx, q.Dump(), dst, func(dst *[]w.PropertyList) ([]w.Key, error) {
+		return cb.GetAll(cacheInfo, q, q.Dump(), dst)
+	})
 }
 
 func (d *datastoreImpl) IncompleteKey(kind string, parent w.Key) w.Key {
@@ -251,7 +195,7 @@ func (d *datastoreImpl) IDKey(kind string, id int64, parent w.Key) w.Key {
 
 func (d *datastoreImpl) NewQuery(kind string) w.Query {
 	q := datastore.NewQuery(kind)
-	return &queryImpl{ctx: d.ctx, q: q, dump: &w.QueryDump{}}
+	return &queryImpl{ctx: d.ctx, q: q, dump: &w.QueryDump{Kind: kind}}
 }
 
 func (d *datastoreImpl) Close() error {

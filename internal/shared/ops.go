@@ -10,10 +10,13 @@ import (
 )
 
 var typeOfPropertyLoadSaver = reflect.TypeOf((*datastore.PropertyLoadSaver)(nil)).Elem()
+var typeOfPropertyList = reflect.TypeOf(datastore.PropertyList(nil))
 
 type getOps func(keys []datastore.Key, dst []datastore.PropertyList) error
 type putOps func(keys []datastore.Key, src []datastore.PropertyList) ([]datastore.Key, []datastore.PendingKey, error)
 type deleteOps func(keys []datastore.Key) error
+type nextOps func(dst *datastore.PropertyList) (datastore.Key, error)
+type getAllOps func(dst *[]datastore.PropertyList) ([]datastore.Key, error)
 
 func GetMultiOps(ctx context.Context, keys []datastore.Key, dst interface{}, ops getOps) error {
 	v := reflect.ValueOf(dst)
@@ -118,4 +121,86 @@ func DeleteMultiOps(ctx context.Context, keys []datastore.Key, ops deleteOps) er
 	}
 
 	return nil
+}
+
+func NextOps(ctx context.Context, qDump *datastore.QueryDump, dst interface{}, ops nextOps) (datastore.Key, error) {
+
+	var key datastore.Key
+	var ps datastore.PropertyList
+	var err error
+	if !qDump.KeysOnly {
+		key, err = ops(&ps)
+	} else {
+		key, err = ops(nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if !qDump.KeysOnly {
+		if err = datastore.LoadEntity(ctx, dst, &datastore.Entity{Key: key, Properties: ps}); err != nil {
+			return key, err
+		}
+	}
+
+	return key, nil
+}
+
+func GetAllOps(ctx context.Context, qDump *datastore.QueryDump, dst interface{}, ops getAllOps) ([]datastore.Key, error) {
+	var dv reflect.Value
+	var elemType reflect.Type
+	var isPtrStruct bool
+	if !qDump.KeysOnly {
+		dv = reflect.ValueOf(dst)
+		if dv.Kind() != reflect.Ptr || dv.IsNil() {
+			return nil, datastore.ErrInvalidEntityType
+		}
+		dv = dv.Elem()
+		if dv.Kind() != reflect.Slice {
+			return nil, datastore.ErrInvalidEntityType
+		}
+		if dv.Type() == typeOfPropertyList {
+			return nil, datastore.ErrInvalidEntityType
+		}
+		elemType = dv.Type().Elem()
+		if reflect.PtrTo(elemType).Implements(typeOfPropertyLoadSaver) {
+			// ok
+		} else {
+			switch elemType.Kind() {
+			case reflect.Ptr:
+				isPtrStruct = true
+				elemType = elemType.Elem()
+				if elemType.Kind() != reflect.Struct {
+					return nil, datastore.ErrInvalidEntityType
+				}
+			}
+		}
+	}
+
+	// TODO add reflect.Map support
+
+	var wPss []datastore.PropertyList
+	wKeys, err := ops(&wPss)
+	if err != nil {
+		return nil, err
+	}
+
+	if !qDump.KeysOnly {
+		for idx, ps := range wPss {
+
+			elem := reflect.New(elemType)
+
+			if err = datastore.LoadEntity(ctx, elem.Interface(), &datastore.Entity{Key: wKeys[idx], Properties: ps}); err != nil {
+				return nil, err
+			}
+
+			if !isPtrStruct {
+				elem = elem.Elem()
+			}
+
+			dv.Set(reflect.Append(dv, elem))
+		}
+	}
+
+	return wKeys, nil
 }

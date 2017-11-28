@@ -5,6 +5,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	w "go.mercari.io/datastore"
+	"go.mercari.io/datastore/internal/shared"
 )
 
 var _ w.Query = (*queryImpl)(nil)
@@ -158,28 +159,14 @@ func (t *iteratorImpl) Next(dst interface{}) (w.Key, error) {
 		return nil, t.firstError
 	}
 
-	var key *datastore.Key
-	var origPs datastore.PropertyList
-	var err error
-	if !t.q.dump.KeysOnly {
-		key, err = t.t.Next(&origPs)
-	} else {
-		key, err = t.t.Next(nil)
+	cacheInfo := &w.CacheInfo{
+		Context: t.client.ctx,
+		Client:  t.client,
 	}
-	if err != nil {
-		return nil, toWrapperError(err)
-	}
-
-	wKey := toWrapperKey(key)
-	if !t.q.dump.KeysOnly {
-		ps := toWrapperPropertyList(origPs)
-
-		if err = w.LoadEntity(t.client.ctx, dst, &w.Entity{Key: wKey, Properties: ps}); err != nil {
-			return wKey, err
-		}
-	}
-
-	return wKey, nil
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{t.client}, nil, &originalIteratorBridgeImpl{t.q.Dump()}, t.client.cacheStrategies)
+	return shared.NextOps(t.client.ctx, t.q.Dump(), dst, func(dst *w.PropertyList) (w.Key, error) {
+		return cb.Next(cacheInfo, t.q, t.q.Dump(), t, dst)
+	})
 }
 
 func (t *iteratorImpl) Cursor() (w.Cursor, error) {

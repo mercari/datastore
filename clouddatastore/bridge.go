@@ -202,19 +202,26 @@ func (otb *originalTransactionBridgeImpl) DeleteMulti(keys []w.Key) error {
 }
 
 type originalIteratorBridgeImpl struct {
+	qDump *w.QueryDump
 }
 
 func (oib *originalIteratorBridgeImpl) Next(iter w.Iterator, ps *w.PropertyList) (w.Key, error) {
 	iterImpl := iter.(*iteratorImpl)
 
-	origPs := toOriginalPropertyList(*ps)
+	var origPsPtr *datastore.PropertyList
+	if !oib.qDump.KeysOnly {
+		origPs := toOriginalPropertyList(*ps)
+		origPsPtr = &origPs
+	}
 
-	origKey, err := iterImpl.t.Next(origPs)
+	origKey, err := iterImpl.t.Next(origPsPtr)
 	if err != nil {
 		return nil, toWrapperError(err)
 	}
 
-	*ps = toWrapperPropertyList(origPs)
+	if !oib.qDump.KeysOnly {
+		*ps = toWrapperPropertyList(*origPsPtr)
+	}
 
 	return toWrapperKey(origKey), nil
 }

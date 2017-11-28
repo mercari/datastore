@@ -117,7 +117,18 @@ func (tx *transactionImpl) Commit() (w.Commit, error) {
 		return nil, toWrapperError(err)
 	}
 
-	return &commitImpl{commit}, nil
+	cacheInfo := &w.CacheInfo{
+		Context: tx.client.ctx,
+		Client:  tx.client,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+	commitImpl := &commitImpl{commit}
+	err = cb.PostCommit(cacheInfo, commitImpl)
+	if err != nil {
+		return nil, err
+	}
+
+	return commitImpl, nil
 }
 
 func (tx *transactionImpl) Rollback() error {
@@ -129,6 +140,16 @@ func (tx *transactionImpl) Rollback() error {
 	err := baseTx.Rollback()
 	if err != nil {
 		return toWrapperError(err)
+	}
+
+	cacheInfo := &w.CacheInfo{
+		Context: tx.client.ctx,
+		Client:  tx.client,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+	err = cb.PostRollback(cacheInfo)
+	if err != nil {
+		return err
 	}
 
 	return nil
