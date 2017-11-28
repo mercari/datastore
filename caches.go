@@ -15,8 +15,8 @@ type CacheStrategy interface {
 	GetMultiWithTx(info *CacheInfo, keys []Key, psList []PropertyList) error
 	DeleteMultiWithoutTx(info *CacheInfo, keys []Key) error
 	DeleteMultiWithTx(info *CacheInfo, keys []Key) error
-	PostCommit(info *CacheInfo, commit Commit) error
-	PostRollback(info *CacheInfo) error
+	PostCommit(info *CacheInfo, tx Transaction, commit Commit) error
+	PostRollback(info *CacheInfo, tx Transaction) error
 	Run(info *CacheInfo, q Query, qDump *QueryDump) Iterator
 	GetAll(info *CacheInfo, q Query, qDump *QueryDump, psList *[]PropertyList) ([]Key, error)
 	Next(info *CacheInfo, q Query, qDump *QueryDump, iter Iterator, ps *PropertyList) (Key, error)

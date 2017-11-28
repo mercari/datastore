@@ -14,12 +14,20 @@ func NewLogger(prefix string, logf func(ctx context.Context, format string, args
 	return &logger{Prefix: prefix, Logf: logf, counter: 1}
 }
 
+type contextTx struct{}
+
 type logger struct {
 	Prefix string
 	Logf   func(ctx context.Context, format string, args ...interface{})
 
 	m       sync.Mutex
 	counter int
+}
+
+type txPutEntity struct {
+	Index      int
+	Key        datastore.Key
+	PendingKey datastore.PendingKey
 }
 
 func (l *logger) KeysToString(keys []datastore.Key) string {
@@ -59,10 +67,24 @@ func (l *logger) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key,
 	l.Logf(info.Context, l.Prefix+"PutMultiWithTx #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
 
 	pKeys, err := info.Next.PutMultiWithTx(info, keys, psList)
-
 	if err != nil {
 		l.Logf(info.Context, l.Prefix+"PutMultiWithTx #%d, err=%s", cnt, err.Error())
 	}
+
+	txPutMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txPutEntity)
+	if !ok {
+		txPutMap = make(map[datastore.Transaction][]*txPutEntity)
+		info.Context = context.WithValue(info.Context, contextTx{}, txPutMap)
+	}
+	putLogs := txPutMap[info.Transaction]
+	for idx, key := range keys {
+		if key.Incomplete() {
+			putLogs = append(putLogs, &txPutEntity{PendingKey: pKeys[idx]})
+		} else {
+			putLogs = append(putLogs, &txPutEntity{Key: key})
+		}
+	}
+	txPutMap[info.Transaction] = putLogs
 
 	return pKeys, err
 }
@@ -135,7 +157,7 @@ func (l *logger) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datastore.K
 	return err
 }
 
-func (l *logger) PostCommit(info *datastore.CacheInfo, commit datastore.Commit) error {
+func (l *logger) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction, commit datastore.Commit) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -143,10 +165,31 @@ func (l *logger) PostCommit(info *datastore.CacheInfo, commit datastore.Commit) 
 
 	l.Logf(info.Context, l.Prefix+"PostCommit #%d", cnt)
 
+	txPutMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txPutEntity)
+	if ok {
+		putLogs := txPutMap[info.Transaction]
+		delete(txPutMap, info.Transaction)
+		keys := make([]datastore.Key, 0, len(putLogs))
+		for _, putLog := range putLogs {
+			if putLog.Key != nil {
+				keys = append(keys, putLog.Key)
+				continue
+			}
+
+			key := commit.Key(putLog.PendingKey)
+			keys = append(keys, key)
+		}
+
+		l.Logf(info.Context, l.Prefix+"PostCommit #%d Put keys=[%s]", cnt, l.KeysToString(keys))
+
+	} else {
+		l.Logf(info.Context, l.Prefix+"PostCommit #%d put log not contains in ctx", cnt)
+	}
+
 	return nil
 }
 
-func (l *logger) PostRollback(info *datastore.CacheInfo) error {
+func (l *logger) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1

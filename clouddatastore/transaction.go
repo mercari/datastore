@@ -48,9 +48,14 @@ func (tx *transactionImpl) GetMulti(keys []w.Key, dst interface{}) error {
 	}
 	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
 
-	return shared.GetMultiOps(tx.client.ctx, keys, dst, func(keys []w.Key, dst []w.PropertyList) error {
+	err := shared.GetMultiOps(tx.client.ctx, keys, dst, func(keys []w.Key, dst []w.PropertyList) error {
 		return cb.GetMultiWithTx(cacheInfo, keys, dst)
 	})
+	// overwrite ctx.
+	// cache strategies add value to ctx sometimes.
+	tx.client.ctx = cacheInfo.Context
+
+	return err
 }
 
 func (tx *transactionImpl) Put(key w.Key, src interface{}) (w.PendingKey, error) {
@@ -75,6 +80,9 @@ func (tx *transactionImpl) PutMulti(keys []w.Key, src interface{}) ([]w.PendingK
 		pKeys, err := cb.PutMultiWithTx(cacheInfo, keys, src)
 		return nil, pKeys, err
 	})
+	// overwrite ctx.
+	// cache strategies add value to ctx sometimes.
+	tx.client.ctx = cacheInfo.Context
 
 	if err != nil {
 		return nil, err
@@ -101,9 +109,15 @@ func (tx *transactionImpl) DeleteMulti(keys []w.Key) error {
 	}
 	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
 
-	return shared.DeleteMultiOps(tx.client.ctx, keys, func(keys []w.Key) error {
+	err := shared.DeleteMultiOps(tx.client.ctx, keys, func(keys []w.Key) error {
 		return cb.DeleteMultiWithTx(cacheInfo, keys)
 	})
+
+	// overwrite ctx.
+	// cache strategies add value to ctx sometimes.
+	tx.client.ctx = cacheInfo.Context
+
+	return err
 }
 
 func (tx *transactionImpl) Commit() (w.Commit, error) {
@@ -123,7 +137,11 @@ func (tx *transactionImpl) Commit() (w.Commit, error) {
 	}
 	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
 	commitImpl := &commitImpl{commit}
-	err = cb.PostCommit(cacheInfo, commitImpl)
+	err = cb.PostCommit(cacheInfo, tx, commitImpl)
+	// overwrite ctx.
+	// cache strategies add value to ctx sometimes.
+	tx.client.ctx = cacheInfo.Context
+
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +165,11 @@ func (tx *transactionImpl) Rollback() error {
 		Client:  tx.client,
 	}
 	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
-	err = cb.PostRollback(cacheInfo)
+	// overwrite ctx.
+	// cache strategies add value to ctx sometimes.
+	tx.client.ctx = cacheInfo.Context
+
+	err = cb.PostRollback(cacheInfo, tx)
 	if err != nil {
 		return err
 	}

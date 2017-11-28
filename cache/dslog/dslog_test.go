@@ -3,6 +3,7 @@ package dslog
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -253,7 +254,7 @@ func TestDsLog_Transaction(t *testing.T) {
 		}
 	}
 
-	expected := heredoc.Doc(`
+	expectedPattern := heredoc.Doc(`
 		log: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,a]
 		log: PutMultiWithoutTx #1, keys=[/Data,a]
 		log: PutMultiWithTx #2, len(keys)=1, keys=[/Data,b]
@@ -264,9 +265,12 @@ func TestDsLog_Transaction(t *testing.T) {
 		log: GetMultiWithTx #7, len(keys)=1, keys=[/Data,a]
 		log: DeleteMultiWithTx #8, len(keys)=1, keys=[/Data,a]
 		log: PostCommit #9
+		log: PostCommit #9 Put keys=[/Data,@####@]
 	`)
+	ss := strings.SplitN(expectedPattern, "@####@", 2)
+	expected := regexp.MustCompile(regexp.QuoteMeta(ss[0]) + "[0-9]+" + regexp.QuoteMeta(ss[1]))
 
-	if v := strings.Join(logs, "\n") + "\n"; v != expected {
+	if v := strings.Join(logs, "\n") + "\n"; !expected.MatchString(v) {
 		t.Errorf("unexpected: %v", v)
 	}
 }

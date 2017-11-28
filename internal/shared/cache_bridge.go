@@ -168,7 +168,7 @@ func (cb *CacheBridge) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datas
 	return current.DeleteMultiWithTx(left.Info, keys)
 }
 
-func (cb *CacheBridge) PostCommit(info *datastore.CacheInfo, commit datastore.Commit) error {
+func (cb *CacheBridge) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction, commit datastore.Commit) error {
 	l := len(cb.cs)
 	if l == 0 {
 		return nil
@@ -185,10 +185,10 @@ func (cb *CacheBridge) PostCommit(info *datastore.CacheInfo, commit datastore.Co
 	}
 	left.Info.Next = left
 
-	return current.PostCommit(left.Info, commit)
+	return current.PostCommit(left.Info, tx, commit)
 }
 
-func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo) error {
+func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
 	l := len(cb.cs)
 	if l == 0 {
 		return nil
@@ -205,7 +205,7 @@ func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo) error {
 	}
 	left.Info.Next = left
 
-	return current.PostRollback(left.Info)
+	return current.PostRollback(left.Info, tx)
 }
 
 func (cb *CacheBridge) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
