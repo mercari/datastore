@@ -99,14 +99,38 @@ func (d *datastoreImpl) NewTransaction(ctx context.Context) (w.Transaction, erro
 	}
 
 	txCtx := context.WithValue(ctx, contextTransaction{}, tx)
-	return &transactionImpl{client: &datastoreImpl{ctx: txCtx, client: d.client, cacheStrategies: d.cacheStrategies}}, nil
+	txImpl := &transactionImpl{
+		client: &datastoreImpl{
+			ctx:             txCtx,
+			client:          d.client,
+			cacheStrategies: d.cacheStrategies,
+		},
+	}
+	txImpl.cacheInfo = &w.CacheInfo{
+		Context:     txCtx,
+		Client:      d,
+		Transaction: txImpl,
+	}
+
+	return txImpl, nil
 }
 
 func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transaction) error) (w.Commit, error) {
 	commit, err := d.client.RunInTransaction(ctx, func(baseTx *datastore.Transaction) error {
 		txCtx := context.WithValue(ctx, contextTransaction{}, baseTx)
-		tx := &transactionImpl{client: &datastoreImpl{ctx: txCtx, client: d.client, cacheStrategies: d.cacheStrategies}}
-		return f(tx)
+		txImpl := &transactionImpl{
+			client: &datastoreImpl{
+				ctx:             txCtx,
+				client:          d.client,
+				cacheStrategies: d.cacheStrategies,
+			},
+		}
+		txImpl.cacheInfo = &w.CacheInfo{
+			Context:     txCtx,
+			Client:      d,
+			Transaction: txImpl,
+		}
+		return f(txImpl)
 	})
 	if err != nil {
 		return nil, toWrapperError(err)

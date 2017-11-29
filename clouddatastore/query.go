@@ -22,9 +22,11 @@ type queryImpl struct {
 }
 
 type iteratorImpl struct {
-	client *datastoreImpl
-	q      *queryImpl
-	t      *datastore.Iterator
+	client    *datastoreImpl
+	q         *queryImpl
+	qDump     *w.QueryDump
+	t         *datastore.Iterator
+	cacheInfo *w.CacheInfo
 
 	firstError error
 }
@@ -159,13 +161,9 @@ func (t *iteratorImpl) Next(dst interface{}) (w.Key, error) {
 		return nil, t.firstError
 	}
 
-	cacheInfo := &w.CacheInfo{
-		Context: t.client.ctx,
-		Client:  t.client,
-	}
-	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{t.client}, nil, &originalIteratorBridgeImpl{t.q.Dump()}, t.client.cacheStrategies)
-	return shared.NextOps(t.client.ctx, t.q.Dump(), dst, func(dst *w.PropertyList) (w.Key, error) {
-		return cb.Next(cacheInfo, t.q, t.q.Dump(), t, dst)
+	cb := shared.NewCacheBridge(t.cacheInfo, &originalClientBridgeImpl{t.client}, nil, &originalIteratorBridgeImpl{t.q.Dump()}, t.client.cacheStrategies)
+	return shared.NextOps(t.client.ctx, t.qDump, dst, func(dst *w.PropertyList) (w.Key, error) {
+		return cb.Next(t.cacheInfo, t.q, t.qDump, t, dst)
 	})
 }
 

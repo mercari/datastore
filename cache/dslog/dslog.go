@@ -71,10 +71,15 @@ func (l *logger) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key,
 		l.Logf(info.Context, l.Prefix+"PutMultiWithTx #%d, err=%s", cnt, err.Error())
 	}
 
-	txPutMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txPutEntity)
+	lgTxPutMap, ok := info.Context.Value(contextTx{}).(map[*logger]map[datastore.Transaction][]*txPutEntity)
+	if !ok {
+		lgTxPutMap = make(map[*logger]map[datastore.Transaction][]*txPutEntity)
+		info.Context = context.WithValue(info.Context, contextTx{}, lgTxPutMap)
+	}
+	txPutMap, ok := lgTxPutMap[l]
 	if !ok {
 		txPutMap = make(map[datastore.Transaction][]*txPutEntity)
-		info.Context = context.WithValue(info.Context, contextTx{}, txPutMap)
+		lgTxPutMap[l] = txPutMap
 	}
 	putLogs := txPutMap[info.Transaction]
 	for idx, key := range keys {
@@ -84,7 +89,7 @@ func (l *logger) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key,
 			putLogs = append(putLogs, &txPutEntity{Key: key})
 		}
 	}
-	txPutMap[info.Transaction] = putLogs
+	lgTxPutMap[l][info.Transaction] = putLogs
 
 	return pKeys, err
 }
@@ -163,30 +168,40 @@ func (l *logger) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction,
 	l.counter += 1
 	l.m.Unlock()
 
-	l.Logf(info.Context, l.Prefix+"PostCommit #%d", cnt)
-
-	txPutMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txPutEntity)
+	lgTxPutMap, ok := info.Context.Value(contextTx{}).(map[*logger]map[datastore.Transaction][]*txPutEntity)
 	if ok {
-		putLogs := txPutMap[info.Transaction]
-		delete(txPutMap, info.Transaction)
-		keys := make([]datastore.Key, 0, len(putLogs))
-		for _, putLog := range putLogs {
-			if putLog.Key != nil {
-				keys = append(keys, putLog.Key)
-				continue
+		txPutMap, ok := lgTxPutMap[l]
+		if ok {
+			putLogs := txPutMap[info.Transaction]
+			delete(txPutMap, info.Transaction)
+			keys := make([]datastore.Key, 0, len(putLogs))
+			for _, putLog := range putLogs {
+				if putLog.Key != nil {
+					keys = append(keys, putLog.Key)
+					continue
+				}
+
+				key := commit.Key(putLog.PendingKey)
+				keys = append(keys, key)
 			}
 
-			key := commit.Key(putLog.PendingKey)
-			keys = append(keys, key)
+			l.Logf(info.Context, l.Prefix+"PostCommit #%d Put keys=[%s]", cnt, l.KeysToString(keys))
+
+			delete(txPutMap, info.Transaction)
+
+		} else {
+			l.Logf(info.Context, l.Prefix+"PostCommit #%d put log not contains in ctx", cnt)
 		}
 
-		l.Logf(info.Context, l.Prefix+"PostCommit #%d Put keys=[%s]", cnt, l.KeysToString(keys))
+		if len(txPutMap) == 0 {
+			delete(lgTxPutMap, l)
+		}
 
 	} else {
 		l.Logf(info.Context, l.Prefix+"PostCommit #%d put log not contains in ctx", cnt)
 	}
 
-	return nil
+	return info.Next.PostCommit(info, tx, commit)
 }
 
 func (l *logger) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
@@ -197,7 +212,7 @@ func (l *logger) PostRollback(info *datastore.CacheInfo, tx datastore.Transactio
 
 	l.Logf(info.Context, l.Prefix+"PostRollback #%d", cnt)
 
-	return nil
+	return info.Next.PostRollback(info, tx)
 }
 
 func (l *logger) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {

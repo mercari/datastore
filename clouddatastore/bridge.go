@@ -118,8 +118,17 @@ func (ocb *originalClientBridgeImpl) Run(ctx context.Context, q w.Query) w.Itera
 	qImpl := q.(*queryImpl)
 	iter := ocb.d.client.Run(ctx, qImpl.q)
 
-	// TODO 後々のためにqDumpのshare
-	return &iteratorImpl{client: ocb.d, q: qImpl, t: iter, firstError: qImpl.firstError}
+	return &iteratorImpl{
+		client: ocb.d,
+		q:      qImpl,
+		qDump:  qImpl.Dump(),
+		t:      iter,
+		cacheInfo: &w.CacheInfo{
+			Context: ctx,
+			Client:  ocb.d,
+		},
+		firstError: qImpl.firstError,
+	}
 }
 
 func (ocb *originalClientBridgeImpl) GetAll(ctx context.Context, q w.Query, psList *[]w.PropertyList) ([]w.Key, error) {

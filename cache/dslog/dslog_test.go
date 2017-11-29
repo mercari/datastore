@@ -1,6 +1,7 @@
 package dslog
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"regexp"
@@ -85,9 +86,11 @@ func TestDsLog_Query(t *testing.T) {
 		Name string
 	}
 
-	keys := make([]datastore.Key, 10)
-	list := make([]*Data, 10)
-	for i := 0; i < 10; i++ {
+	const size = 10
+
+	keys := make([]datastore.Key, size)
+	list := make([]*Data, size)
+	for i := 0; i < size; i++ {
 		keys[i] = client.NameKey("Data", fmt.Sprintf("#%d", i+1), nil)
 		list[i] = &Data{
 			Name: fmt.Sprintf("#%d", i+1),
@@ -118,7 +121,7 @@ func TestDsLog_Query(t *testing.T) {
 		}
 		cnt++
 	}
-	if cnt != 10 {
+	if cnt != size {
 		t.Errorf("unexpected: %v", cnt)
 	}
 
@@ -254,21 +257,30 @@ func TestDsLog_Transaction(t *testing.T) {
 		}
 	}
 
-	expectedPattern := heredoc.Doc(`
-		log: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,a]
-		log: PutMultiWithoutTx #1, keys=[/Data,a]
-		log: PutMultiWithTx #2, len(keys)=1, keys=[/Data,b]
-		log: GetMultiWithTx #3, len(keys)=1, keys=[/Data,a]
-		log: DeleteMultiWithTx #4, len(keys)=1, keys=[/Data,a]
-		log: PostRollback #5
-		log: PutMultiWithTx #6, len(keys)=1, keys=[/Data,0]
-		log: GetMultiWithTx #7, len(keys)=1, keys=[/Data,a]
-		log: DeleteMultiWithTx #8, len(keys)=1, keys=[/Data,a]
-		log: PostCommit #9
-		log: PostCommit #9 Put keys=[/Data,@####@]
-	`)
-	ss := strings.SplitN(expectedPattern, "@####@", 2)
-	expected := regexp.MustCompile(regexp.QuoteMeta(ss[0]) + "[0-9]+" + regexp.QuoteMeta(ss[1]))
+	var expected *regexp.Regexp
+	{
+		expectedPattern := heredoc.Doc(`
+			log: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,a]
+			log: PutMultiWithoutTx #1, keys=[/Data,a]
+			log: PutMultiWithTx #2, len(keys)=1, keys=[/Data,b]
+			log: GetMultiWithTx #3, len(keys)=1, keys=[/Data,a]
+			log: DeleteMultiWithTx #4, len(keys)=1, keys=[/Data,a]
+			log: PostRollback #5
+			log: PutMultiWithTx #6, len(keys)=1, keys=[/Data,0]
+			log: GetMultiWithTx #7, len(keys)=1, keys=[/Data,a]
+			log: DeleteMultiWithTx #8, len(keys)=1, keys=[/Data,a]
+			log: PostCommit #9 Put keys=[/Data,@####@]
+		`)
+		ss := strings.Split(expectedPattern, "@####@")
+		var buf bytes.Buffer
+		for idx, s := range ss {
+			buf.WriteString(regexp.QuoteMeta(s))
+			if idx != (len(ss) - 1) {
+				buf.WriteString("[0-9]+")
+			}
+		}
+		expected = regexp.MustCompile(buf.String())
+	}
 
 	if v := strings.Join(logs, "\n") + "\n"; !expected.MatchString(v) {
 		t.Errorf("unexpected: %v", v)
