@@ -304,6 +304,15 @@ func (d *datastoreImpl) Close() error {
 	return nil
 }
 
+func (d *datastoreImpl) DecodeKey(encoded string) (w.Key, error) {
+	key, err := datastore.DecodeKey(encoded)
+	if err != nil {
+		return nil, toWrapperError(err)
+	}
+
+	return toWrapperKey(d.ctx, key), nil
+}
+
 func (d *datastoreImpl) DecodeCursor(s string) (w.Cursor, error) {
 	cur, err := datastore.DecodeCursor(s)
 	if err != nil {

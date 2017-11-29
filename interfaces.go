@@ -31,6 +31,7 @@ type Client interface {
 
 	Close() error
 
+	DecodeKey(encoded string) (Key, error)
 	DecodeCursor(s string) (Cursor, error)
 
 	Batch() *Batch
