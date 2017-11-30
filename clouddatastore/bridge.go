@@ -114,27 +114,31 @@ func (ocb *originalClientBridgeImpl) DeleteMulti(ctx context.Context, keys []w.K
 	return nil
 }
 
-func (ocb *originalClientBridgeImpl) Run(ctx context.Context, q w.Query) w.Iterator {
+func (ocb *originalClientBridgeImpl) Run(ctx context.Context, q w.Query, qDump *w.QueryDump) w.Iterator {
 	qImpl := q.(*queryImpl)
 	iter := ocb.d.client.Run(ctx, qImpl.q)
 
 	return &iteratorImpl{
 		client: ocb.d,
 		q:      qImpl,
-		qDump:  qImpl.Dump(),
+		qDump:  qDump,
 		t:      iter,
 		cacheInfo: &w.CacheInfo{
-			Context: ctx,
-			Client:  ocb.d,
+			Context:     ctx,
+			Client:      ocb.d,
+			Transaction: qDump.Transaction,
 		},
 		firstError: qImpl.firstError,
 	}
 }
 
-func (ocb *originalClientBridgeImpl) GetAll(ctx context.Context, q w.Query, psList *[]w.PropertyList) ([]w.Key, error) {
+func (ocb *originalClientBridgeImpl) GetAll(ctx context.Context, q w.Query, qDump *w.QueryDump, psList *[]w.PropertyList) ([]w.Key, error) {
 	qImpl := q.(*queryImpl)
 
-	origPss := toOriginalPropertyListList(*psList)
+	var origPss []datastore.PropertyList
+	if !qDump.KeysOnly {
+		origPss = toOriginalPropertyListList(*psList)
+	}
 	origKeys, err := ocb.d.client.GetAll(ctx, qImpl.q, &origPss)
 	if err != nil {
 		return nil, toWrapperError(err)
@@ -142,8 +146,10 @@ func (ocb *originalClientBridgeImpl) GetAll(ctx context.Context, q w.Query, psLi
 
 	wKeys := toWrapperKeys(origKeys)
 
-	// TODO should be copy? not replace?
-	*psList = toWrapperPropertyListList(origPss)
+	if !qDump.KeysOnly {
+		// TODO should be copy? not replace?
+		*psList = toWrapperPropertyListList(origPss)
+	}
 
 	return wKeys, nil
 }

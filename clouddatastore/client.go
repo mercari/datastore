@@ -188,14 +188,15 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 		return nil, qImpl.firstError
 	}
 
+	qDump := q.Dump()
 	cacheInfo := &w.CacheInfo{
-		Context: ctx,
-		Client:  d,
+		Context:     ctx,
+		Client:      d,
+		Transaction: qDump.Transaction,
 	}
 	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
-
-	return shared.GetAllOps(ctx, q.Dump(), dst, func(dst *[]w.PropertyList) ([]w.Key, error) {
-		return cb.GetAll(cacheInfo, q, q.Dump(), dst)
+	return shared.GetAllOps(ctx, qDump, dst, func(dst *[]w.PropertyList) ([]w.Key, error) {
+		return cb.GetAll(cacheInfo, q, qDump, dst)
 	})
 }
 

@@ -125,14 +125,10 @@ func DeleteMultiOps(ctx context.Context, keys []datastore.Key, ops deleteOps) er
 
 func NextOps(ctx context.Context, qDump *datastore.QueryDump, dst interface{}, ops nextOps) (datastore.Key, error) {
 
-	var key datastore.Key
+	// don't pass nil to ops.
+	// the true query may not be KeysOnly.
 	var ps datastore.PropertyList
-	var err error
-	if !qDump.KeysOnly {
-		key, err = ops(&ps)
-	} else {
-		key, err = ops(nil)
-	}
+	key, err := ops(&ps)
 	if err != nil {
 		return nil, err
 	}

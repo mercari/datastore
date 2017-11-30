@@ -20,8 +20,8 @@ type OriginalClientBridge interface {
 	PutMulti(ctx context.Context, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error)
 	GetMulti(ctx context.Context, keys []datastore.Key, psList []datastore.PropertyList) error
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
-	Run(ctx context.Context, q datastore.Query) datastore.Iterator
-	GetAll(ctx context.Context, q datastore.Query, psList *[]datastore.PropertyList) ([]datastore.Key, error)
+	Run(ctx context.Context, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator
+	GetAll(ctx context.Context, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error)
 }
 
 type OriginalTransactionBridge interface {
@@ -211,7 +211,7 @@ func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo, tx datastore.Tran
 func (cb *CacheBridge) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
 	l := len(cb.cs)
 	if l == 0 {
-		return cb.ocb.Run(info.Context, q)
+		return cb.ocb.Run(info.Context, q, qDump)
 	}
 
 	// call last strategy
@@ -231,7 +231,7 @@ func (cb *CacheBridge) Run(info *datastore.CacheInfo, q datastore.Query, qDump *
 func (cb *CacheBridge) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
 	l := len(cb.cs)
 	if l == 0 {
-		return cb.ocb.GetAll(info.Context, q, psList)
+		return cb.ocb.GetAll(info.Context, q, qDump, psList)
 	}
 
 	// call last strategy

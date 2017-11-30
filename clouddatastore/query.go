@@ -161,7 +161,7 @@ func (t *iteratorImpl) Next(dst interface{}) (w.Key, error) {
 		return nil, t.firstError
 	}
 
-	cb := shared.NewCacheBridge(t.cacheInfo, &originalClientBridgeImpl{t.client}, nil, &originalIteratorBridgeImpl{t.q.Dump()}, t.client.cacheStrategies)
+	cb := shared.NewCacheBridge(t.cacheInfo, &originalClientBridgeImpl{t.client}, nil, &originalIteratorBridgeImpl{t.qDump}, t.client.cacheStrategies)
 	return shared.NextOps(t.client.ctx, t.qDump, dst, func(dst *w.PropertyList) (w.Key, error) {
 		return cb.Next(t.cacheInfo, t.q, t.qDump, t, dst)
 	})
