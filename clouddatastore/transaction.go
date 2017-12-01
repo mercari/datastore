@@ -133,12 +133,7 @@ func (tx *transactionImpl) Rollback() error {
 	}
 
 	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
-	err = cb.PostRollback(tx.cacheInfo, tx)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cb.PostRollback(tx.cacheInfo, tx)
 }
 
 func (tx *transactionImpl) Batch() *w.TransactionBatch {

@@ -335,6 +335,19 @@ func toOriginalPropertyList(ps w.PropertyList) (datastore.PropertyList, error) {
 	return newPs, nil
 }
 
+func toOriginalPropertyListList(pss []w.PropertyList) ([]datastore.PropertyList, error) {
+	newPss := make([]datastore.PropertyList, 0, len(pss))
+	for _, ps := range pss {
+		newPs, err := toOriginalPropertyList(ps)
+		if err != nil {
+			return nil, err
+		}
+		newPss = append(newPss, newPs)
+	}
+
+	return newPss, nil
+}
+
 func toWrapperProperty(ctx context.Context, p datastore.Property) w.Property {
 	return w.Property{
 		Name:    p.Name,
@@ -395,4 +408,13 @@ func toWrapperPropertyList(ctx context.Context, ps datastore.PropertyList) w.Pro
 	}
 
 	return newPs
+}
+
+func toWrapperPropertyListList(ctx context.Context, pss []datastore.PropertyList) []w.PropertyList {
+	newPss := make([]w.PropertyList, 0, len(pss))
+	for _, ps := range pss {
+		newPss = append(newPss, toWrapperPropertyList(ctx, ps))
+	}
+
+	return newPss
 }

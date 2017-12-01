@@ -3,20 +3,18 @@ package aedatastore
 import (
 	"context"
 	"errors"
-	"reflect"
 
 	w "go.mercari.io/datastore"
+	"go.mercari.io/datastore/internal/shared"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
 var _ w.Client = (*datastoreImpl)(nil)
 
-var typeOfPropertyLoadSaver = reflect.TypeOf((*w.PropertyLoadSaver)(nil)).Elem()
-var typeOfPropertyList = reflect.TypeOf(w.PropertyList(nil))
-
 type datastoreImpl struct {
-	ctx context.Context
+	ctx             context.Context
+	cacheStrategies []w.CacheStrategy
 }
 
 func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dst interface{}) error {
@@ -31,8 +29,14 @@ func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dst interface{}) err
 }
 
 func (d *datastoreImpl) GetMulti(ctx context.Context, keys []w.Key, dst interface{}) error {
-	return getMultiOps(ctx, keys, dst, func(keys []*datastore.Key, dst []datastore.PropertyList) error {
-		return datastore.GetMulti(ctx, keys, dst)
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+
+	return shared.GetMultiOps(ctx, keys, dst, func(keys []w.Key, dst []w.PropertyList) error {
+		return cb.GetMultiWithoutTx(cacheInfo, keys, dst)
 	})
 }
 
@@ -48,14 +52,15 @@ func (d *datastoreImpl) Put(ctx context.Context, key w.Key, src interface{}) (w.
 }
 
 func (d *datastoreImpl) PutMulti(ctx context.Context, keys []w.Key, src interface{}) ([]w.Key, error) {
-	keys, _, err := putMultiOps(ctx, keys, src, func(keys []*datastore.Key, src []datastore.PropertyList) ([]w.Key, []w.PendingKey, error) {
-		keys, err := datastore.PutMulti(ctx, keys, src)
-		if err != nil {
-			return nil, nil, err
-		}
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
 
-		wKeys := toWrapperKeys(ctx, keys)
-		return wKeys, nil, nil
+	keys, _, err := shared.PutMultiOps(ctx, keys, src, func(keys []w.Key, src []w.PropertyList) ([]w.Key, []w.PendingKey, error) {
+		keys, err := cb.PutMultiWithoutTx(cacheInfo, keys, src)
+		return keys, nil, err
 	})
 	if err != nil {
 		return nil, err
@@ -76,8 +81,14 @@ func (d *datastoreImpl) Delete(ctx context.Context, key w.Key) error {
 }
 
 func (d *datastoreImpl) DeleteMulti(ctx context.Context, keys []w.Key) error {
-	return deleteMultiOps(ctx, keys, func(keys []*datastore.Key) error {
-		return datastore.DeleteMulti(ctx, keys)
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
+	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+
+	return shared.DeleteMultiOps(ctx, keys, func(keys []w.Key) error {
+		return cb.DeleteMultiWithoutTx(cacheInfo, keys)
 	})
 }
 
@@ -88,7 +99,19 @@ func (d *datastoreImpl) NewTransaction(ctx context.Context) (w.Transaction, erro
 	}
 
 	txCtx := context.WithValue(ext.txCtx, contextTransaction{}, ext)
-	return &transactionImpl{client: &datastoreImpl{ctx: txCtx}}, nil
+	txImpl := &transactionImpl{
+		client: &datastoreImpl{
+			ctx:             txCtx,
+			cacheStrategies: d.cacheStrategies,
+		},
+	}
+	txImpl.cacheInfo = &w.CacheInfo{
+		Context:     txCtx,
+		Client:      d,
+		Transaction: txImpl,
+	}
+
+	return txImpl, nil
 }
 
 func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transaction) error) (w.Commit, error) {
@@ -100,17 +123,28 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 	// TODO この辺テストガッツリ
 
 	txCtx := context.WithValue(ext.txCtx, contextTransaction{}, ext)
-	tx := &transactionImpl{client: &datastoreImpl{ctx: txCtx}}
-	err = f(tx)
+	txImpl := &transactionImpl{
+		client: &datastoreImpl{
+			ctx:             txCtx,
+			cacheStrategies: d.cacheStrategies,
+		},
+	}
+	txImpl.cacheInfo = &w.CacheInfo{
+		Context:     txCtx,
+		Client:      d,
+		Transaction: txImpl,
+	}
+
+	err = f(txImpl)
 	if err != nil {
-		rollbackErr := tx.Rollback()
+		rollbackErr := txImpl.Rollback()
 		if rollbackErr != nil {
 			return nil, rollbackErr
 		}
 		return nil, err
 	}
 
-	commit, err := tx.Commit()
+	commit, err := txImpl.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -118,19 +152,13 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 }
 
 func (d *datastoreImpl) Run(ctx context.Context, q w.Query) w.Iterator {
-	qImpl := q.(*queryImpl)
-	if qImpl.transaction != nil {
-		// replace ctx to tx ctx
-		ctx = qImpl.transaction.client.ctx
+	cacheInfo := &w.CacheInfo{
+		Context: ctx,
+		Client:  d,
 	}
-	firstError := qImpl.firstError
-	var err error
-	ctx, err = appengine.Namespace(ctx, qImpl.namespace)
-	if firstError == nil && err != nil {
-		firstError = err
-	}
-	t := qImpl.q.Run(ctx)
-	return &iteratorImpl{client: d, q: qImpl, t: t, firstError: firstError}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+
+	return cb.Run(cb.Info, q, q.Dump())
 }
 
 func (d *datastoreImpl) AllocatedIDs(ctx context.Context, keys []w.Key) ([]w.Key, error) {
@@ -158,13 +186,17 @@ func (d *datastoreImpl) Count(ctx context.Context, q w.Query) (int, error) {
 		return 0, qImpl.firstError
 	}
 
-	if qImpl.transaction != nil {
+	if qImpl.dump.Transaction != nil {
 		// replace ctx to tx ctx
-		ctx = qImpl.transaction.client.ctx
+		txImpl, ok := qImpl.dump.Transaction.(*transactionImpl)
+		if !ok {
+			return 0, errors.New("unexpected context")
+		}
+		ctx = txImpl.client.ctx
 	}
 
 	var err error
-	ctx, err = appengine.Namespace(ctx, qImpl.namespace)
+	ctx, err = appengine.Namespace(ctx, qImpl.dump.Namespace)
 	if err != nil {
 		return 0, toWrapperError(err)
 	}
@@ -186,76 +218,16 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 		return nil, qImpl.firstError
 	}
 
-	if qImpl.transaction != nil {
-		// replace ctx to tx ctx
-		ctx = qImpl.transaction.client.ctx
+	qDump := q.Dump()
+	cacheInfo := &w.CacheInfo{
+		Context:     ctx,
+		Client:      d,
+		Transaction: qDump.Transaction,
 	}
-
-	var err error
-	ctx, err = appengine.Namespace(ctx, qImpl.namespace)
-	if err != nil {
-		return nil, toWrapperError(err)
-	}
-
-	var dv reflect.Value
-	var elemType reflect.Type
-	var isPtrStruct bool
-	if !qImpl.keysOnly {
-		dv = reflect.ValueOf(dst)
-		if dv.Kind() != reflect.Ptr || dv.IsNil() {
-			return nil, w.ErrInvalidEntityType
-		}
-		dv = dv.Elem()
-		if dv.Kind() != reflect.Slice {
-			return nil, w.ErrInvalidEntityType
-		}
-		if dv.Type() == typeOfPropertyList {
-			return nil, w.ErrInvalidEntityType
-		}
-		elemType = dv.Type().Elem()
-		if reflect.PtrTo(elemType).Implements(typeOfPropertyLoadSaver) {
-			// ok
-		} else {
-			switch elemType.Kind() {
-			case reflect.Ptr:
-				isPtrStruct = true
-				elemType = elemType.Elem()
-				if elemType.Kind() != reflect.Struct {
-					return nil, w.ErrInvalidEntityType
-				}
-			}
-		}
-	}
-
-	// TODO add reflect.Map support
-
-	var origPss []datastore.PropertyList
-	origKeys, err := qImpl.q.GetAll(ctx, &origPss)
-	if err != nil {
-		return nil, toWrapperError(err)
-	}
-
-	wKeys := toWrapperKeys(ctx, origKeys)
-
-	if !qImpl.keysOnly {
-		for idx, origPs := range origPss {
-			ps := toWrapperPropertyList(ctx, origPs)
-
-			elem := reflect.New(elemType)
-
-			if err = w.LoadEntity(ctx, elem.Interface(), &w.Entity{Key: wKeys[idx], Properties: ps}); err != nil {
-				return nil, err
-			}
-
-			if !isPtrStruct {
-				elem = elem.Elem()
-			}
-
-			dv.Set(reflect.Append(dv, elem))
-		}
-	}
-
-	return wKeys, nil
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+	return shared.GetAllOps(ctx, qDump, dst, func(dst *[]w.PropertyList) ([]w.Key, error) {
+		return cb.GetAll(cacheInfo, q, qDump, dst)
+	})
 }
 
 func (d *datastoreImpl) IncompleteKey(kind string, parent w.Key) w.Key {
@@ -296,7 +268,7 @@ func (d *datastoreImpl) IDKey(kind string, id int64, parent w.Key) w.Key {
 
 func (d *datastoreImpl) NewQuery(kind string) w.Query {
 	q := datastore.NewQuery(kind)
-	return &queryImpl{ctx: d.ctx, q: q}
+	return &queryImpl{ctx: d.ctx, q: q, dump: &w.QueryDump{Kind: kind}}
 }
 
 func (d *datastoreImpl) Close() error {
@@ -327,11 +299,22 @@ func (d *datastoreImpl) Batch() *w.Batch {
 }
 
 func (d *datastoreImpl) AppendCacheStrategy(strategy w.CacheStrategy) {
-	panic("not implemented")
+	d.cacheStrategies = append(d.cacheStrategies, strategy)
 }
 
 func (d *datastoreImpl) RemoveCacheStrategy(strategy w.CacheStrategy) bool {
-	panic("not implemented")
+	list := make([]w.CacheStrategy, 0, len(d.cacheStrategies))
+	found := false
+	for _, old := range d.cacheStrategies {
+		if old == strategy {
+			found = true
+			continue
+		}
+		list = append(list, old)
+	}
+	d.cacheStrategies = list
+
+	return found
 }
 
 func (d *datastoreImpl) SwapContext(ctx context.Context) context.Context {
