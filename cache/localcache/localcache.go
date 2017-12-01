@@ -40,6 +40,15 @@ type cacheItem struct {
 	expiration   time.Duration
 }
 
+func (ch *CacheHandler) Has(key datastore.Key) bool {
+	_, ok := ch.cache[key.Encode()]
+	return ok
+}
+
+func (ch *CacheHandler) Len() int {
+	return len(ch.cache)
+}
+
 // storagecache.Storage implementation
 
 func (ch *CacheHandler) SetMulti(ctx context.Context, is []*storagecache.CacheItem) error {

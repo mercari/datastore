@@ -1,25 +1,38 @@
 package localcache
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
-
-	"regexp"
-
-	"bytes"
 
 	"github.com/MakeNowJust/heredoc"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/cache/dslog"
-	"go.mercari.io/datastore/internal/testutils"
+	"go.mercari.io/datastore/cache/localcache"
+	"go.mercari.io/datastore/testsuite"
 	"google.golang.org/api/iterator"
 )
 
-func TestLocalCache_Basic(t *testing.T) {
-	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
-	defer cleanUp()
+var TestSuite = map[string]testsuite.Test{
+	"LocalCache_Basic":       LocalCache_Basic,
+	"LocalCache_Query":       LocalCache_Query,
+	"LocalCache_Transaction": LocalCache_Transaction,
+}
+
+func init() {
+	testsuite.MergeTestSuite(TestSuite)
+}
+
+func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -36,7 +49,7 @@ func TestLocalCache_Basic(t *testing.T) {
 		client.RemoveCacheStrategy(aLog)
 	}()
 
-	ch := New()
+	ch := localcache.New()
 	client.AppendCacheStrategy(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -100,9 +113,13 @@ func TestLocalCache_Basic(t *testing.T) {
 	}
 }
 
-func TestLocalCache_Query(t *testing.T) {
-	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
-	defer cleanUp()
+func LocalCache_Query(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -119,7 +136,7 @@ func TestLocalCache_Query(t *testing.T) {
 		client.RemoveCacheStrategy(aLog)
 	}()
 
-	ch := New()
+	ch := localcache.New()
 	client.AppendCacheStrategy(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -219,9 +236,13 @@ func TestLocalCache_Query(t *testing.T) {
 	}
 }
 
-func TestLocalCache_Transaction(t *testing.T) {
-	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
-	defer cleanUp()
+func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -238,7 +259,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		client.RemoveCacheStrategy(aLog)
 	}()
 
-	ch := New()
+	ch := localcache.New()
 	client.AppendCacheStrategy(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -357,13 +378,6 @@ func TestLocalCache_Transaction(t *testing.T) {
 		}
 
 		if v := ch.Len(); v != 0 {
-			for keyStr := range ch.cache {
-				key, err := client.DecodeKey(keyStr)
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Log(key.String())
-			}
 			t.Fatalf("unexpected: %v", v)
 		}
 	}
