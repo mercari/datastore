@@ -1,4 +1,4 @@
-package localcache
+package aememcache
 
 import (
 	"bytes"
@@ -9,14 +9,19 @@ import (
 	"testing"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/golang/protobuf/proto"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/cache/dslog"
+	memcachepb "go.mercari.io/datastore/internal/pb/memcache"
 	"go.mercari.io/datastore/internal/testutils"
+	netcontext "golang.org/x/net/context"
 	"google.golang.org/api/iterator"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/memcache"
 )
 
-func TestLocalCache_Basic(t *testing.T) {
-	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+func TestAEMemcacheCache_Basic(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupAEDatastore(t)
 	defer cleanUp()
 
 	var logs []string
@@ -62,8 +67,9 @@ func TestLocalCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); !v {
-		t.Fatalf("unexpected: %v", v)
+	_, err = memcache.Get(ctx, key.Encode())
+	if err == nil {
+		t.Fatal(err)
 	}
 
 	// Get. from cache.
@@ -79,8 +85,9 @@ func TestLocalCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); v {
-		t.Fatalf("unexpected: %v", v)
+	_, err = memcache.Get(ctx, key.Encode())
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	expected := heredoc.Doc(`
@@ -98,8 +105,8 @@ func TestLocalCache_Basic(t *testing.T) {
 	}
 }
 
-func TestLocalCache_Query(t *testing.T) {
-	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+func TestAEMemcacheCache_Query(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupAEDatastore(t)
 	defer cleanUp()
 
 	var logs []string
@@ -217,9 +224,145 @@ func TestLocalCache_Query(t *testing.T) {
 	}
 }
 
-func TestLocalCache_Transaction(t *testing.T) {
-	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+func TestAEMemcacheCache_Transaction(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupAEDatastore(t)
 	defer cleanUp()
+
+	var rpcLogs []string
+	rpcLogf := func(ctx context.Context, format string, args ...interface{}) {
+		t.Logf(format, args...)
+		rpcLogs = append(rpcLogs, fmt.Sprintf(format, args...))
+	}
+
+	ctx = appengine.WithAPICallFunc(ctx, func(ctx netcontext.Context, service, method string, in, out proto.Message) error {
+		origErr := appengine.APICall(ctx, service, method, in, out)
+
+		switch service {
+		case "memcache":
+			switch method {
+			case "Set":
+				{
+					b, err := proto.Marshal(in)
+					if err != nil {
+						return err
+					}
+					req := &memcachepb.MemcacheSetRequest{}
+					err = proto.Unmarshal(b, req)
+					if err != nil {
+						t.Fatal(err)
+					}
+					rpcLogf(ctx, "memcache.Set: len=%d", len(req.GetItem()))
+					for _, item := range req.GetItem() {
+						keyStr := string(item.GetKey())
+						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
+						key, err := client.DecodeKey(keyStr)
+						if err != nil {
+							t.Fatal(err)
+						}
+						rpcLogf(ctx, "memcache.Set: req=%s", key.String())
+					}
+
+					b, err = proto.Marshal(out)
+					if err != nil {
+						return err
+					}
+					resp := &memcachepb.MemcacheSetResponse{}
+					err = proto.Unmarshal(b, resp)
+					if err != nil {
+						t.Fatal(err)
+					}
+					rpcLogf(ctx, "memcache.Set: resp len=%d", len(resp.GetSetStatus()))
+					for _, status := range resp.GetSetStatus() {
+						rpcLogf(ctx, "memcache.Set: resp=%s", status.String())
+					}
+				}
+
+			case "Get":
+				{
+					b, err := proto.Marshal(in)
+					if err != nil {
+						return err
+					}
+					req := &memcachepb.MemcacheGetRequest{}
+					err = proto.Unmarshal(b, req)
+					if err != nil {
+						t.Fatal(err)
+					}
+					rpcLogf(ctx, "memcache.Get: req len=%d", len(req.GetKey()))
+					for _, key := range req.GetKey() {
+						keyStr := string(key)
+						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
+						key, err := client.DecodeKey(keyStr)
+						if err != nil {
+							t.Fatal(err)
+						}
+						rpcLogf(ctx, "memcache.Get: req=%s", key.String())
+					}
+
+					b, err = proto.Marshal(out)
+					if err != nil {
+						return err
+					}
+					resp := &memcachepb.MemcacheGetResponse{}
+					err = proto.Unmarshal(b, resp)
+					if err != nil {
+						t.Fatal(err)
+					}
+					rpcLogf(ctx, "memcache.Get: resp len=%d", len(resp.GetItem()))
+					for _, item := range resp.GetItem() {
+						keyStr := string(item.Key)
+						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
+						key, err := client.DecodeKey(keyStr)
+						if err != nil {
+							t.Fatal(err)
+						}
+						rpcLogf(ctx, "memcache.Get: resp=%s", key.String())
+					}
+				}
+
+			case "Delete":
+				{
+					b, err := proto.Marshal(in)
+					if err != nil {
+						return err
+					}
+					req := &memcachepb.MemcacheDeleteRequest{}
+					err = proto.Unmarshal(b, req)
+					if err != nil {
+						t.Fatal(err)
+					}
+					rpcLogf(ctx, "memcache.Delete: req len=%d", len(req.GetItem()))
+					for _, item := range req.GetItem() {
+						keyStr := string(item.GetKey())
+						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
+						key, err := client.DecodeKey(keyStr)
+						if err != nil {
+							t.Fatal(err)
+						}
+						rpcLogf(ctx, "memcache.Delete: req=%s", key.String())
+					}
+
+					b, err = proto.Marshal(out)
+					if err != nil {
+						return err
+					}
+					resp := &memcachepb.MemcacheDeleteResponse{}
+					err = proto.Unmarshal(b, resp)
+					if err != nil {
+						t.Fatal(err)
+					}
+					rpcLogf(ctx, "memcache.Delete: resp len=%d", len(resp.GetDeleteStatus()))
+					for _, status := range resp.GetDeleteStatus() {
+						rpcLogf(ctx, "memcache.Delete: resp=%s", status.String())
+					}
+				}
+
+			}
+		}
+
+		return origErr
+	})
+	client.SwapContext(ctx)
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -237,6 +380,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 	}()
 
 	ch := New()
+	ch.raiseMemcacheError = true
 	client.AppendCacheStrategy(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -252,6 +396,14 @@ func TestLocalCache_Transaction(t *testing.T) {
 
 	// exec.
 
+	stats, err := memcache.Stats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := stats.Items; v != 0 {
+		t.Fatalf("unexpected: %v", v)
+	}
+
 	type Data struct {
 		Name string
 	}
@@ -259,12 +411,13 @@ func TestLocalCache_Transaction(t *testing.T) {
 	key := client.NameKey("Data", "a", nil)
 
 	// put to cache
-	_, err := client.Put(ctx, key, &Data{Name: "Before"})
+	_, err = client.Put(ctx, key, &Data{Name: "Before"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v := ch.Has(key); !v {
-		t.Fatalf("unexpected: %v", v)
+	_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key.Encode()))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	{ // Rollback
@@ -279,8 +432,9 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key2); v {
-			t.Fatalf("unexpected: %v", v)
+		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key2.Encode()))
+		if err != memcache.ErrCacheMiss {
+			t.Fatal(err)
 		}
 
 		obj := &Data{}
@@ -294,8 +448,9 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key); !v {
-			t.Fatalf("unexpected: %v", v)
+		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key.Encode()))
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		// rollback.
@@ -303,7 +458,11 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Len(); v != 1 {
+		stats, err := memcache.Stats(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if v := stats.Items; v != 1 {
 			t.Fatalf("unexpected: %v", v)
 		}
 	}
@@ -320,7 +479,11 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Len(); v != 1 {
+		stats, err := memcache.Stats(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if v := stats.Items; v != 1 {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -335,8 +498,9 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key); !v {
-			t.Fatalf("unexpected: %v", v)
+		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key.Encode()))
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		// commit.
@@ -350,18 +514,16 @@ func TestLocalCache_Transaction(t *testing.T) {
 			t.Errorf("unexpected: %v", v)
 		}
 		// commited, but don't put to cache in tx.
-		if v := ch.Has(key3); v {
-			t.Fatalf("unexpected: %v", v)
+		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key3.Encode()))
+		if err != memcache.ErrCacheMiss {
+			t.Fatal(err)
 		}
 
-		if v := ch.Len(); v != 0 {
-			for keyStr := range ch.cache {
-				key, err := client.DecodeKey(keyStr)
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Log(key.String())
-			}
+		stats, err = memcache.Stats(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if v := stats.Items; v != 0 {
 			t.Fatalf("unexpected: %v", v)
 		}
 	}
@@ -400,8 +562,54 @@ func TestLocalCache_Transaction(t *testing.T) {
 		}
 		expected = regexp.MustCompile(buf.String())
 	}
-
 	if v := strings.Join(logs, "\n") + "\n"; !expected.MatchString(v) {
+		t.Errorf("unexpected: %v", v)
+	}
+
+	{
+		expectedPattern := heredoc.Doc(`
+			memcache.Set: len=1
+			memcache.Set: req=/Data,a
+			memcache.Set: resp len=1
+			memcache.Set: resp=STORED
+			memcache.Get: req len=1
+			memcache.Get: req=/Data,a
+			memcache.Get: resp len=1
+			memcache.Get: resp=/Data,a
+			memcache.Get: req len=1
+			memcache.Get: req=/Data,b
+			memcache.Get: resp len=0
+			memcache.Get: req len=1
+			memcache.Get: req=/Data,a
+			memcache.Get: resp len=1
+			memcache.Get: resp=/Data,a
+			memcache.Get: req len=1
+			memcache.Get: req=/Data,a
+			memcache.Get: resp len=1
+			memcache.Get: resp=/Data,a
+			memcache.Delete: req len=3
+			memcache.Delete: req=/Data,@####@
+			memcache.Delete: req=/Data,a
+			memcache.Delete: req=/Data,a
+			memcache.Delete: resp len=3
+			memcache.Delete: resp=NOT_FOUND
+			memcache.Delete: resp=DELETED
+			memcache.Delete: resp=NOT_FOUND
+			memcache.Get: req len=1
+			memcache.Get: req=/Data,@####@
+			memcache.Get: resp len=0
+		`)
+		ss := strings.Split(expectedPattern, "@####@")
+		var buf bytes.Buffer
+		for idx, s := range ss {
+			buf.WriteString(regexp.QuoteMeta(s))
+			if idx != (len(ss) - 1) {
+				buf.WriteString("[0-9]+")
+			}
+		}
+		expected = regexp.MustCompile(buf.String())
+	}
+	if v := strings.Join(rpcLogs, "\n") + "\n"; !expected.MatchString(v) {
 		t.Errorf("unexpected: %v", v)
 	}
 }

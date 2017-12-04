@@ -18,11 +18,12 @@ go build -o build-cmd/jwg         ./vendor/github.com/favclip/jwg/cmd/jwg
 go build -o build-cmd/qbg         ./vendor/github.com/favclip/qbg/cmd/qbg
 
 # copy utils from other repo
-rm -rf internal/c
-mkdir -p internal/c
+rm -rf   internal/c internal/pb
+mkdir -p internal/c internal/pb
 
 cp -r vendor/cloud.google.com/go/internal/atomiccache internal/c/atomiccache
 cp -r vendor/cloud.google.com/go/internal/fields internal/c/fields
+cp -r vendor/google.golang.org/appengine/internal/memcache internal/pb/memcache
 
 if [ `uname` = "Darwin" ]; then
   sed -i '' -e 's/"cloud.google.com\/go\/internal\/atomiccache"/"go.mercari.io\/datastore\/internal\/c\/atomiccache"/g' internal/c/fields/fields.go

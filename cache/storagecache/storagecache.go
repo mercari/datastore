@@ -127,7 +127,7 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []data
 			continue
 		}
 
-		missingKeys = append(missingKeys, ci.Key)
+		missingKeys = append(missingKeys, keys[idx])
 		idx := idx
 		replaceLaters = append(replaceLaters, func(ps datastore.PropertyList) {
 			resultPsList[idx] = ps
@@ -149,7 +149,14 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []data
 		defer ch.m.Unlock()
 
 		// ignore returned error
-		ch.s.DeleteMulti(info.Context, foundKeys)
+		deleteKeys := make([]datastore.Key, 0, len(foundKeys))
+		for _, key := range foundKeys {
+			if key == nil {
+				continue
+			}
+			deleteKeys = append(deleteKeys, key)
+		}
+		ch.s.DeleteMulti(info.Context, deleteKeys)
 
 		return err
 	}
@@ -255,7 +262,11 @@ func (ch *cacheHandler) PostCommit(info *datastore.CacheInfo, tx datastore.Trans
 		}
 	}
 
-	sErr := ch.s.DeleteMulti(info.Context, keys)
+	// don't pass txCtx to appengine.APICall
+	// otherwise, `transaction context has expired` will be occur
+	baseCtx := info.Client.SwapContext(context.Background())
+	info.Client.SwapContext(baseCtx)
+	sErr := ch.s.DeleteMulti(baseCtx, keys)
 	nErr := info.Next.PostCommit(info, tx, commit)
 	if sErr != nil {
 		return sErr
