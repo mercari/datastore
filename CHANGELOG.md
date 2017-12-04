@@ -1,3 +1,13 @@
+<a name="0.8.0"></a>
+# [0.8.0](https://github.com/mercari/datastore/compare/v0.7.0...v0.8.0) (2017-12-04)
+
+
+### Features
+
+* **cache/storagecache:** implement WithIncludeKinds, WithExcludeKinds, WithKeyFilter options ([a8b5857](https://github.com/mercari/datastore/commit/a8b5857))
+
+
+
 <a name="0.7.0"></a>
 # [0.7.0](https://github.com/mercari/datastore/compare/v0.6.0...v0.7.0) (2017-12-04)
 
