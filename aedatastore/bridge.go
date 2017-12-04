@@ -2,6 +2,7 @@ package aedatastore
 
 import (
 	"context"
+	"encoding/gob"
 	"errors"
 
 	w "go.mercari.io/datastore"
@@ -12,6 +13,8 @@ import (
 
 func init() {
 	w.FromContext = FromContext
+
+	gob.Register(&keyImpl{})
 }
 
 func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) {

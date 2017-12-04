@@ -2,6 +2,7 @@ package clouddatastore
 
 import (
 	"context"
+	"encoding/gob"
 	"errors"
 
 	"cloud.google.com/go/compute/metadata"
@@ -14,6 +15,8 @@ import (
 
 func init() {
 	w.FromContext = FromContext
+
+	gob.Register(&keyImpl{})
 }
 
 var projectID *string
