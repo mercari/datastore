@@ -16,7 +16,7 @@ import (
 var _ storagecache.Storage = &CacheHandler{}
 var _ datastore.CacheStrategy = &CacheHandler{}
 
-func New() *CacheHandler {
+func New(opts ...storagecache.CacheOption) *CacheHandler {
 	ch := &CacheHandler{
 		KeyPrefix:      "mercari:aememcache:",
 		ExpireDuration: 0,
@@ -24,7 +24,7 @@ func New() *CacheHandler {
 			log.Debugf(ctx, format, args...)
 		},
 	}
-	s := storagecache.New(ch)
+	s := storagecache.New(ch, opts...)
 	ch.st = s
 
 	return ch

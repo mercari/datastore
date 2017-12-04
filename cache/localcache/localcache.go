@@ -14,13 +14,14 @@ var _ datastore.CacheStrategy = &CacheHandler{}
 
 const defaultExpiration = 3 * time.Minute
 
-func New() *CacheHandler {
+func New(opts ...storagecache.CacheOption) *CacheHandler {
 	// I want to make ch.cache accessible from the test
 	ch := &CacheHandler{
 		cache:          make(map[string]cacheItem),
 		ExpireDuration: defaultExpiration,
+		Logf:           func(ctx context.Context, format string, args ...interface{}) {},
 	}
-	s := storagecache.New(ch)
+	s := storagecache.New(ch, opts...)
 	ch.st = s
 
 	return ch
@@ -31,6 +32,7 @@ type CacheHandler struct {
 	m              sync.Mutex
 	st             datastore.CacheStrategy
 	ExpireDuration time.Duration
+	Logf           func(ctx context.Context, format string, args ...interface{})
 }
 
 type cacheItem struct {
@@ -45,6 +47,13 @@ func (ch *CacheHandler) Has(key datastore.Key) bool {
 	return ok
 }
 
+func (ch *CacheHandler) DeleteCache(ctx context.Context, key datastore.Key) {
+	ch.m.Lock()
+	defer ch.m.Unlock()
+	ch.Logf(ctx, "cache/localcache.DeleteCache: key=%s", key.String())
+	delete(ch.cache, key.Encode())
+}
+
 func (ch *CacheHandler) Len() int {
 	return len(ch.cache)
 }
@@ -57,12 +66,17 @@ func (ch *CacheHandler) FlushLocalCache() {
 
 // storagecache.Storage implementation
 
-func (ch *CacheHandler) SetMulti(ctx context.Context, is []*storagecache.CacheItem) error {
+func (ch *CacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheItem) error {
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
+	ch.Logf(ctx, "cache/localcache.SetMulti: len=%d", len(cis))
+	for idx, ci := range cis {
+		ch.Logf(ctx, "cache/localcache.SetMulti: idx=%d key=%s len(ps)=%d", idx, ci.Key.String(), len(ci.PropertyList))
+	}
+
 	now := time.Now()
-	for _, ci := range is {
+	for _, ci := range cis {
 		if ci.Key.Incomplete() {
 			continue
 		}
@@ -83,22 +97,31 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 
 	now := time.Now()
 
+	ch.Logf(ctx, "cache/localcache.GetMulti: len=%d", len(keys))
+	for idx, key := range keys {
+		ch.Logf(ctx, "cache/localcache.GetMulti: idx=%d key=%s", idx, key.String())
+	}
+
 	resultList := make([]*storagecache.CacheItem, len(keys))
 	for idx, key := range keys {
 		if key.Incomplete() {
+			ch.Logf(ctx, "cache/localcache.GetMulti: idx=%d, incomplete key=%s", idx, key.String())
 			continue
 		}
 		cItem, ok := ch.cache[key.Encode()]
 		if !ok {
+			ch.Logf(ctx, "cache/localcache.GetMulti: idx=%d, missed key=%s", idx, key.String())
 			continue
 		}
 
 		if cItem.setAt.Add(cItem.expiration).After(now) {
+			ch.Logf(ctx, "cache/localcache.GetMulti: idx=%d, hit key=%s len(ps)=%d", idx, key.String(), len(cItem.PropertyList))
 			resultList[idx] = &storagecache.CacheItem{
 				Key:          key,
 				PropertyList: cItem.PropertyList,
 			}
 		} else {
+			ch.Logf(ctx, "cache/localcache.GetMulti: idx=%d, expired key=%s", idx, key.String())
 			delete(ch.cache, key.Encode())
 		}
 	}
@@ -109,6 +132,11 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 func (ch *CacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) error {
 	ch.m.Lock()
 	defer ch.m.Unlock()
+
+	ch.Logf(ctx, "cache/localcache.DeleteMulti: len=%d", len(keys))
+	for idx, key := range keys {
+		ch.Logf(ctx, "cache/localcache.DeleteMulti: idx=%d key=%s", idx, key.String())
+	}
 
 	for _, key := range keys {
 		delete(ch.cache, key.Encode())
