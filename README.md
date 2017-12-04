@@ -33,16 +33,13 @@ $ go get -u go.mercari.io/datastore
     * It can catch entity from the cache layers as well as from the datastore
 * Add retry feature to each RPC
     * e.g. Retry AllocateID when it failed
-* Add cache layer uses without Tx
+* Add cache layer
     * About...
         * Local Cache
-        * Memcache
+        * AE Memcache
         * etc...
     * Easy to ON/OFF switching
-* Add RPC hook layer
-    * It makes implements [memvache](https://github.com/vvakame/memvache) like cache strategy
 * Add some useful methods
-    * ~~GetAsIntIDMap, GetAsStringIDMap~~
     * `aedatastore/TransactionContext`
 
 ### DON'T
@@ -73,6 +70,18 @@ TODO
     * Test code that works in AppEngine production environment
 * `boom`
     * [goon](https://github.com/mjibson/goon) likes interface for this package
+* `cache`
+    * Implementation of cache layer strategies
+    * `cache/aememcache`
+        * Entity caching with [AE Memcache](https://cloud.google.com/appengine/docs/standard/go/memcache/using)
+    * `cache/dslog`
+        * Datastore operation logging in cache layer
+    * `cache/fishbone`
+        * Replace query by KeysOnly query with Get ops
+    * `cache/localcache`
+        * Entity caching with machine local memory
+    * `cache/storagecache`
+        * Entity cacheing base code
 * `clouddatastore`
     * Datastore Wrapper implementation for Cloud Datastore
 * `internal`
@@ -87,7 +96,6 @@ TODO
 ## TODO
 
 * Write tests for namespace
-* Implement cache layers
 * Retry feature
 * Write more documents
 
