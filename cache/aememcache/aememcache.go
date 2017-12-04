@@ -20,6 +20,9 @@ func New() *CacheHandler {
 	ch := &CacheHandler{
 		KeyPrefix:      "mercari:aememcache:",
 		ExpireDuration: 0,
+		Logf: func(ctx context.Context, format string, args ...interface{}) {
+			log.Debugf(ctx, format, args...)
+		},
 	}
 	s := storagecache.New(ch)
 	ch.st = s
@@ -32,6 +35,7 @@ type CacheHandler struct {
 	raiseMemcacheError bool
 	KeyPrefix          string
 	ExpireDuration     time.Duration
+	Logf               func(ctx context.Context, format string, args ...interface{})
 }
 
 // storagecache.Storage implementation
@@ -40,10 +44,12 @@ func (ch *CacheHandler) cacheKey(key datastore.Key) string {
 	return ch.KeyPrefix + key.Encode()
 }
 
-func (ch *CacheHandler) SetMulti(ctx context.Context, is []*storagecache.CacheItem) error {
+func (ch *CacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheItem) error {
 
-	itemList := make([]*memcache.Item, 0, len(is))
-	for _, ci := range is {
+	ch.Logf(ctx, "aememcache.SetMulti: incoming len=%d", len(cis))
+
+	itemList := make([]*memcache.Item, 0, len(cis))
+	for _, ci := range cis {
 		if ci.Key.Incomplete() {
 			continue
 		}
@@ -60,9 +66,11 @@ func (ch *CacheHandler) SetMulti(ctx context.Context, is []*storagecache.CacheIt
 		})
 	}
 
+	ch.Logf(ctx, "aememcache.SetMulti: len=%d", len(itemList))
+
 	err := memcache.SetMulti(ctx, itemList)
 	if err != nil {
-		log.Infof(ctx, "cache/aememcache: error on memcache.SetMulti %s", err.Error())
+		ch.Logf(ctx, "cache/aememcache: error on memcache.SetMulti %s", err.Error())
 		if ch.raiseMemcacheError {
 			if merr, ok := err.(appengine.MultiError); ok {
 				for _, err := range merr {
@@ -76,13 +84,13 @@ func (ch *CacheHandler) SetMulti(ctx context.Context, is []*storagecache.CacheIt
 			}
 		}
 
-		keys := make([]string, 0, len(is))
-		for _, ci := range is {
+		keys := make([]string, 0, len(cis))
+		for _, ci := range cis {
 			keys = append(keys, ci.Key.Encode())
 		}
 		err = memcache.DeleteMulti(ctx, keys)
 		if err != nil {
-			log.Infof(ctx, "cache/aememcache: error on memcache.DeleteMulti %s", err.Error())
+			ch.Logf(ctx, "cache/aememcache: error on memcache.DeleteMulti %s", err.Error())
 			if ch.raiseMemcacheError {
 				if merr, ok := err.(appengine.MultiError); ok {
 					for _, err := range merr {
@@ -103,6 +111,8 @@ func (ch *CacheHandler) SetMulti(ctx context.Context, is []*storagecache.CacheIt
 
 func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*storagecache.CacheItem, error) {
 
+	ch.Logf(ctx, "aememcache.GetMulti: incoming len=%d", len(keys))
+
 	resultList := make([]*storagecache.CacheItem, len(keys))
 
 	cacheKeys := make([]string, 0, len(keys))
@@ -111,8 +121,10 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 	}
 
 	itemMap, err := memcache.GetMulti(ctx, cacheKeys)
+	ch.Logf(ctx, "aememcache.GetMulti: got len=%d", len(itemMap))
+
 	if err != nil {
-		log.Infof(ctx, "cache/aememcache: error on memcache.GetMulti %s", err.Error())
+		ch.Logf(ctx, "cache/aememcache: error on memcache.GetMulti %s", err.Error())
 		if ch.raiseMemcacheError {
 			if merr, ok := err.(appengine.MultiError); ok {
 				for _, err := range merr {
@@ -151,6 +163,7 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 }
 
 func (ch *CacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) error {
+	ch.Logf(ctx, "aememcache.DeleteMulti: incoming len=%d", len(keys))
 
 	cacheKeys := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -159,7 +172,7 @@ func (ch *CacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) e
 
 	err := memcache.DeleteMulti(ctx, cacheKeys)
 	if err != nil {
-		log.Infof(ctx, "cache/aememcache: error on memcache.DeleteMulti %s", err.Error())
+		ch.Logf(ctx, "cache/aememcache: error on memcache.DeleteMulti %s", err.Error())
 		if ch.raiseMemcacheError {
 			if merr, ok := err.(appengine.MultiError); ok {
 				for _, err := range merr {
