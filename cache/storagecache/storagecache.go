@@ -9,8 +9,16 @@ import (
 
 var _ datastore.CacheStrategy = &cacheHandler{}
 
-func New(s Storage) datastore.CacheStrategy {
-	return &cacheHandler{s: s}
+func New(s Storage, opts ...CacheOption) datastore.CacheStrategy {
+	ch := &cacheHandler{
+		s: s,
+	}
+
+	for _, opt := range opts {
+		opt.Apply(ch)
+	}
+
+	return ch
 }
 
 type contextTx struct{}
@@ -21,6 +29,10 @@ type Storage interface {
 	// If not in the cache, the value of the corresponding element is nil.
 	GetMulti(ctx context.Context, keys []datastore.Key) ([]*CacheItem, error)
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
+}
+
+type CacheOption interface {
+	Apply(*cacheHandler)
 }
 
 type CacheItem struct {
@@ -44,8 +56,20 @@ type TxOpLog struct {
 }
 
 type cacheHandler struct {
-	s Storage
-	m sync.Mutex
+	s       Storage
+	m       sync.Mutex
+	filters []func(key datastore.Key) bool
+}
+
+func (ch *cacheHandler) target(key datastore.Key) bool {
+	for _, f := range ch.filters {
+		// If false comes back even once, it is not cached
+		if !f(key) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
@@ -57,14 +81,20 @@ func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.CacheInfo, keys []data
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
-	is := make([]*CacheItem, len(keys))
+	cis := make([]*CacheItem, 0, len(keys))
 	for idx, key := range keys {
-		is[idx] = &CacheItem{
+		if !ch.target(key) {
+			continue
+		}
+		cis = append(cis, &CacheItem{
 			Key:          key,
 			PropertyList: psList[idx],
-		}
+		})
 	}
-	err = ch.s.SetMulti(info.Context, is)
+	if len(cis) == 0 {
+		return keys, nil
+	}
+	err = ch.s.SetMulti(info.Context, cis)
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +116,9 @@ func (ch *cacheHandler) PutMultiWithTx(info *datastore.CacheInfo, keys []datasto
 
 	logs := txOpMap[info.Transaction]
 	for idx, key := range keys {
+		if !ch.target(key) {
+			continue
+		}
 		log := &TxOpLog{
 			Ops:          TxPutOp,
 			PropertyList: psList[idx],
@@ -111,39 +144,71 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []data
 	//   When we have a cache, don't get it.
 	//   When we don't have a cache, passes arguments to next strategy.
 
+	// 1. ch.target で判定したキャッシュを参照しないでよいKeysをmissingKeysで後段の処理に回すことを確定
+	// 2. キャッシュを参照するKeysについてストレージに問い合わせ
+	// 3. キャッシュにあったら resultPsList に結果を突っ込む
+	//    キャッシュになかったら missingKeys に合流
+	// 4. missingKeys を後段の処理に回す
+	// 5. 4の結果を resultPsList に合流させる
+
 	foundKeys := make([]datastore.Key, len(keys))
 	missingKeys := make([]datastore.Key, 0, len(keys))
-	replaceLaters := make([]func(ps datastore.PropertyList), 0)
 	resultPsList := make([]datastore.PropertyList, len(keys))
 
-	is, err := ch.s.GetMulti(info.Context, keys)
-	if err != nil {
-		return err
-	}
-	for idx, ci := range is {
-		if ci != nil {
-			foundKeys[idx] = ci.Key
-			resultPsList[idx] = ci.PropertyList
+	replaceLaters := make([]func(ps datastore.PropertyList), 0)
+
+	filteredKey := make([]datastore.Key, 0, len(keys))
+	filteredIndices := make([]int, 0, len(keys))
+	filteredReplaceLaters := make([]func(ci *CacheItem), 0, len(keys))
+	for idx, key := range keys {
+		idx := idx
+
+		if !ch.target(key) {
+			missingKeys = append(missingKeys, key)
+			replaceLaters = append(replaceLaters, func(ps datastore.PropertyList) {
+				resultPsList[idx] = ps
+			})
+
 			continue
 		}
 
-		missingKeys = append(missingKeys, keys[idx])
-		idx := idx
-		replaceLaters = append(replaceLaters, func(ps datastore.PropertyList) {
-			resultPsList[idx] = ps
+		filteredKey = append(filteredKey, key)
+		filteredIndices = append(filteredIndices, idx)
+		filteredReplaceLaters = append(filteredReplaceLaters, func(ci *CacheItem) {
+			foundKeys[idx] = ci.Key
+			resultPsList[idx] = ci.PropertyList
 		})
+	}
+
+	if len(filteredKey) != 0 {
+		is, err := ch.s.GetMulti(info.Context, filteredKey)
+		if err != nil {
+			return err
+		}
+		for idx, ci := range is {
+			if ci != nil {
+				filteredReplaceLaters[idx](ci)
+				continue
+			}
+
+			idx := idx
+			missingKeys = append(missingKeys, filteredKey[idx])
+			replaceLaters = append(replaceLaters, func(ps datastore.PropertyList) {
+				resultPsList[filteredIndices[idx]] = ps
+			})
+		}
 	}
 
 	ch.m.Unlock()
 
 	if len(missingKeys) == 0 {
-		copy(resultPsList, psList)
+		copy(psList, resultPsList)
 
 		return nil
 	}
 
-	missingPsList := make([]datastore.PropertyList, 0, len(missingKeys))
-	err = info.Next.GetMultiWithoutTx(info, missingKeys, missingPsList)
+	missingPsList := make([]datastore.PropertyList, len(missingKeys))
+	err := info.Next.GetMultiWithoutTx(info, missingKeys, missingPsList)
 	if err != nil {
 		ch.m.Lock()
 		defer ch.m.Unlock()
@@ -163,7 +228,7 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []data
 	for idx, ps := range missingPsList {
 		replaceLaters[idx](ps)
 	}
-	copy(resultPsList, psList)
+	copy(psList, resultPsList)
 
 	return nil
 }
@@ -185,6 +250,9 @@ func (ch *cacheHandler) GetMultiWithTx(info *datastore.CacheInfo, keys []datasto
 
 	logs := txOpMap[info.Transaction]
 	for _, key := range keys {
+		if !ch.target(key) {
+			continue
+		}
 		log := &TxOpLog{
 			Ops: TxGetOp,
 			Key: key,
@@ -202,7 +270,19 @@ func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []d
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
-	sErr := ch.s.DeleteMulti(info.Context, keys)
+	filteredKeys := make([]datastore.Key, 0, len(keys))
+	for _, key := range keys {
+		if !ch.target(key) {
+			continue
+		}
+
+		filteredKeys = append(filteredKeys, key)
+	}
+	if len(filteredKeys) == 0 {
+		return err
+	}
+
+	sErr := ch.s.DeleteMulti(info.Context, filteredKeys)
 	if sErr != nil {
 		return sErr
 	}
@@ -224,6 +304,10 @@ func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.CacheInfo, keys []data
 
 	logs := txOpMap[info.Transaction]
 	for _, key := range keys {
+		if !ch.target(key) {
+			continue
+		}
+
 		log := &TxOpLog{
 			Ops: TxDeleteOp,
 			Key: key,
@@ -262,11 +346,23 @@ func (ch *cacheHandler) PostCommit(info *datastore.CacheInfo, tx datastore.Trans
 		}
 	}
 
+	filteredKeys := make([]datastore.Key, 0, len(keys))
+	for _, key := range keys {
+		if !ch.target(key) {
+			continue
+		}
+
+		filteredKeys = append(filteredKeys, key)
+	}
+	if len(filteredKeys) == 0 {
+		return info.Next.PostCommit(info, tx, commit)
+	}
+
 	// don't pass txCtx to appengine.APICall
 	// otherwise, `transaction context has expired` will be occur
 	baseCtx := info.Client.SwapContext(context.Background())
 	info.Client.SwapContext(baseCtx)
-	sErr := ch.s.DeleteMulti(baseCtx, keys)
+	sErr := ch.s.DeleteMulti(baseCtx, filteredKeys)
 	nErr := info.Next.PostCommit(info, tx, commit)
 	if sErr != nil {
 		return sErr
