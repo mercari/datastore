@@ -1,3 +1,14 @@
+<a name="0.7.0"></a>
+# [0.7.0](https://github.com/mercari/datastore/compare/v0.6.0...v0.7.0) (2017-12-04)
+
+
+### Features
+
+* **cache** implement cache layer & cache strategies ([203ab21](https://github.com/mercari/datastore/commit/203ab21))
+* **core,ae,cloud:** add datastore#Client.DecodeKey method ([42fa040](https://github.com/mercari/datastore/commit/42fa040))
+
+
+
 <a name="0.6.0"></a>
 # [0.6.0](https://github.com/mercari/datastore/compare/v0.5.3...v0.6.0) (2017-11-24)
 
