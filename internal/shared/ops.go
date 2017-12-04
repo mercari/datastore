@@ -30,8 +30,8 @@ func GetMultiOps(ctx context.Context, keys []datastore.Key, dst interface{}, ops
 		return nil
 	}
 
-	wPss := make([]datastore.PropertyList, len(keys))
-	err := ops(keys, wPss)
+	pss := make([]datastore.PropertyList, len(keys))
+	err := ops(keys, pss)
 	foundError := false
 
 	merr, catchMerr := err.(datastore.MultiError)
@@ -67,7 +67,7 @@ func GetMultiOps(ctx context.Context, keys []datastore.Key, dst interface{}, ops
 			}
 		}
 
-		if err = datastore.LoadEntity(ctx, elem.Interface(), &datastore.Entity{Key: keys[idx], Properties: wPss[idx]}); err != nil {
+		if err = datastore.LoadEntity(ctx, elem.Interface(), &datastore.Entity{Key: keys[idx], Properties: pss[idx]}); err != nil {
 			merr[idx] = err
 			foundError = true
 		}
@@ -92,7 +92,7 @@ func PutMultiOps(ctx context.Context, keys []datastore.Key, src interface{}, ops
 		return nil, nil, nil
 	}
 
-	var wPss []datastore.PropertyList
+	var pss []datastore.PropertyList
 	for idx, key := range keys {
 		elem := v.Index(idx)
 		if reflect.PtrTo(elem.Type()).Implements(typeOfPropertyLoadSaver) || elem.Type().Kind() == reflect.Struct {
@@ -103,15 +103,15 @@ func PutMultiOps(ctx context.Context, keys []datastore.Key, src interface{}, ops
 		if err != nil {
 			return nil, nil, err
 		}
-		wPss = append(wPss, e.Properties)
+		pss = append(pss, e.Properties)
 	}
 
-	wKeys, wPKeys, err := ops(keys, wPss)
+	keys, pKeys, err := ops(keys, pss)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return wKeys, wPKeys, nil
+	return keys, pKeys, nil
 }
 
 func DeleteMultiOps(ctx context.Context, keys []datastore.Key, ops deleteOps) error {
@@ -175,18 +175,18 @@ func GetAllOps(ctx context.Context, qDump *datastore.QueryDump, dst interface{},
 
 	// TODO add reflect.Map support
 
-	var wPss []datastore.PropertyList
-	wKeys, err := ops(&wPss)
+	var pss []datastore.PropertyList
+	keys, err := ops(&pss)
 	if err != nil {
 		return nil, err
 	}
 
 	if !qDump.KeysOnly {
-		for idx, ps := range wPss {
+		for idx, ps := range pss {
 
 			elem := reflect.New(elemType)
 
-			if err = datastore.LoadEntity(ctx, elem.Interface(), &datastore.Entity{Key: wKeys[idx], Properties: ps}); err != nil {
+			if err = datastore.LoadEntity(ctx, elem.Interface(), &datastore.Entity{Key: keys[idx], Properties: ps}); err != nil {
 				return nil, err
 			}
 
@@ -198,5 +198,5 @@ func GetAllOps(ctx context.Context, qDump *datastore.QueryDump, dst interface{},
 		}
 	}
 
-	return wKeys, nil
+	return keys, nil
 }
