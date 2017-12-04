@@ -234,6 +234,15 @@ func toOriginalPropertyList(ps w.PropertyList) datastore.PropertyList {
 	return newPs
 }
 
+func toOriginalPropertyListList(pss []w.PropertyList) []datastore.PropertyList {
+	newPss := make([]datastore.PropertyList, 0, len(pss))
+	for _, ps := range pss {
+		newPss = append(newPss, toOriginalPropertyList(ps))
+	}
+
+	return newPss
+}
+
 func toWrapperEntity(entity *datastore.Entity) *w.Entity {
 	return &w.Entity{
 		Key:        toWrapperKey(entity.Key),
@@ -256,6 +265,15 @@ func toWrapperPropertyList(ps datastore.PropertyList) w.PropertyList {
 	}
 
 	return newPs
+}
+
+func toWrapperPropertyListList(pss []datastore.PropertyList) []w.PropertyList {
+	newPss := make([]w.PropertyList, 0, len(pss))
+	for _, ps := range pss {
+		newPss = append(newPss, toWrapperPropertyList(ps))
+	}
+
+	return newPss
 }
 
 func toOriginalTransaction(tx w.Transaction) *datastore.Transaction {

@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	"go.mercari.io/datastore/testsuite"
+	_ "go.mercari.io/datastore/testsuite/cache/dslog"
+	_ "go.mercari.io/datastore/testsuite/cache/fishbone"
+	_ "go.mercari.io/datastore/testsuite/cache/localcache"
 	_ "go.mercari.io/datastore/testsuite/favcliptools"
 	_ "go.mercari.io/datastore/testsuite/realworld/tbf"
 	"google.golang.org/api/iterator"

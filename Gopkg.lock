@@ -9,6 +9,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/MakeNowJust/heredoc"
+  packages = ["."]
+  revision = "e9091a26100e9cfb2b6a8f470085bfa541931a91"
+
+[[projects]]
+  branch = "master"
   name = "github.com/favclip/genbase"
   packages = ["."]
   revision = "9308343633095f1e30c2e879e8a7af64f15273d0"
@@ -88,7 +94,7 @@
 [[projects]]
   branch = "master"
   name = "google.golang.org/appengine"
-  packages = [".","aetest","datastore","internal","internal/app_identity","internal/base","internal/datastore","internal/log","internal/modules","internal/remote_api","internal/socket","internal/urlfetch","internal/user","log","socket","urlfetch","user"]
+  packages = [".","aetest","datastore","internal","internal/app_identity","internal/base","internal/datastore","internal/log","internal/memcache","internal/modules","internal/remote_api","internal/socket","internal/urlfetch","internal/user","log","memcache","socket","urlfetch","user"]
   revision = "9d8544a6b2c7df9cff240fcf92d7b2f59bc13416"
 
 [[projects]]
@@ -112,6 +118,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "55cc40219a1062231f3a69c8efda46c8e82842787296212cce55e905b57ac666"
+  inputs-digest = "d2692e37b1a0db87fda232e50f01a450bbf4f09d553ac6fceca5d2c856082c68"
   solver-name = "gps-cdcl"
   solver-version = 1

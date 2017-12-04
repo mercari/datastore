@@ -216,6 +216,7 @@ For cloud.google.com/go (/datastore, /internal/atomiccache, /internal/fields)
 ========================================================================
 For google.golang.org/api (/option)
     option.go (this file licensed under the Apache License, Version 2.0)
+    internal/pb/memcache/memcache_service.pb.go
 ========================================================================
 
 Copyright (c) 2011 Google Inc. All rights reserved.

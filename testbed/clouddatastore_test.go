@@ -1047,3 +1047,40 @@ func TestCloudDatastore_GetAllByPropertyListSlice(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCloudDatastore_PendingKeyWithCompleteKey(t *testing.T) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, "souzoh-p-vvakame")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	type Data struct {
+		Name string
+	}
+
+	tx, err := client.NewTransaction(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pKey, err := tx.Put(datastore.NameKey("Data", "a", nil), &Data{Name: "Test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	commit, err := tx.Commit()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := recover(); err == nil || err.(string) != "PendingKey was not created by corresponding transaction" {
+			t.Errorf("unexpected: '%v'", err)
+		}
+	}()
+	// panic occurred in this case.
+	commit.Key(pKey)
+}

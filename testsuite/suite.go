@@ -26,6 +26,7 @@ var TestSuite = map[string]Test{
 	"PutAndGetBareStruct":                       PutAndGetBareStruct,
 	"PutAndGetMultiBareStruct":                  PutAndGetMultiBareStruct,
 	"GeoPoint_PutAndGet":                        GeoPoint_PutAndGet,
+	"GobDecode":                                 GobDecode,
 	"Key_Equal":                                 Key_Equal,
 	"Key_Incomplete":                            Key_Incomplete,
 	"PLS_Basic":                                 PLS_Basic,
