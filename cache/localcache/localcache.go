@@ -49,6 +49,12 @@ func (ch *CacheHandler) Len() int {
 	return len(ch.cache)
 }
 
+func (ch *CacheHandler) FlushLocalCache() {
+	ch.m.Lock()
+	defer ch.m.Unlock()
+	ch.cache = make(map[string]cacheItem)
+}
+
 // storagecache.Storage implementation
 
 func (ch *CacheHandler) SetMulti(ctx context.Context, is []*storagecache.CacheItem) error {

@@ -98,6 +98,40 @@ func TestLocalCache_Basic(t *testing.T) {
 	}
 }
 
+func TestLocalCache_FlushLocalCache(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	ch := New()
+	client.AppendCacheStrategy(ch)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveCacheStrategy(ch)
+	}()
+
+	type Data struct {
+		Name string
+	}
+
+	// Put. add to cache.
+	key := client.IDKey("Data", 111, nil)
+	objBefore := &Data{Name: "Data"}
+	_, err := client.Put(ctx, key, objBefore)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := ch.Has(key); !v {
+		t.Fatalf("unexpected: %v", v)
+	}
+
+	ch.FlushLocalCache()
+
+	if v := ch.Has(key); v {
+		t.Fatalf("unexpected: %v", v)
+	}
+}
+
 func TestLocalCache_Query(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
