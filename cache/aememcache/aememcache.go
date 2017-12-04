@@ -129,12 +129,22 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 	}
 
 	for idx, key := range keys {
-		item, ok := itemMap[key.Encode()]
+		item, ok := itemMap[ch.cacheKey(key)]
 		if !ok {
 			resultList[idx] = nil
 			continue
 		}
-		log.Infof(ctx, "item: %+v", item)
+		buf := bytes.NewBuffer(item.Value)
+		dec := gob.NewDecoder(buf)
+		var ps datastore.PropertyList
+		err = dec.Decode(&ps)
+		if err != nil {
+			return nil, err
+		}
+		resultList[idx] = &storagecache.CacheItem{
+			Key:          key,
+			PropertyList: ps,
+		}
 	}
 
 	return resultList, nil

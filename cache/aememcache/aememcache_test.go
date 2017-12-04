@@ -67,8 +67,8 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = memcache.Get(ctx, key.Encode())
-	if err == nil {
+	_, err = memcache.Get(ctx, ch.cacheKey(key))
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -85,8 +85,8 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = memcache.Get(ctx, key.Encode())
-	if err != nil {
+	_, err = memcache.Get(ctx, ch.cacheKey(key))
+	if err != memcache.ErrCacheMiss {
 		t.Fatal(err)
 	}
 
