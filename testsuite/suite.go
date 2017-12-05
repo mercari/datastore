@@ -14,6 +14,7 @@ var TestSuite = map[string]Test{
 	"Batch_Get":                                 Batch_Get,
 	"Batch_Delete":                              Batch_Delete,
 	"PutAndGet":                                 PutAndGet,
+	"PutAndGet_TimeTime":                        PutAndGet_TimeTime,
 	"PutAndDelete":                              PutAndDelete,
 	"PutAndGet_ObjectHasObjectSlice":            PutAndGet_ObjectHasObjectSlice,
 	"PutAndGet_ObjectHasObjectSliceWithFlatten": PutAndGet_ObjectHasObjectSliceWithFlatten,

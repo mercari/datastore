@@ -97,7 +97,7 @@ func PropertyTranslater_PutAndGet(t *testing.T, ctx context.Context, client data
 		t.Fatal(err)
 	}
 
-	l, err := time.LoadLocation("Asia/Tokyo")
+	l, err := time.LoadLocation("Europe/Berlin") // not UTC, not PST, not Asia/Tokyo(developer's local timezone)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,8 @@ func PropertyTranslater_PutAndGet(t *testing.T, ctx context.Context, client data
 	if v := obj.UserID; int64(v) != userKey.ID() {
 		t.Errorf("unexpected: %v", v)
 	}
-	if v := obj.CreatedAt; time.Time(v).Equal(time.Time(now)) {
+	expectedNow := time.Time(now).Truncate(time.Microsecond).In(time.Local)
+	if v := obj.CreatedAt; !time.Time(v).Equal(expectedNow) {
 		t.Errorf("unexpected: %v", v)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"go.mercari.io/datastore"
 )
@@ -36,6 +37,46 @@ func PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 
 	if v := entity.String; v != "Test" {
+		t.Errorf("unexpected: %v", v)
+	}
+}
+
+func PutAndGet_TimeTime(t *testing.T, ctx context.Context, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	type Data struct {
+		At time.Time
+	}
+
+	key := client.IncompleteKey("Data", nil)
+
+	l, err := time.LoadLocation("Europe/Berlin") // not UTC, not PST, not Asia/Tokyo(developer's local timezone)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2017, 12, 5, 10, 11, 22, 33, l)
+
+	newKey, err := client.Put(ctx, key, &Data{At: now})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := &Data{}
+	err = client.Get(ctx, newKey, obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// load by time.Local
+	if v := obj.At.Location(); v != time.Local {
+		t.Errorf("unexpected: %v", v)
+	}
+	if v := obj.At.UnixNano(); v != now.Truncate(time.Microsecond).UnixNano() {
 		t.Errorf("unexpected: %v", v)
 	}
 }

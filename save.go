@@ -306,7 +306,7 @@ func propertiesToProtoFake(ctx context.Context, key Key, props []Property) (*Ent
 		Key:        key,
 		Properties: props,
 	}
-	for _, p := range props {
+	for idx, p := range props {
 		// Do not send a Key value a a field to datastore.
 		if p.Name == keyFieldName {
 			continue
@@ -316,15 +316,21 @@ func propertiesToProtoFake(ctx context.Context, key Key, props []Property) (*Ent
 		if err != nil {
 			return nil, fmt.Errorf("datastore: %v for a Property with Name %q", err, p.Name)
 		}
-		p.Value = val
+		props[idx].Value = val
 	}
 	return e, nil
 }
 
 func interfaceToProtoFake(ctx context.Context, iv interface{}, noIndex bool) (interface{}, error) {
 	switch v := iv.(type) {
-	case PropertyTranslator:
-		return v.ToPropertyValue(ctx)
+	case time.Time:
+		if v.Before(minTime) || v.After(maxTime) {
+			return nil, errors.New("time value out of range")
+		}
+		// This rounding process reproduces the cloud.google.com/go/datastore
+		// don't use original time.Time's locale and UTC both. use machine default.
+		um := toUnixMicro(v)
+		return fromUnixMicro(um), nil
 	default:
 		return v, nil
 	}

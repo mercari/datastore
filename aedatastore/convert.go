@@ -3,6 +3,7 @@ package aedatastore
 import (
 	"context"
 	"fmt"
+	"time"
 
 	w "go.mercari.io/datastore"
 	"google.golang.org/api/iterator"
@@ -207,6 +208,11 @@ func toWrapperValue(ctx context.Context, v interface{}) interface{} {
 		return toWrapperKey(ctx, v)
 	case []*datastore.Key:
 		return toWrapperKeys(ctx, v)
+
+	case time.Time:
+		// align to cloud datastore.
+		// cloud datastore uses machine locale.
+		return v.In(time.Local)
 
 	case appengine.GeoPoint:
 		return w.GeoPoint{Lat: v.Lat, Lng: v.Lng}

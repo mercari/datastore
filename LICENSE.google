@@ -5,6 +5,7 @@ For cloud.google.com/go (/datastore, /internal/atomiccache, /internal/fields)
     load.go
     save.go
     query.go
+    time.go
     internal/c/atomiccache/atomiccache.go
     internal/c/fields/fold.go
     internal/c/fields/fields.go
