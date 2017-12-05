@@ -38,3 +38,7 @@ required = [
 [[constraint]]
   branch = "master"
   name = "google.golang.org/appengine"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/favclip/testerator"

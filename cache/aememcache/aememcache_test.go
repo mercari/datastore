@@ -4,9 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/favclip/testerator"
+	_ "github.com/favclip/testerator/datastore"
+	_ "github.com/favclip/testerator/memcache"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/golang/protobuf/proto"
@@ -19,6 +24,24 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/memcache"
 )
+
+func TestMain(m *testing.M) {
+	_, _, err := testerator.SpinUp()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	status := m.Run()
+
+	err = testerator.SpinDown()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	os.Exit(status)
+}
 
 func TestAEMemcacheCache_Basic(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupAEDatastore(t)

@@ -5,11 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/favclip/testerator"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/aedatastore"
 	"go.mercari.io/datastore/clouddatastore"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/aetest"
 )
 
 var EmitCleanUpLog = false
@@ -70,20 +69,15 @@ func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func(
 }
 
 func SetupAEDatastore(t *testing.T) (context.Context, datastore.Client, func()) {
-	inst, err := aetest.NewInstance(&aetest.Options{StronglyConsistentDatastore: true})
+	_, ctx, err := testerator.SpinUp()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(err.Error())
 	}
-	r, err := inst.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx := appengine.NewContext(r)
 
 	client, err := aedatastore.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return ctx, client, func() { inst.Close() }
+	return ctx, client, func() { testerator.SpinDown() }
 }

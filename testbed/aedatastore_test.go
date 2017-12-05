@@ -4,13 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/favclip/testerator"
+	_ "github.com/favclip/testerator/datastore"
+	_ "github.com/favclip/testerator/memcache"
+
 	netcontext "golang.org/x/net/context"
 	"google.golang.org/appengine"
-	"google.golang.org/appengine/aetest"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -18,17 +22,31 @@ type AEDatastoreStruct struct {
 	Test string
 }
 
+func TestMain(m *testing.M) {
+	_, _, err := testerator.SpinUp()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	status := m.Run()
+
+	err = testerator.SpinDown()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	os.Exit(status)
+}
+
 func newContext() (context.Context, func(), error) {
-	inst, err := aetest.NewInstance(&aetest.Options{StronglyConsistentDatastore: true})
+	_, ctx, err := testerator.SpinUp()
 	if err != nil {
 		return nil, nil, err
 	}
-	r, err := inst.NewRequest("GET", "/", nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	ctx := appengine.NewContext(r)
-	return ctx, func() { inst.Close() }, nil
+
+	return ctx, func() { testerator.SpinDown() }, nil
 }
 
 func TestAEDatastore_Put(t *testing.T) {

@@ -33,6 +33,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/favclip/testerator"
+  packages = [".","datastore","memcache"]
+  revision = "334401dbe72dc66e5a940a8c04ae2ab4a9a5af5c"
+
+[[projects]]
+  branch = "master"
   name = "github.com/golang/lint"
   packages = [".","golint"]
   revision = "6aaf7c34af0f4c36a57e0c429bace4d706d8e931"
@@ -118,6 +124,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d2692e37b1a0db87fda232e50f01a450bbf4f09d553ac6fceca5d2c856082c68"
+  inputs-digest = "426cf888b16f028a3db798b87981aa2854d212d3823f0d7d890bcb1577dfe4a5"
   solver-name = "gps-cdcl"
   solver-version = 1
