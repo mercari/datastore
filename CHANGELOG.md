@@ -1,3 +1,13 @@
+<a name="0.8.1"></a>
+## [0.8.1](https://github.com/mercari/datastore/compare/v0.8.0...v0.8.1) (2017-12-05)
+
+
+### Bug Fixes
+
+* **core:** fix time.Time's default location. fit to Cloud Datastore behaviour ([4226d8f](https://github.com/mercari/datastore/commit/4226d8f))
+
+
+
 <a name="0.8.0"></a>
 # [0.8.0](https://github.com/mercari/datastore/compare/v0.7.0...v0.8.0) (2017-12-04)
 
