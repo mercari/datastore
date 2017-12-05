@@ -41,7 +41,7 @@
   branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto","protoc-gen-go/descriptor","ptypes","ptypes/any","ptypes/duration","ptypes/struct","ptypes/timestamp","ptypes/wrappers"]
-  revision = "1643683e1b54a9e88ad26d98f81400c8c9d9f4f9"
+  revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
 
 [[projects]]
   name = "github.com/googleapis/gax-go"
@@ -59,13 +59,13 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
-  revision = "a337091b0525af65de94df2eb7e98bd9962dcbe2"
+  revision = "a8b9294777976932365dabb6640cf1468d95c70f"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/oauth2"
   packages = [".","google","internal","jws","jwt"]
-  revision = "9ff8ebcc8e241d46f52ecc5bff0e5a2f2dbef402"
+  revision = "f95fa95eaa936d9d87489b15d1d18b97c1ba9c28"
 
 [[projects]]
   branch = "master"
@@ -77,19 +77,19 @@
   branch = "master"
   name = "golang.org/x/text"
   packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
-  revision = "88f656faf3f37f690df1a32515b479415e1a6769"
+  revision = "57961680700a5336d15015c8c50686ca5ba362a4"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/tools"
   packages = ["cmd/goimports","go/ast/astutil","go/buildutil","go/gcexportdata","go/gcimporter15","go/loader","go/types/typeutil","imports"]
-  revision = "05e91d06384e3a4eb0aba75560d254b8d5a7b431"
+  revision = "04447353bc504b9a5c02eb227b9ecd252e64ea20"
 
 [[projects]]
   branch = "master"
   name = "google.golang.org/api"
   packages = ["internal","iterator","option","transport/grpc"]
-  revision = "76b09a3314405551b1f19de9944347fcda3f80ae"
+  revision = "8cfdc57a0663729cc2811afefb5b7cd3d901e97c"
 
 [[projects]]
   branch = "master"
@@ -101,19 +101,19 @@
   branch = "master"
   name = "google.golang.org/genproto"
   packages = ["googleapis/api/annotations","googleapis/datastore/v1","googleapis/rpc/status","googleapis/type/latlng"]
-  revision = "11c7f9e547da6db876260ce49ea7536985904c9b"
+  revision = "7f0da29060c682909f650ad8ed4e515bd74fa12a"
 
 [[projects]]
   name = "google.golang.org/grpc"
-  packages = [".","balancer","codes","connectivity","credentials","credentials/oauth","grpclb/grpc_lb_v1/messages","grpclog","internal","keepalive","metadata","naming","peer","resolver","stats","status","tap","transport"]
-  revision = "5ffe3083946d5603a0578721101dc8165b1d5b5f"
-  version = "v1.7.2"
+  packages = [".","balancer","balancer/roundrobin","codes","connectivity","credentials","credentials/oauth","encoding","grpclb/grpc_lb_v1/messages","grpclog","internal","keepalive","metadata","naming","peer","resolver","resolver/dns","resolver/manual","resolver/passthrough","stats","status","tap","transport"]
+  revision = "be077907e29fdb945d351e4284eb5361e7f8924e"
+  version = "v1.8.1"
 
 [[projects]]
   name = "honnef.co/go/tools"
-  packages = ["callgraph","callgraph/static","cmd/gosimple","cmd/staticcheck","cmd/unused","functions","internal/sharedcheck","lint","lint/lintutil","simple","ssa","ssa/ssautil","staticcheck","staticcheck/vrp","unused","version"]
-  revision = "e5147431c7c056bd6ef33ad2f23c846f835571dd"
-  version = "2017.1"
+  packages = ["callgraph","callgraph/static","cmd/gosimple","cmd/staticcheck","cmd/unused","deprecated","functions","internal/sharedcheck","lint","lint/lintutil","simple","ssa","ssa/ssautil","staticcheck","staticcheck/vrp","unused","version"]
+  revision = "444f7b0ef8e620c384da646182663eb4f0f14ffe"
+  version = "2017.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
