@@ -36,7 +36,7 @@ func TestBoom_TransactionBatchGet(t *testing.T) {
 	b := tx.Batch()
 	for _, key := range keys {
 		obj := &Data{ID: key.ID()}
-		b.Get(obj)
+		b.Get(obj, nil)
 		list = append(list, obj)
 	}
 
@@ -80,7 +80,7 @@ func TestBoom_TransactionBatchPut(t *testing.T) {
 	b := tx.Batch()
 	for i := 0; i < size; i++ {
 		obj := &Data{}
-		b.Put(obj)
+		b.Put(obj, nil)
 		list = append(list, obj)
 	}
 
@@ -138,7 +138,7 @@ func TestBoom_TransactionBatchDelete(t *testing.T) {
 	b := tx.Batch()
 	for _, key := range keys {
 		obj := &Data{ID: key.ID()}
-		b.Delete(obj)
+		b.Delete(obj, nil)
 	}
 
 	err = b.Exec()

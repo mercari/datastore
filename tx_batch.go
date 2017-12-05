@@ -12,49 +12,38 @@ type TransactionBatch struct {
 	delete txBatchDelete
 }
 
+type TxBatchPutHandler func(pKey PendingKey, err error) error
+
 type txBatchPut struct {
 	m    sync.Mutex
 	keys []Key
 	srcs []interface{}
-	cs   []chan *TransactionPutResult
-}
-
-type TransactionPutResult struct {
-	PendingKey PendingKey
-	Err        error
+	hs   []TxBatchPutHandler
 }
 
 type txBatchGet struct {
 	m    sync.Mutex
 	keys []Key
 	dsts []interface{}
-	cs   []chan error
+	hs   []BatchErrHandler
 }
 
 type txBatchDelete struct {
 	m    sync.Mutex
 	keys []Key
-	cs   []chan error
+	hs   []BatchErrHandler
 }
 
-func (b *TransactionBatch) Put(key Key, src interface{}) chan *TransactionPutResult {
-	return b.put.Put(key, src)
+func (b *TransactionBatch) Put(key Key, src interface{}, h TxBatchPutHandler) {
+	b.put.Put(key, src, h)
 }
 
-func (b *TransactionBatch) UnwrapPutResult(r *TransactionPutResult) (PendingKey, error) {
-	if r.Err != nil {
-		return nil, r.Err
-	}
-
-	return r.PendingKey, nil
+func (b *TransactionBatch) Get(key Key, dst interface{}, h BatchErrHandler) {
+	b.get.Get(key, dst, h)
 }
 
-func (b *TransactionBatch) Get(key Key, dst interface{}) chan error {
-	return b.get.Get(key, dst)
-}
-
-func (b *TransactionBatch) Delete(key Key) chan error {
-	return b.delete.Delete(key)
+func (b *TransactionBatch) Delete(key Key, h BatchErrHandler) {
+	b.delete.Delete(key, h)
 }
 
 func (b *TransactionBatch) Exec() error {
@@ -105,17 +94,13 @@ func (b *TransactionBatch) Exec() error {
 	return nil
 }
 
-func (b *txBatchPut) Put(key Key, src interface{}) chan *TransactionPutResult {
+func (b *txBatchPut) Put(key Key, src interface{}, h TxBatchPutHandler) {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan *TransactionPutResult, 1)
-
 	b.keys = append(b.keys, key)
 	b.srcs = append(b.srcs, src)
-	b.cs = append(b.cs, c)
-
-	return c
+	b.hs = append(b.hs, h)
 }
 
 func (b *txBatchPut) Exec(tx Transaction) []error {
@@ -127,7 +112,7 @@ func (b *txBatchPut) Exec(tx Transaction) []error {
 	defer func() {
 		b.keys = nil
 		b.srcs = nil
-		b.cs = nil
+		b.hs = nil
 	}()
 	defer b.m.Unlock()
 
@@ -136,41 +121,49 @@ func (b *txBatchPut) Exec(tx Transaction) []error {
 	if merr, ok := err.(MultiError); ok {
 		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
-			c := b.cs[idx]
+			h := b.hs[idx]
+			if h != nil {
+				err = h(newPendingKeys[idx], err)
+			}
 			if err != nil {
 				trimmedError = append(trimmedError, err)
-				c <- &TransactionPutResult{Err: err}
-			} else {
-				c <- &TransactionPutResult{PendingKey: newPendingKeys[idx]}
 			}
 		}
 		return trimmedError
 	} else if err != nil {
-		for _, c := range b.cs {
-			c <- &TransactionPutResult{Err: err}
+		for _, h := range b.hs {
+			if h != nil {
+				h(nil, err)
+			}
 		}
 		return []error{err}
 	}
 
+	errs := make([]error, 0, len(newPendingKeys))
 	for idx, newKey := range newPendingKeys {
-		c := b.cs[idx]
-		c <- &TransactionPutResult{PendingKey: newKey}
+		h := b.hs[idx]
+		if h != nil {
+			err := h(newKey, nil)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) != 0 {
+		return errs
 	}
 
 	return nil
 }
 
-func (b *txBatchGet) Get(key Key, dst interface{}) chan error {
+func (b *txBatchGet) Get(key Key, dst interface{}, h BatchErrHandler) {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan error, 1)
-
 	b.keys = append(b.keys, key)
 	b.dsts = append(b.dsts, dst)
-	b.cs = append(b.cs, c)
-
-	return c
+	b.hs = append(b.hs, h)
 }
 
 func (b *txBatchGet) Exec(tx Transaction) []error {
@@ -182,7 +175,7 @@ func (b *txBatchGet) Exec(tx Transaction) []error {
 	defer func() {
 		b.keys = nil
 		b.dsts = nil
-		b.cs = nil
+		b.hs = nil
 	}()
 	defer b.m.Unlock()
 
@@ -191,39 +184,47 @@ func (b *txBatchGet) Exec(tx Transaction) []error {
 	if merr, ok := err.(MultiError); ok {
 		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
-			c := b.cs[idx]
+			h := b.hs[idx]
+			if h != nil {
+				err = h(err)
+			}
 			if err != nil {
 				trimmedError = append(trimmedError, err)
-				c <- err
-			} else {
-				c <- nil
 			}
 		}
 		return trimmedError
 	} else if err != nil {
-		for _, c := range b.cs {
-			c <- err
+		for _, h := range b.hs {
+			if h != nil {
+				h(err)
+			}
 		}
 		return []error{err}
 	}
 
-	for _, c := range b.cs {
-		c <- nil
+	errs := make([]error, 0, len(b.hs))
+	for _, h := range b.hs {
+		if h != nil {
+			err := h(nil)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) != 0 {
+		return errs
 	}
 
 	return nil
 }
 
-func (b *txBatchDelete) Delete(key Key) chan error {
+func (b *txBatchDelete) Delete(key Key, h BatchErrHandler) {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan error, 1)
-
 	b.keys = append(b.keys, key)
-	b.cs = append(b.cs, c)
-
-	return c
+	b.hs = append(b.hs, h)
 }
 
 func (b *txBatchDelete) Exec(tx Transaction) []error {
@@ -234,7 +235,7 @@ func (b *txBatchDelete) Exec(tx Transaction) []error {
 	b.m.Lock()
 	defer func() {
 		b.keys = nil
-		b.cs = nil
+		b.hs = nil
 	}()
 	defer b.m.Unlock()
 
@@ -243,24 +244,36 @@ func (b *txBatchDelete) Exec(tx Transaction) []error {
 	if merr, ok := err.(MultiError); ok {
 		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
-			c := b.cs[idx]
+			h := b.hs[idx]
+			if h != nil {
+				err = h(err)
+			}
 			if err != nil {
 				trimmedError = append(trimmedError, err)
-				c <- err
-			} else {
-				c <- nil
 			}
 		}
 		return trimmedError
 	} else if err != nil {
-		for _, c := range b.cs {
-			c <- err
+		for _, h := range b.hs {
+			if h != nil {
+				h(err)
+			}
 		}
 		return []error{err}
 	}
 
-	for _, c := range b.cs {
-		c <- nil
+	errs := make([]error, 0, len(b.hs))
+	for _, h := range b.hs {
+		if h != nil {
+			err := h(nil)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) != 0 {
+		return errs
 	}
 
 	return nil

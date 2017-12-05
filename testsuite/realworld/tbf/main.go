@@ -88,13 +88,13 @@ func RealWorld_TBF(t *testing.T, ctx context.Context, client datastore.Client) {
 				OwnerCircleID: circleID,
 				GCSPath:       fmt.Sprintf("%d/%d.jpg", circleKey.ID(), imageKey.ID()),
 			}
-			batch.Put(imageKey, image)
+			batch.Put(imageKey, image, nil)
 
 			circle.ImageIDs = append(circle.ImageIDs, image.ID)
 			circle.Images = append(circle.Images, image)
 		}
 
-		batch.Put(circleKey, circle)
+		batch.Put(circleKey, circle, nil)
 	}
 	err := batch.Exec(ctx)
 	if err != nil {
