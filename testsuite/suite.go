@@ -30,6 +30,7 @@ var TestSuite = map[string]Test{
 	"GobDecode":                                 GobDecode,
 	"Key_Equal":                                 Key_Equal,
 	"Key_Incomplete":                            Key_Incomplete,
+	"Key_PutAndGet":                             Key_PutAndGet,
 	"PLS_Basic":                                 PLS_Basic,
 	"KL_Basic":                                  KL_Basic,
 	"PropertyTranslater_PutAndGet":              PropertyTranslater_PutAndGet,
