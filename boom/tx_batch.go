@@ -57,10 +57,12 @@ func (b *TransactionBatch) Put(src interface{}) chan *datastore.TransactionPutRe
 		b.tx.m.Lock()
 		defer b.tx.m.Unlock()
 
-		b.tx.pendingKeysLater = append(b.tx.pendingKeysLater, &setKeyLater{
-			pendingKey: putResult.PendingKey,
-			src:        src,
-		})
+		if keys[0].Incomplete() {
+			b.tx.pendingKeysLater = append(b.tx.pendingKeysLater, &setKeyLater{
+				pendingKey: putResult.PendingKey,
+				src:        src,
+			})
+		}
 
 		c <- putResult
 	}()
