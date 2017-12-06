@@ -1,3 +1,15 @@
+<a name="0.9.0"></a>
+# [0.9.0](https://github.com/mercari/datastore/compare/v0.8.2...v0.9.0) (2017-12-06)
+
+### Features
+
+* **core,boom:** change batch operation signatures ([51da3ba](https://github.com/mercari/datastore/commit/51da3ba))
+
+### BREAKING CHANGES
+
+For batch processing, we stopped asynchronous processing using chan and switched to synchronous processing using callback function.
+
+
 <a name="0.8.2"></a>
 ## [0.8.2](https://github.com/mercari/datastore/compare/v0.8.1...v0.8.2) (2017-12-06)
 
