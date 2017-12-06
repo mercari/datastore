@@ -79,6 +79,9 @@ func (tx *Transaction) PutMulti(src interface{}) ([]datastore.PendingKey, error)
 	tx.m.Lock()
 	defer tx.m.Unlock()
 	for idx, pKey := range pKeys {
+		if !keys[idx].Incomplete() {
+			continue
+		}
 		tx.pendingKeysLater = append(tx.pendingKeysLater, &setKeyLater{
 			pendingKey: pKey,
 			src:        v.Index(idx).Interface(),

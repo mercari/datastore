@@ -139,3 +139,28 @@ func TestBoom_TxRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestBoom_TxWithCompleteKey(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	bm := FromClient(ctx, client)
+
+	type Data struct {
+		ID string `boom:"id" datastore:"-"`
+	}
+
+	tx, err := bm.NewTransaction()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.PutMulti([]*Data{{ID: "hoge"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Commit()
+	if err != nil {
+		t.Fatal(err)
+	}
+}

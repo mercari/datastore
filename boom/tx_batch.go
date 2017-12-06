@@ -61,10 +61,12 @@ func (b *TransactionBatch) Put(src interface{}, h datastore.TxBatchPutHandler) {
 			return err
 		}
 
-		b.tx.pendingKeysLater = append(b.tx.pendingKeysLater, &setKeyLater{
-			pendingKey: pKey,
-			src:        src,
-		})
+		if keys[0].Incomplete() {
+			b.tx.pendingKeysLater = append(b.tx.pendingKeysLater, &setKeyLater{
+				pendingKey: pKey,
+				src:        src,
+			})
+		}
 
 		if h != nil {
 			return h(pKey, nil)
