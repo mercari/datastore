@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/boom"
 )
 
 func Transaction_Commit(t *testing.T, ctx context.Context, client datastore.Client) {
@@ -271,37 +270,6 @@ func RunInTransaction_Rollback(t *testing.T, ctx context.Context, client datasto
 		return errors.New("This tx should failure")
 	})
 	if err == nil {
-		t.Fatal(err)
-	}
-}
-
-func Transaction_WithBoom(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	bm := boom.FromClient(ctx, client)
-
-	type Data struct {
-		ID string `boom:"id" datastore:"-"`
-	}
-
-	tx, err := bm.NewTransaction()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = tx.PutMulti([]*Data{&Data{
-		ID: "hoge",
-	}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = tx.Commit()
-	if err != nil {
 		t.Fatal(err)
 	}
 }

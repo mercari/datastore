@@ -51,7 +51,6 @@ var TestSuite = map[string]Test{
 	"TransactionBatch_PutAndAllocateIDs":        TransactionBatch_PutAndAllocateIDs,
 	"TransactionBatch_Get":                      TransactionBatch_Get,
 	"TransactionBatch_Delete":                   TransactionBatch_Delete,
-	"Transaction_WithBoom":                      Transaction_WithBoom,
 }
 
 func MergeTestSuite(suite map[string]Test) {
