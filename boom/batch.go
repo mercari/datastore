@@ -11,81 +11,85 @@ type Batch struct {
 	bm *Boom
 	b  *datastore.Batch
 
-	putWait     sync.WaitGroup
 	earlyErrors []error
 }
 
-func (b *Batch) Get(dst interface{}) chan error {
+func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
-		b.m.Lock()
-		b.earlyErrors = append(b.earlyErrors, err)
-		b.m.Unlock()
-		c := make(chan error, 1)
-		c <- err
-		return c
-	}
-
-	return b.b.Get(keys[0], dst)
-}
-
-func (b *Batch) Put(src interface{}) chan *datastore.PutResult {
-	c := make(chan *datastore.PutResult, 1)
-
-	keys, err := b.bm.extractKeys([]interface{}{src})
-	if err != nil {
-		b.m.Lock()
-		b.earlyErrors = append(b.earlyErrors, err)
-		b.m.Unlock()
-		c <- &datastore.PutResult{Err: err}
-		return c
-	}
-
-	res := b.b.Put(keys[0], src)
-	b.putWait.Add(1)
-
-	go func() {
-		defer b.putWait.Done()
-
-		putResult := <-res
-		if putResult.Err != nil {
-			c <- putResult
-			return
+		if h != nil {
+			err = h(err)
 		}
-
-		err := b.bm.setStructKey(src, putResult.Key)
 		if err != nil {
 			b.m.Lock()
-			defer b.m.Unlock()
-
 			b.earlyErrors = append(b.earlyErrors, err)
-			c <- &datastore.PutResult{Err: err}
-			return
+			b.m.Unlock()
 		}
-
-		c <- putResult
-	}()
-	return c
-}
-
-func (b *Batch) Delete(dst interface{}) chan error {
-	keys, err := b.bm.extractKeys([]interface{}{dst})
-	if err != nil {
-		b.m.Lock()
-		b.earlyErrors = append(b.earlyErrors, err)
-		b.m.Unlock()
-		c := make(chan error, 1)
-		c <- err
-		return c
+		return
 	}
 
-	return b.b.Delete(keys[0])
+	b.b.Get(keys[0], dst, h)
+}
+
+func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
+	keys, err := b.bm.extractKeys([]interface{}{src})
+	if err != nil {
+		if h != nil {
+			err = h(nil, err)
+		}
+		if err != nil {
+			b.m.Lock()
+			b.earlyErrors = append(b.earlyErrors, err)
+			b.m.Unlock()
+		}
+		return
+	}
+
+	b.b.Put(keys[0], src, func(key datastore.Key, err error) error {
+		if err != nil {
+			return h(key, err)
+		}
+
+		err = b.bm.setStructKey(src, key)
+		if err != nil {
+			if h != nil {
+				err = h(key, err)
+			}
+			if err != nil {
+				b.m.Lock()
+				b.earlyErrors = append(b.earlyErrors, err)
+				b.m.Unlock()
+			}
+			return err
+		}
+
+		if h != nil {
+			return h(key, nil)
+		}
+
+		return nil
+	})
+}
+
+func (b *Batch) Delete(dst interface{}, h datastore.BatchErrHandler) {
+	keys, err := b.bm.extractKeys([]interface{}{dst})
+	if err != nil {
+		if h != nil {
+			err = h(err)
+		}
+		if err != nil {
+			b.m.Lock()
+			b.earlyErrors = append(b.earlyErrors, err)
+			b.m.Unlock()
+		}
+		return
+	}
+
+	b.b.Delete(keys[0], h)
 }
 
 func (b *Batch) Exec() error {
 	err := b.b.Exec(b.bm.Context)
-
-	b.putWait.Wait()
 
 	b.m.Lock()
 	defer b.m.Unlock()

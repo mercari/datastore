@@ -72,7 +72,7 @@ func (circle *Circle) Load(ctx context.Context, ps []datastore.Property) error {
 
 		image := &Image{}
 		circle.Images[idx] = image
-		batch.Get(imageKey, image)
+		batch.Get(imageKey, image, nil)
 	}
 
 	return nil

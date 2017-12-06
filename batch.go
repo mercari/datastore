@@ -13,49 +13,39 @@ type Batch struct {
 	delete batchDelete
 }
 
+type BatchPutHandler func(key Key, err error) error
+type BatchErrHandler func(err error) error
+
 type batchPut struct {
 	m    sync.Mutex
 	keys []Key
 	srcs []interface{}
-	cs   []chan *PutResult
-}
-
-type PutResult struct {
-	Key Key
-	Err error
+	hs   []BatchPutHandler
 }
 
 type batchGet struct {
 	m    sync.Mutex
 	keys []Key
 	dsts []interface{}
-	cs   []chan error
+	hs   []BatchErrHandler
 }
 
 type batchDelete struct {
 	m    sync.Mutex
 	keys []Key
-	cs   []chan error
+	hs   []BatchErrHandler
 }
 
-func (b *Batch) Put(key Key, src interface{}) chan *PutResult {
-	return b.put.Put(key, src)
+func (b *Batch) Put(key Key, src interface{}, h BatchPutHandler) {
+	b.put.Put(key, src, h)
 }
 
-func (b *Batch) UnwrapPutResult(r *PutResult) (Key, error) {
-	if r.Err != nil {
-		return nil, r.Err
-	}
-
-	return r.Key, nil
+func (b *Batch) Get(key Key, dst interface{}, h BatchErrHandler) {
+	b.get.Get(key, dst, h)
 }
 
-func (b *Batch) Get(key Key, dst interface{}) chan error {
-	return b.get.Get(key, dst)
-}
-
-func (b *Batch) Delete(key Key) chan error {
-	return b.delete.Delete(key)
+func (b *Batch) Delete(key Key, h BatchErrHandler) {
+	b.delete.Delete(key, h)
 }
 
 func (b *Batch) Exec(ctx context.Context) error {
@@ -106,17 +96,13 @@ func (b *Batch) Exec(ctx context.Context) error {
 	return nil
 }
 
-func (b *batchPut) Put(key Key, src interface{}) chan *PutResult {
+func (b *batchPut) Put(key Key, src interface{}, h BatchPutHandler) {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan *PutResult, 1)
-
 	b.keys = append(b.keys, key)
 	b.srcs = append(b.srcs, src)
-	b.cs = append(b.cs, c)
-
-	return c
+	b.hs = append(b.hs, h)
 }
 
 func (b *batchPut) Exec(ctx context.Context, client Client) []error {
@@ -128,7 +114,7 @@ func (b *batchPut) Exec(ctx context.Context, client Client) []error {
 	defer func() {
 		b.keys = nil
 		b.srcs = nil
-		b.cs = nil
+		b.hs = nil
 	}()
 	defer b.m.Unlock()
 
@@ -137,41 +123,49 @@ func (b *batchPut) Exec(ctx context.Context, client Client) []error {
 	if merr, ok := err.(MultiError); ok {
 		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
-			c := b.cs[idx]
+			h := b.hs[idx]
+			if h != nil {
+				err = h(newKeys[idx], err)
+			}
 			if err != nil {
 				trimmedError = append(trimmedError, err)
-				c <- &PutResult{Err: err}
-			} else {
-				c <- &PutResult{Key: newKeys[idx]}
 			}
 		}
 		return trimmedError
 	} else if err != nil {
-		for _, c := range b.cs {
-			c <- &PutResult{Err: err}
+		for _, h := range b.hs {
+			if h != nil {
+				h(nil, err)
+			}
 		}
 		return []error{err}
 	}
 
+	errs := make([]error, 0, len(newKeys))
 	for idx, newKey := range newKeys {
-		c := b.cs[idx]
-		c <- &PutResult{Key: newKey}
+		h := b.hs[idx]
+		if h != nil {
+			err := h(newKey, nil)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) != 0 {
+		return errs
 	}
 
 	return nil
 }
 
-func (b *batchGet) Get(key Key, dst interface{}) chan error {
+func (b *batchGet) Get(key Key, dst interface{}, h BatchErrHandler) {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan error, 1)
-
 	b.keys = append(b.keys, key)
 	b.dsts = append(b.dsts, dst)
-	b.cs = append(b.cs, c)
-
-	return c
+	b.hs = append(b.hs, h)
 }
 
 func (b *batchGet) Exec(ctx context.Context, client Client) []error {
@@ -183,7 +177,7 @@ func (b *batchGet) Exec(ctx context.Context, client Client) []error {
 	defer func() {
 		b.keys = nil
 		b.dsts = nil
-		b.cs = nil
+		b.hs = nil
 	}()
 	defer b.m.Unlock()
 
@@ -192,39 +186,47 @@ func (b *batchGet) Exec(ctx context.Context, client Client) []error {
 	if merr, ok := err.(MultiError); ok {
 		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
-			c := b.cs[idx]
+			h := b.hs[idx]
+			if h != nil {
+				err = h(err)
+			}
 			if err != nil {
 				trimmedError = append(trimmedError, err)
-				c <- err
-			} else {
-				c <- nil
 			}
 		}
 		return trimmedError
 	} else if err != nil {
-		for _, c := range b.cs {
-			c <- err
+		for _, h := range b.hs {
+			if h != nil {
+				h(err)
+			}
 		}
 		return []error{err}
 	}
 
-	for _, c := range b.cs {
-		c <- nil
+	errs := make([]error, 0, len(b.hs))
+	for _, h := range b.hs {
+		if h != nil {
+			err := h(nil)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) != 0 {
+		return errs
 	}
 
 	return nil
 }
 
-func (b *batchDelete) Delete(key Key) chan error {
+func (b *batchDelete) Delete(key Key, h BatchErrHandler) {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	c := make(chan error, 1)
-
 	b.keys = append(b.keys, key)
-	b.cs = append(b.cs, c)
-
-	return c
+	b.hs = append(b.hs, h)
 }
 
 func (b *batchDelete) Exec(ctx context.Context, client Client) []error {
@@ -235,7 +237,7 @@ func (b *batchDelete) Exec(ctx context.Context, client Client) []error {
 	b.m.Lock()
 	defer func() {
 		b.keys = nil
-		b.cs = nil
+		b.hs = nil
 	}()
 	defer b.m.Unlock()
 
@@ -244,24 +246,36 @@ func (b *batchDelete) Exec(ctx context.Context, client Client) []error {
 	if merr, ok := err.(MultiError); ok {
 		trimmedError := make([]error, 0, len(merr))
 		for idx, err := range merr {
-			c := b.cs[idx]
+			h := b.hs[idx]
+			if h != nil {
+				err = h(err)
+			}
 			if err != nil {
 				trimmedError = append(trimmedError, err)
-				c <- err
-			} else {
-				c <- nil
 			}
 		}
 		return trimmedError
 	} else if err != nil {
-		for _, c := range b.cs {
-			c <- err
+		for _, h := range b.hs {
+			if h != nil {
+				h(err)
+			}
 		}
 		return []error{err}
 	}
 
-	for _, c := range b.cs {
-		c <- nil
+	errs := make([]error, 0, len(b.hs))
+	for _, h := range b.hs {
+		if h != nil {
+			err := h(nil)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) != 0 {
+		return errs
 	}
 
 	return nil

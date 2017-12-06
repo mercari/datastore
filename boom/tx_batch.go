@@ -12,75 +12,85 @@ type TransactionBatch struct {
 	tx *Transaction
 	b  *datastore.TransactionBatch
 
-	putWait     sync.WaitGroup
 	earlyErrors []error
 }
 
-func (b *TransactionBatch) Get(dst interface{}) chan error {
+func (b *TransactionBatch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
-		b.m.Lock()
-		b.earlyErrors = append(b.earlyErrors, err)
-		b.m.Unlock()
-		c := make(chan error, 1)
-		c <- err
-		return c
+		if h != nil {
+			err = h(err)
+		}
+		if err != nil {
+			b.m.Lock()
+			b.earlyErrors = append(b.earlyErrors, err)
+			b.m.Unlock()
+		}
+		return
 	}
 
-	return b.b.Get(keys[0], dst)
+	b.b.Get(keys[0], dst, h)
 }
 
-func (b *TransactionBatch) Put(src interface{}) chan *datastore.TransactionPutResult {
-	c := make(chan *datastore.TransactionPutResult, 1)
-
+func (b *TransactionBatch) Put(src interface{}, h datastore.TxBatchPutHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{src})
 	if err != nil {
-		b.m.Lock()
-		b.earlyErrors = append(b.earlyErrors, err)
-		b.m.Unlock()
-		c <- &datastore.TransactionPutResult{Err: err}
-		return c
+		if h != nil {
+			err = h(nil, err)
+		}
+		if err != nil {
+			b.m.Lock()
+			b.earlyErrors = append(b.earlyErrors, err)
+			b.m.Unlock()
+		}
+		return
 	}
 
-	res := b.b.Put(keys[0], src)
-	b.putWait.Add(1)
-
-	go func() {
-		defer b.putWait.Done()
-
-		putResult := <-res
-		if putResult.Err != nil {
-			c <- putResult
-			return
-		}
-
+	b.b.Put(keys[0], src, func(pKey datastore.PendingKey, err error) error {
 		b.tx.m.Lock()
 		defer b.tx.m.Unlock()
+		if err != nil {
+			if h != nil {
+				err = h(pKey, err)
+			}
+			if err != nil {
+				b.m.Lock()
+				b.earlyErrors = append(b.earlyErrors, err)
+				b.m.Unlock()
+			}
+			return err
+		}
 
 		if keys[0].Incomplete() {
 			b.tx.pendingKeysLater = append(b.tx.pendingKeysLater, &setKeyLater{
-				pendingKey: putResult.PendingKey,
+				pendingKey: pKey,
 				src:        src,
 			})
 		}
 
-		c <- putResult
-	}()
-	return c
+		if h != nil {
+			return h(pKey, nil)
+		}
+
+		return nil
+	})
 }
 
-func (b *TransactionBatch) Delete(dst interface{}) chan error {
+func (b *TransactionBatch) Delete(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
-		b.m.Lock()
-		b.earlyErrors = append(b.earlyErrors, err)
-		b.m.Unlock()
-		c := make(chan error, 1)
-		c <- err
-		return c
+		if h != nil {
+			err = h(err)
+		}
+		if err != nil {
+			b.m.Lock()
+			b.earlyErrors = append(b.earlyErrors, err)
+			b.m.Unlock()
+		}
+		return
 	}
 
-	return b.b.Delete(keys[0])
+	b.b.Delete(keys[0], h)
 }
 
 func (b *TransactionBatch) Exec() error {
@@ -99,7 +109,6 @@ func (b *TransactionBatch) Exec() error {
 		return err
 	}
 
-	b.putWait.Wait()
 	b.earlyErrors = nil
 
 	return nil
