@@ -53,12 +53,17 @@ func RealWorld_TBF(t *testing.T, ctx context.Context, client datastore.Client) {
 	ctx = context.WithValue(ctx, contextBatch{}, batch)
 
 	rpcCount := 0
+	inMemcacheTestSuite := false
 	if testsuite.IsAEDatastoreClient(ctx) {
 		// checking rpc count when testing in ae.
 		ctx = appengine.WithAPICallFunc(ctx, func(ctx netcontext.Context, service, method string, in, out proto.Message) error {
 			t.Log(service, method)
 			if service == "datastore_v3" {
 				rpcCount++
+			}
+			if service == "memcache" {
+				// if memcache service called, this test in the TestAEDatastoreWithAEMemcacheTestSuite.
+				inMemcacheTestSuite = true
 			}
 
 			return appengine.APICall(ctx, service, method, in, out)
@@ -100,7 +105,7 @@ func RealWorld_TBF(t *testing.T, ctx context.Context, client datastore.Client) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if testsuite.IsAEDatastoreClient(ctx) {
+	if testsuite.IsAEDatastoreClient(ctx) && !inMemcacheTestSuite {
 		if rpcCount != 1 {
 			t.Errorf("unexpected: %v", rpcCount)
 		}
@@ -118,7 +123,7 @@ func RealWorld_TBF(t *testing.T, ctx context.Context, client datastore.Client) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if testsuite.IsAEDatastoreClient(ctx) {
+	if testsuite.IsAEDatastoreClient(ctx) && !inMemcacheTestSuite {
 		if rpcCount != 2 {
 			t.Errorf("unexpected: %v", rpcCount)
 		}
