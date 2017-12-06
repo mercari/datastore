@@ -636,3 +636,131 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		t.Errorf("unexpected: %v", v)
 	}
 }
+
+func TestAEMemcacheCache_MultiError(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupAEDatastore(t)
+	defer cleanUp()
+
+	var logs []string
+	logf := func(ctx context.Context, format string, args ...interface{}) {
+		t.Logf(format, args...)
+		logs = append(logs, fmt.Sprintf(format, args...))
+	}
+
+	// setup. strategies are first in - last apply.
+
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveCacheStrategy(aLog)
+	}()
+
+	ch := New()
+	ch.Logf = logf
+	client.AppendCacheStrategy(ch)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveCacheStrategy(ch)
+	}()
+
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveCacheStrategy(bLog)
+	}()
+
+	// exec.
+
+	type Data struct {
+		Name string
+	}
+
+	const size = 10
+
+	keys := make([]datastore.Key, 0, size)
+	list := make([]*Data, 0, size)
+	for i := 1; i <= size; i++ {
+		keys = append(keys, client.IDKey("Data", int64(i), nil))
+		list = append(list, &Data{
+			Name: fmt.Sprintf("#%d", i),
+		})
+	}
+
+	_, err := client.PutMulti(ctx, keys, list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, key := range keys {
+		if key.ID()%2 == 0 {
+			// delete cache id=2, 4, 6, 8, 10
+			err := memcache.Delete(ctx, ch.cacheKey(key))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		if key.ID()%3 == 0 {
+			// Delete entity where out of aememcache scope
+			// delete entity id=3, 6, 9
+			client.RemoveCacheStrategy(ch)
+			err := client.Delete(ctx, key)
+			if err != nil {
+				t.Fatal(err)
+			}
+			client.AppendCacheStrategy(ch)
+		}
+	}
+
+	list = make([]*Data, size)
+	err = client.GetMulti(ctx, keys, list)
+	merr, ok := err.(datastore.MultiError)
+	if !ok {
+		t.Fatal(err)
+	}
+
+	if v := len(merr); v != size {
+		t.Fatalf("unexpected: %v", v)
+	}
+	for idx, err := range merr {
+		key := keys[idx]
+		if key.ID()%2 == 0 && key.ID()%3 == 0 {
+			// not exists on memcache & datastore both
+			if err != datastore.ErrNoSuchEntity {
+				t.Error(err)
+			}
+		} else {
+			if v := list[idx].Name; v != fmt.Sprintf("#%d", idx+1) {
+				t.Errorf("unexpected: %v", v)
+			}
+		}
+	}
+
+	expected := heredoc.Doc(`
+		before: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		after: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		cache/aememcache.SetMulti: incoming len=10
+		cache/aememcache.SetMulti: len=10
+		before: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		before: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
+		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
+		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
+		after: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
+		before: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
+		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
+		cache/aememcache.GetMulti: incoming len=10
+		cache/aememcache.GetMulti: got len=5
+		before: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
+		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
+		after: GetMultiWithoutTx #5, err=datastore: no such entity
+		before: GetMultiWithoutTx #5, err=datastore: no such entity
+		cache/aememcache.SetMulti: incoming len=4
+		cache/aememcache.SetMulti: len=4
+	`)
+
+	if v := strings.Join(logs, "\n") + "\n"; v != expected {
+		t.Errorf("unexpected: %v", v)
+	}
+}

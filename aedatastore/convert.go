@@ -40,6 +40,10 @@ func toOriginalKey(key w.Key) *datastore.Key {
 }
 
 func toOriginalKeys(keys []w.Key) []*datastore.Key {
+	if keys == nil {
+		return nil
+	}
+
 	origKeys := make([]*datastore.Key, len(keys))
 	for idx, key := range keys {
 		origKeys[idx] = toOriginalKey(key)
@@ -80,6 +84,10 @@ func toOriginalPendingKey(pKey w.PendingKey) *datastore.Key {
 }
 
 func toWrapperKeys(ctx context.Context, keys []*datastore.Key) []w.Key {
+	if keys == nil {
+		return nil
+	}
+
 	wKeys := make([]w.Key, len(keys))
 	for idx, key := range keys {
 		wKeys[idx] = toWrapperKey(ctx, key)
@@ -100,6 +108,10 @@ func toWrapperPendingKey(ctx context.Context, key *datastore.Key) *pendingKeyImp
 }
 
 func toWrapperPendingKeys(ctx context.Context, keys []*datastore.Key) []w.PendingKey {
+	if keys == nil {
+		return nil
+	}
+
 	wKeys := make([]w.PendingKey, len(keys))
 	for idx, key := range keys {
 		wKeys[idx] = toWrapperPendingKey(ctx, key)
@@ -109,6 +121,10 @@ func toWrapperPendingKeys(ctx context.Context, keys []*datastore.Key) []w.Pendin
 }
 
 func toWrapperError(err error) error {
+	if err == nil {
+		return nil
+	}
+
 	switch {
 	case err == datastore.ErrNoSuchEntity:
 		return w.ErrNoSuchEntity
@@ -246,6 +262,10 @@ func toOriginalPropertyList(ps w.PropertyList) (datastore.PropertyList, error) {
 	// NOTE Cloud Datastore側の仕様に寄せているため、PropertyのValueが[]interface{}の場合がある
 	// その場合、1要素毎に分解してMultiple=trueをセットしてやらないといけない
 
+	if ps == nil {
+		return nil, nil
+	}
+
 	newPs := make([]datastore.Property, 0, len(ps))
 	for _, p := range ps {
 		switch v := p.Value.(type) {
@@ -342,6 +362,10 @@ func toOriginalPropertyList(ps w.PropertyList) (datastore.PropertyList, error) {
 }
 
 func toOriginalPropertyListList(pss []w.PropertyList) ([]datastore.PropertyList, error) {
+	if pss == nil {
+		return nil, nil
+	}
+
 	newPss := make([]datastore.PropertyList, 0, len(pss))
 	for _, ps := range pss {
 		newPs, err := toOriginalPropertyList(ps)
@@ -387,6 +411,10 @@ func toWrapperPropertyList(ctx context.Context, ps datastore.PropertyList) w.Pro
 	// 同名の要素を集めて[]interface{}にしてやらないといけない
 	// `datastore:",flatten" を使っていない場合のサポートは考えない
 
+	if ps == nil {
+		return nil
+	}
+
 	var multiMap map[string]bool
 	newPs := make([]w.Property, 0, len(ps))
 	for idx, p := range ps {
@@ -417,6 +445,10 @@ func toWrapperPropertyList(ctx context.Context, ps datastore.PropertyList) w.Pro
 }
 
 func toWrapperPropertyListList(ctx context.Context, pss []datastore.PropertyList) []w.PropertyList {
+	if pss == nil {
+		return nil
+	}
+
 	newPss := make([]w.PropertyList, 0, len(pss))
 	for _, ps := range pss {
 		newPss = append(newPss, toWrapperPropertyList(ctx, ps))

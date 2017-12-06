@@ -14,6 +14,7 @@ import (
 )
 
 var _ storagecache.Storage = &CacheHandler{}
+var _ storagecache.Logger = &CacheHandler{}
 var _ datastore.CacheStrategy = &CacheHandler{}
 
 func New(opts ...storagecache.CacheOption) *CacheHandler {
@@ -44,14 +45,18 @@ func (ch *CacheHandler) cacheKey(key datastore.Key) string {
 	return ch.KeyPrefix + key.Encode()
 }
 
+func (ch *CacheHandler) Printf(ctx context.Context, format string, args ...interface{}) {
+	ch.Logf(ctx, format, args...)
+}
+
 func (ch *CacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheItem) error {
 
-	ch.Logf(ctx, "aememcache.SetMulti: incoming len=%d", len(cis))
+	ch.Logf(ctx, "cache/aememcache.SetMulti: incoming len=%d", len(cis))
 
 	itemList := make([]*memcache.Item, 0, len(cis))
 	for _, ci := range cis {
 		if ci.Key.Incomplete() {
-			continue
+			panic("incomplete key incoming")
 		}
 		var buf bytes.Buffer
 		enc := gob.NewEncoder(&buf)
@@ -66,7 +71,7 @@ func (ch *CacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 		})
 	}
 
-	ch.Logf(ctx, "aememcache.SetMulti: len=%d", len(itemList))
+	ch.Logf(ctx, "cache/aememcache.SetMulti: len=%d", len(itemList))
 
 	err := memcache.SetMulti(ctx, itemList)
 	if err != nil {
@@ -111,7 +116,7 @@ func (ch *CacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 
 func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*storagecache.CacheItem, error) {
 
-	ch.Logf(ctx, "aememcache.GetMulti: incoming len=%d", len(keys))
+	ch.Logf(ctx, "cache/aememcache.GetMulti: incoming len=%d", len(keys))
 
 	resultList := make([]*storagecache.CacheItem, len(keys))
 
@@ -121,7 +126,7 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 	}
 
 	itemMap, err := memcache.GetMulti(ctx, cacheKeys)
-	ch.Logf(ctx, "aememcache.GetMulti: got len=%d", len(itemMap))
+	ch.Logf(ctx, "cache/aememcache.GetMulti: got len=%d", len(itemMap))
 
 	if err != nil {
 		ch.Logf(ctx, "cache/aememcache: error on memcache.GetMulti %s", err.Error())
@@ -131,7 +136,7 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 					if err == nil || err == memcache.ErrCacheMiss {
 						continue
 					}
-					return nil, merr
+					return nil, datastore.MultiError(merr)
 				}
 			} else {
 				return nil, err
@@ -163,7 +168,7 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 }
 
 func (ch *CacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) error {
-	ch.Logf(ctx, "aememcache.DeleteMulti: incoming len=%d", len(keys))
+	ch.Logf(ctx, "cache/aememcache.DeleteMulti: incoming len=%d", len(keys))
 
 	cacheKeys := make([]string, 0, len(keys))
 	for _, key := range keys {

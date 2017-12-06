@@ -20,6 +20,10 @@ func toOriginalKey(key w.Key) *datastore.Key {
 }
 
 func toOriginalKeys(keys []w.Key) []*datastore.Key {
+	if keys == nil {
+		return nil
+	}
+
 	origKeys := make([]*datastore.Key, len(keys))
 	for idx, key := range keys {
 		origKeys[idx] = toOriginalKey(key)
@@ -59,6 +63,10 @@ func toOriginalPendingKey(pKey w.PendingKey) *datastore.PendingKey {
 }
 
 func toWrapperKeys(keys []*datastore.Key) []w.Key {
+	if keys == nil {
+		return nil
+	}
+
 	wKeys := make([]w.Key, len(keys))
 	for idx, key := range keys {
 		wKeys[idx] = toWrapperKey(key)
@@ -78,6 +86,10 @@ func toWrapperPendingKey(pendingKey *datastore.PendingKey) *pendingKeyImpl {
 }
 
 func toWrapperPendingKeys(keys []*datastore.PendingKey) []w.PendingKey {
+	if keys == nil {
+		return nil
+	}
+
 	wKeys := make([]w.PendingKey, len(keys))
 	for idx, key := range keys {
 		wKeys[idx] = toWrapperPendingKey(key)
@@ -87,6 +99,10 @@ func toWrapperPendingKeys(keys []*datastore.PendingKey) []w.PendingKey {
 }
 
 func toWrapperError(err error) error {
+	if err == nil {
+		return nil
+	}
+
 	switch {
 	case err == datastore.ErrNoSuchEntity:
 		return w.ErrNoSuchEntity
@@ -128,6 +144,10 @@ func toWrapperError(err error) error {
 }
 
 func toOriginalEntity(entity *w.Entity) *datastore.Entity {
+	if entity == nil {
+		return nil
+	}
+
 	return &datastore.Entity{
 		Key:        toOriginalKey(entity.Key),
 		Properties: toOriginalPropertyList(entity.Properties),
@@ -226,6 +246,10 @@ func toOriginalProperty(p w.Property) datastore.Property {
 }
 
 func toOriginalPropertyList(ps w.PropertyList) datastore.PropertyList {
+	if ps == nil {
+		return nil
+	}
+
 	newPs := make([]datastore.Property, 0, len(ps))
 	for _, p := range ps {
 		newPs = append(newPs, toOriginalProperty(p))
@@ -235,6 +259,10 @@ func toOriginalPropertyList(ps w.PropertyList) datastore.PropertyList {
 }
 
 func toOriginalPropertyListList(pss []w.PropertyList) []datastore.PropertyList {
+	if pss == nil {
+		return nil
+	}
+
 	newPss := make([]datastore.PropertyList, 0, len(pss))
 	for _, ps := range pss {
 		newPss = append(newPss, toOriginalPropertyList(ps))
@@ -244,6 +272,10 @@ func toOriginalPropertyListList(pss []w.PropertyList) []datastore.PropertyList {
 }
 
 func toWrapperEntity(entity *datastore.Entity) *w.Entity {
+	if entity == nil {
+		return nil
+	}
+
 	return &w.Entity{
 		Key:        toWrapperKey(entity.Key),
 		Properties: toWrapperPropertyList(entity.Properties),
@@ -259,6 +291,10 @@ func toWrapperProperty(p datastore.Property) w.Property {
 }
 
 func toWrapperPropertyList(ps datastore.PropertyList) w.PropertyList {
+	if ps == nil {
+		return nil
+	}
+
 	newPs := make([]w.Property, 0, len(ps))
 	for _, p := range ps {
 		newPs = append(newPs, toWrapperProperty(p))
@@ -268,6 +304,10 @@ func toWrapperPropertyList(ps datastore.PropertyList) w.PropertyList {
 }
 
 func toWrapperPropertyListList(pss []datastore.PropertyList) []w.PropertyList {
+	if pss == nil {
+		return nil
+	}
+
 	newPss := make([]w.PropertyList, 0, len(pss))
 	for _, ps := range pss {
 		newPss = append(newPss, toWrapperPropertyList(ps))

@@ -45,11 +45,7 @@ func (ocb *originalClientBridgeImpl) PutMulti(ctx context.Context, keys []w.Key,
 	}
 
 	origKeys, err = datastore.PutMulti(ctx, origKeys, origPss)
-	if err != nil {
-		return nil, toWrapperError(err)
-	}
-
-	return toWrapperKeys(ctx, origKeys), nil
+	return toWrapperKeys(ctx, origKeys), toWrapperError(err)
 }
 
 func (ocb *originalClientBridgeImpl) GetMulti(ctx context.Context, keys []w.Key, psList []w.PropertyList) error {
@@ -60,28 +56,16 @@ func (ocb *originalClientBridgeImpl) GetMulti(ctx context.Context, keys []w.Key,
 	}
 
 	err = datastore.GetMulti(ctx, origKeys, origPss)
-	if err != nil {
-		return toWrapperError(err)
-	}
-
-	// TODO should be copy? not replace?
 	wPss := toWrapperPropertyListList(ctx, origPss)
-	for idx, wPs := range wPss {
-		psList[idx] = wPs
-	}
-
-	return nil
+	copy(psList, wPss)
+	return toWrapperError(err)
 }
 
 func (ocb *originalClientBridgeImpl) DeleteMulti(ctx context.Context, keys []w.Key) error {
 	origKeys := toOriginalKeys(keys)
 
 	err := datastore.DeleteMulti(ctx, origKeys)
-	if err != nil {
-		return toWrapperError(err)
-	}
-
-	return nil
+	return toWrapperError(err)
 }
 
 func (ocb *originalClientBridgeImpl) Run(ctx context.Context, q w.Query, qDump *w.QueryDump) w.Iterator {
@@ -189,14 +173,10 @@ func (otb *originalTransactionBridgeImpl) GetMulti(keys []w.Key, psList []w.Prop
 	}
 
 	err = datastore.GetMulti(ext.txCtx, origKeys, origPss)
+	wPss := toWrapperPropertyListList(ext.txCtx, origPss)
+	copy(psList, wPss)
 	if err != nil {
 		return toWrapperError(err)
-	}
-
-	// TODO should be copy? not replace?
-	wPss := toWrapperPropertyListList(otb.tx.client.ctx, origPss)
-	for idx, wPs := range wPss {
-		psList[idx] = wPs
 	}
 
 	return nil
@@ -211,11 +191,7 @@ func (otb *originalTransactionBridgeImpl) DeleteMulti(keys []w.Key) error {
 	origKeys := toOriginalKeys(keys)
 
 	err := datastore.DeleteMulti(ext.txCtx, origKeys)
-	if err != nil {
-		return toWrapperError(err)
-	}
-
-	return nil
+	return toWrapperError(err)
 }
 
 type originalIteratorBridgeImpl struct {

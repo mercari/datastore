@@ -13,6 +13,12 @@ func New(s Storage, opts ...CacheOption) datastore.CacheStrategy {
 	ch := &cacheHandler{
 		s: s,
 	}
+	logger, ok := s.(Logger)
+	if ok {
+		ch.logf = logger.Printf
+	} else {
+		ch.logf = func(ctx context.Context, format string, args ...interface{}) {}
+	}
 
 	for _, opt := range opts {
 		opt.Apply(ch)
@@ -29,6 +35,10 @@ type Storage interface {
 	// If not in the cache, the value of the corresponding element is nil.
 	GetMulti(ctx context.Context, keys []datastore.Key) ([]*CacheItem, error)
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
+}
+
+type Logger interface {
+	Printf(ctx context.Context, format string, args ...interface{})
 }
 
 type CacheOption interface {
@@ -58,6 +68,7 @@ type TxOpLog struct {
 type cacheHandler struct {
 	s       Storage
 	m       sync.Mutex
+	logf    func(ctx context.Context, format string, args ...interface{})
 	filters []func(key datastore.Key) bool
 }
 
@@ -78,12 +89,12 @@ func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.CacheInfo, keys []data
 		return nil, err
 	}
 
-	ch.m.Lock()
-	defer ch.m.Unlock()
-
 	cis := make([]*CacheItem, 0, len(keys))
 	for idx, key := range keys {
-		if !ch.target(key) {
+		if key.Incomplete() {
+			// 発生し得ないはずだが他のCacheStrategyがやらかすかもしれないので
+			continue
+		} else if !ch.target(key) {
 			continue
 		}
 		cis = append(cis, &CacheItem{
@@ -96,7 +107,7 @@ func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.CacheInfo, keys []data
 	}
 	err = ch.s.SetMulti(info.Context, cis)
 	if err != nil {
-		return nil, err
+		ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.SetMulti err=%s", err.Error())
 	}
 
 	return keys, nil
@@ -136,99 +147,106 @@ func (ch *cacheHandler) PutMultiWithTx(info *datastore.CacheInfo, keys []datasto
 }
 
 func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
-
-	ch.m.Lock()
-	// don't use defer Unlock(). avoid crossing call info.Next.*
-
 	// strategy summary
 	//   When we have a cache, don't get it.
 	//   When we don't have a cache, passes arguments to next strategy.
 
-	// 1. ch.target で判定したキャッシュを参照しないでよいKeysをmissingKeysで後段の処理に回すことを確定
-	// 2. キャッシュを参照するKeysについてストレージに問い合わせ
-	// 3. キャッシュにあったら resultPsList に結果を突っ込む
-	//    キャッシュになかったら missingKeys に合流
-	// 4. missingKeys を後段の処理に回す
-	// 5. 4の結果を resultPsList に合流させる
+	// 最終的に各所からかき集めてきたdatastore.PropertyListを統合してpsListにする
+	// 1. psListをkeysと同じ長さまで伸長し、任意の場所にindexアクセスできるようにする
+	// 2. 全てのtargetであるkeysについてキャッシュに問い合わせをし、結果があった場合psListに代入する
+	// 3. キャッシュに無かったものを後段に問い合わせる 結果があった場合psListに代入し、次回のためにキャッシュにも入れる
 
-	foundKeys := make([]datastore.Key, len(keys))
-	missingKeys := make([]datastore.Key, 0, len(keys))
-	resultPsList := make([]datastore.PropertyList, len(keys))
-
-	replaceLaters := make([]func(ps datastore.PropertyList), 0)
-
-	filteredKey := make([]datastore.Key, 0, len(keys))
-	filteredIndices := make([]int, 0, len(keys))
-	filteredReplaceLaters := make([]func(ci *CacheItem), 0, len(keys))
-	for idx, key := range keys {
-		idx := idx
-
-		if !ch.target(key) {
-			missingKeys = append(missingKeys, key)
-			replaceLaters = append(replaceLaters, func(ps datastore.PropertyList) {
-				resultPsList[idx] = ps
-			})
-
-			continue
-		}
-
-		filteredKey = append(filteredKey, key)
-		filteredIndices = append(filteredIndices, idx)
-		filteredReplaceLaters = append(filteredReplaceLaters, func(ci *CacheItem) {
-			foundKeys[idx] = ci.Key
-			resultPsList[idx] = ci.PropertyList
-		})
+	// step 1
+	for len(psList) < len(keys) {
+		psList = append(psList, nil)
 	}
 
-	if len(filteredKey) != 0 {
-		is, err := ch.s.GetMulti(info.Context, filteredKey)
-		if err != nil {
-			return err
+	{ // step 2
+		filteredIdxList := make([]int, 0, len(keys))
+		filteredKey := make([]datastore.Key, 0, len(keys))
+		for idx, key := range keys {
+			if ch.target(key) {
+				filteredIdxList = append(filteredIdxList, idx)
+				filteredKey = append(filteredKey, key)
+			}
 		}
-		for idx, ci := range is {
-			if ci != nil {
-				filteredReplaceLaters[idx](ci)
-				continue
+
+		if len(filteredKey) != 0 {
+			cis, err := ch.s.GetMulti(info.Context, filteredKey)
+			if err != nil {
+				ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.GetMulti err=%s", err.Error())
+
+				return info.Next.GetMultiWithoutTx(info, keys, psList)
 			}
 
-			idx := idx
-			missingKeys = append(missingKeys, filteredKey[idx])
-			replaceLaters = append(replaceLaters, func(ps datastore.PropertyList) {
-				resultPsList[filteredIndices[idx]] = ps
-			})
-		}
-	}
-
-	ch.m.Unlock()
-
-	if len(missingKeys) == 0 {
-		copy(psList, resultPsList)
-
-		return nil
-	}
-
-	missingPsList := make([]datastore.PropertyList, len(missingKeys))
-	err := info.Next.GetMultiWithoutTx(info, missingKeys, missingPsList)
-	if err != nil {
-		ch.m.Lock()
-		defer ch.m.Unlock()
-
-		// ignore returned error
-		deleteKeys := make([]datastore.Key, 0, len(foundKeys))
-		for _, key := range foundKeys {
-			if key == nil {
-				continue
+			for idx, ci := range cis {
+				if ci != nil {
+					baseIdx := filteredIdxList[idx]
+					psList[baseIdx] = ci.PropertyList
+				}
 			}
-			deleteKeys = append(deleteKeys, key)
 		}
-		ch.s.DeleteMulti(info.Context, deleteKeys)
+	}
 
-		return err
+	var errs []error
+	{ // step 3
+		missingIdxList := make([]int, 0, len(keys))
+		missingKey := make([]datastore.Key, 0, len(keys))
+		for idx, ps := range psList {
+			if ps == nil {
+				missingIdxList = append(missingIdxList, idx)
+				missingKey = append(missingKey, keys[idx])
+			}
+		}
+
+		if len(missingKey) != 0 {
+			cis := make([]*CacheItem, 0, len(missingKey))
+
+			missingPsList := make([]datastore.PropertyList, len(missingKey))
+			err := info.Next.GetMultiWithoutTx(info, missingKey, missingPsList)
+			if merr, ok := err.(datastore.MultiError); ok {
+				errs = make([]error, len(keys))
+				for idx, err := range merr {
+					baseIdx := missingIdxList[idx]
+					if err != nil {
+						errs[baseIdx] = err
+						continue
+					}
+					psList[baseIdx] = missingPsList[idx]
+					if ch.target(missingKey[idx]) {
+						cis = append(cis, &CacheItem{
+							Key:          missingKey[idx],
+							PropertyList: missingPsList[idx],
+						})
+					}
+				}
+			} else if err != nil {
+				return err
+			} else {
+				for idx := range missingKey {
+					baseIdx := missingIdxList[idx]
+					psList[baseIdx] = missingPsList[idx]
+					if ch.target(missingKey[idx]) {
+						cis = append(cis, &CacheItem{
+							Key:          missingKey[idx],
+							PropertyList: missingPsList[idx],
+						})
+					}
+				}
+			}
+
+			if len(cis) != 0 {
+				err := ch.s.SetMulti(info.Context, cis)
+				if err != nil {
+					ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.SetMulti err=%s", err.Error())
+				}
+			}
+		}
 	}
-	for idx, ps := range missingPsList {
-		replaceLaters[idx](ps)
+
+	if len(errs) != 0 {
+		return datastore.MultiError(errs)
 	}
-	copy(psList, resultPsList)
 
 	return nil
 }
@@ -267,9 +285,6 @@ func (ch *cacheHandler) GetMultiWithTx(info *datastore.CacheInfo, keys []datasto
 func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key) error {
 	err := info.Next.DeleteMultiWithoutTx(info, keys)
 
-	ch.m.Lock()
-	defer ch.m.Unlock()
-
 	filteredKeys := make([]datastore.Key, 0, len(keys))
 	for _, key := range keys {
 		if !ch.target(key) {
@@ -284,7 +299,7 @@ func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []d
 
 	sErr := ch.s.DeleteMulti(info.Context, filteredKeys)
 	if sErr != nil {
-		return sErr
+		ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", err.Error())
 	}
 
 	return err
@@ -365,7 +380,7 @@ func (ch *cacheHandler) PostCommit(info *datastore.CacheInfo, tx datastore.Trans
 	sErr := ch.s.DeleteMulti(baseCtx, filteredKeys)
 	nErr := info.Next.PostCommit(info, tx, commit)
 	if sErr != nil {
-		return sErr
+		ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", sErr.Error())
 	}
 
 	return nErr

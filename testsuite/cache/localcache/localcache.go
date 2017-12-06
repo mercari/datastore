@@ -331,7 +331,9 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 		cache/localcache.GetMulti: idx=1 key=/DataA,222
 		cache/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
 		cache/localcache.GetMulti: idx=1, missed key=/DataA,222
-		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataB,111, /DataB,222, /DataA,222]
+		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,222, /DataB,111, /DataB,222]
+		cache/localcache.SetMulti: len=1
+		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		cache/localcache.DeleteMulti: len=2
@@ -388,7 +390,7 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 		Name string
 	}
 
-	{ // Put. cache target.
+	{ // Put. ignored kind.
 		key := client.IDKey("DataA", 111, nil)
 		objBefore := &Data{Name: "A"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -558,6 +560,8 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 		cache/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
 		cache/localcache.GetMulti: idx=1, missed key=/DataB,222
 		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataA,222, /DataB,222]
+		cache/localcache.SetMulti: len=1
+		cache/localcache.SetMulti: idx=0 key=/DataB,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		cache/localcache.DeleteMulti: len=2
@@ -785,7 +789,9 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 		cache/localcache.GetMulti: idx=1 key=/DataB,222
 		cache/localcache.GetMulti: idx=0, missed key=/DataA,222
 		cache/localcache.GetMulti: idx=1, hit key=/DataB,222 len(ps)=1
-		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataB,111, /DataA,222]
+		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataA,222, /DataB,111]
+		cache/localcache.SetMulti: len=1
+		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		cache/localcache.DeleteMulti: len=2

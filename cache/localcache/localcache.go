@@ -10,6 +10,7 @@ import (
 )
 
 var _ storagecache.Storage = &CacheHandler{}
+var _ storagecache.Logger = &CacheHandler{}
 var _ datastore.CacheStrategy = &CacheHandler{}
 
 const defaultExpiration = 3 * time.Minute
@@ -62,6 +63,10 @@ func (ch *CacheHandler) FlushLocalCache() {
 	ch.m.Lock()
 	defer ch.m.Unlock()
 	ch.cache = make(map[string]cacheItem)
+}
+
+func (ch *CacheHandler) Printf(ctx context.Context, format string, args ...interface{}) {
+	ch.Logf(ctx, format, args...)
 }
 
 // storagecache.Storage implementation

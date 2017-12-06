@@ -308,7 +308,9 @@ func TestLocalCache_WithIncludeKinds(t *testing.T) {
 		cache/localcache.GetMulti: idx=1 key=/DataA,222
 		cache/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
 		cache/localcache.GetMulti: idx=1, missed key=/DataA,222
-		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataB,111, /DataB,222, /DataA,222]
+		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,222, /DataB,111, /DataB,222]
+		cache/localcache.SetMulti: len=1
+		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		cache/localcache.DeleteMulti: len=2
@@ -531,6 +533,8 @@ func TestLocalCache_WithExcludeKinds(t *testing.T) {
 		cache/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
 		cache/localcache.GetMulti: idx=1, missed key=/DataB,222
 		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataA,222, /DataB,222]
+		cache/localcache.SetMulti: len=1
+		cache/localcache.SetMulti: idx=0 key=/DataB,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		cache/localcache.DeleteMulti: len=2
@@ -754,7 +758,9 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 		cache/localcache.GetMulti: idx=1 key=/DataB,222
 		cache/localcache.GetMulti: idx=0, missed key=/DataA,222
 		cache/localcache.GetMulti: idx=1, hit key=/DataB,222 len(ps)=1
-		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataB,111, /DataA,222]
+		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataA,222, /DataB,111]
+		cache/localcache.SetMulti: len=1
+		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		cache/localcache.DeleteMulti: len=2
@@ -1105,6 +1111,167 @@ func TestLocalCache_Transaction(t *testing.T) {
 	}
 
 	if v := strings.Join(logs, "\n") + "\n"; !expected.MatchString(v) {
+		t.Errorf("unexpected: %v", v)
+	}
+}
+
+func TestLocalCache_MultiError(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	var logs []string
+	logf := func(ctx context.Context, format string, args ...interface{}) {
+		t.Logf(format, args...)
+		logs = append(logs, fmt.Sprintf(format, args...))
+	}
+
+	// setup. strategies are first in - last apply.
+
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveCacheStrategy(aLog)
+	}()
+
+	ch := New()
+	ch.Logf = logf
+	client.AppendCacheStrategy(ch)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveCacheStrategy(ch)
+	}()
+
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveCacheStrategy(bLog)
+	}()
+
+	// exec.
+
+	type Data struct {
+		Name string
+	}
+
+	const size = 10
+
+	keys := make([]datastore.Key, 0, size)
+	list := make([]*Data, 0, size)
+	for i := 1; i <= size; i++ {
+		keys = append(keys, client.IDKey("Data", int64(i), nil))
+		list = append(list, &Data{
+			Name: fmt.Sprintf("#%d", i),
+		})
+	}
+
+	_, err := client.PutMulti(ctx, keys, list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, key := range keys {
+		if key.ID()%2 == 0 {
+			// delete cache id=2, 4, 6, 8, 10
+			ch.DeleteCache(ctx, key)
+		}
+		if key.ID()%3 == 0 {
+			// Delete entity where out of aememcache scope
+			// delete entity id=3, 6, 9
+			client.RemoveCacheStrategy(ch)
+			err := client.Delete(ctx, key)
+			if err != nil {
+				t.Fatal(err)
+			}
+			client.AppendCacheStrategy(ch)
+		}
+	}
+
+	list = make([]*Data, size)
+	err = client.GetMulti(ctx, keys, list)
+	merr, ok := err.(datastore.MultiError)
+	if !ok {
+		t.Fatal(err)
+	}
+
+	if v := len(merr); v != size {
+		t.Fatalf("unexpected: %v", v)
+	}
+	for idx, err := range merr {
+		key := keys[idx]
+		if key.ID()%2 == 0 && key.ID()%3 == 0 {
+			// not exists on memcache & datastore both
+			if err != datastore.ErrNoSuchEntity {
+				t.Error(err)
+			}
+		} else {
+			if v := list[idx].Name; v != fmt.Sprintf("#%d", idx+1) {
+				t.Errorf("unexpected: %v", v)
+			}
+		}
+	}
+
+	expected := heredoc.Doc(`
+		before: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		after: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		cache/localcache.SetMulti: len=10
+		cache/localcache.SetMulti: idx=0 key=/Data,1 len(ps)=1
+		cache/localcache.SetMulti: idx=1 key=/Data,2 len(ps)=1
+		cache/localcache.SetMulti: idx=2 key=/Data,3 len(ps)=1
+		cache/localcache.SetMulti: idx=3 key=/Data,4 len(ps)=1
+		cache/localcache.SetMulti: idx=4 key=/Data,5 len(ps)=1
+		cache/localcache.SetMulti: idx=5 key=/Data,6 len(ps)=1
+		cache/localcache.SetMulti: idx=6 key=/Data,7 len(ps)=1
+		cache/localcache.SetMulti: idx=7 key=/Data,8 len(ps)=1
+		cache/localcache.SetMulti: idx=8 key=/Data,9 len(ps)=1
+		cache/localcache.SetMulti: idx=9 key=/Data,10 len(ps)=1
+		before: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		cache/localcache.DeleteCache: key=/Data,2
+		before: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
+		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
+		cache/localcache.DeleteCache: key=/Data,4
+		cache/localcache.DeleteCache: key=/Data,6
+		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
+		after: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
+		cache/localcache.DeleteCache: key=/Data,8
+		before: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
+		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
+		cache/localcache.DeleteCache: key=/Data,10
+		cache/localcache.GetMulti: len=10
+		cache/localcache.GetMulti: idx=0 key=/Data,1
+		cache/localcache.GetMulti: idx=1 key=/Data,2
+		cache/localcache.GetMulti: idx=2 key=/Data,3
+		cache/localcache.GetMulti: idx=3 key=/Data,4
+		cache/localcache.GetMulti: idx=4 key=/Data,5
+		cache/localcache.GetMulti: idx=5 key=/Data,6
+		cache/localcache.GetMulti: idx=6 key=/Data,7
+		cache/localcache.GetMulti: idx=7 key=/Data,8
+		cache/localcache.GetMulti: idx=8 key=/Data,9
+		cache/localcache.GetMulti: idx=9 key=/Data,10
+		cache/localcache.GetMulti: idx=0, hit key=/Data,1 len(ps)=1
+		cache/localcache.GetMulti: idx=1, missed key=/Data,2
+		cache/localcache.GetMulti: idx=2, hit key=/Data,3 len(ps)=1
+		cache/localcache.GetMulti: idx=3, missed key=/Data,4
+		cache/localcache.GetMulti: idx=4, hit key=/Data,5 len(ps)=1
+		cache/localcache.GetMulti: idx=5, missed key=/Data,6
+		cache/localcache.GetMulti: idx=6, hit key=/Data,7 len(ps)=1
+		cache/localcache.GetMulti: idx=7, missed key=/Data,8
+		cache/localcache.GetMulti: idx=8, hit key=/Data,9 len(ps)=1
+		cache/localcache.GetMulti: idx=9, missed key=/Data,10
+		before: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
+		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
+		after: GetMultiWithoutTx #5, err=datastore: no such entity
+		before: GetMultiWithoutTx #5, err=datastore: no such entity
+		cache/localcache.SetMulti: len=4
+		cache/localcache.SetMulti: idx=0 key=/Data,2 len(ps)=1
+		cache/localcache.SetMulti: idx=1 key=/Data,4 len(ps)=1
+		cache/localcache.SetMulti: idx=2 key=/Data,8 len(ps)=1
+		cache/localcache.SetMulti: idx=3 key=/Data,10 len(ps)=1
+	`)
+
+	if v := strings.Join(logs, "\n") + "\n"; v != expected {
 		t.Errorf("unexpected: %v", v)
 	}
 }

@@ -81,11 +81,7 @@ func (ocb *originalClientBridgeImpl) PutMulti(ctx context.Context, keys []w.Key,
 	origPss := toOriginalPropertyListList(psList)
 
 	origKeys, err := ocb.d.client.PutMulti(ctx, origKeys, origPss)
-	if err != nil {
-		return nil, toWrapperError(err)
-	}
-
-	return toWrapperKeys(origKeys), nil
+	return toWrapperKeys(origKeys), toWrapperError(err)
 }
 
 func (ocb *originalClientBridgeImpl) GetMulti(ctx context.Context, keys []w.Key, psList []w.PropertyList) error {
@@ -93,28 +89,16 @@ func (ocb *originalClientBridgeImpl) GetMulti(ctx context.Context, keys []w.Key,
 	origPss := toOriginalPropertyListList(psList)
 
 	err := ocb.d.client.GetMulti(ctx, origKeys, origPss)
-	if err != nil {
-		return toWrapperError(err)
-	}
-
-	// TODO should be copy? not replace?
 	wPss := toWrapperPropertyListList(origPss)
-	for idx, wPs := range wPss {
-		psList[idx] = wPs
-	}
-
-	return nil
+	copy(psList, wPss)
+	return toWrapperError(err)
 }
 
 func (ocb *originalClientBridgeImpl) DeleteMulti(ctx context.Context, keys []w.Key) error {
 	origKeys := toOriginalKeys(keys)
 
 	err := ocb.d.client.DeleteMulti(ctx, origKeys)
-	if err != nil {
-		return toWrapperError(err)
-	}
-
-	return nil
+	return toWrapperError(err)
 }
 
 func (ocb *originalClientBridgeImpl) Run(ctx context.Context, q w.Query, qDump *w.QueryDump) w.Iterator {
@@ -190,14 +174,10 @@ func (otb *originalTransactionBridgeImpl) GetMulti(keys []w.Key, psList []w.Prop
 	origPss := toOriginalPropertyListList(psList)
 
 	err := baseTx.GetMulti(origKeys, origPss)
+	wPss := toWrapperPropertyListList(origPss)
+	copy(psList, wPss)
 	if err != nil {
 		return toWrapperError(err)
-	}
-
-	// TODO should be copy? not replace?
-	wPss := toWrapperPropertyListList(origPss)
-	for idx, wPs := range wPss {
-		psList[idx] = wPs
 	}
 
 	return nil
@@ -212,11 +192,7 @@ func (otb *originalTransactionBridgeImpl) DeleteMulti(keys []w.Key) error {
 	origKeys := toOriginalKeys(keys)
 
 	err := baseTx.DeleteMulti(origKeys)
-	if err != nil {
-		return toWrapperError(err)
-	}
-
-	return nil
+	return toWrapperError(err)
 }
 
 type originalIteratorBridgeImpl struct {
