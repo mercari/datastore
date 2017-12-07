@@ -62,7 +62,8 @@ func (ch *CacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 		enc := gob.NewEncoder(&buf)
 		err := enc.Encode(ci.PropertyList)
 		if err != nil {
-			return err
+			ch.Logf(ctx, "cache/aememcache.SetMulti: gob.Encode error key=%s err=%s", ci.Key.String(), err.Error())
+			continue
 		}
 		itemList = append(itemList, &memcache.Item{
 			Key:        ch.cacheKey(ci.Key),
@@ -156,7 +157,9 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 		var ps datastore.PropertyList
 		err = dec.Decode(&ps)
 		if err != nil {
-			return nil, err
+			resultList[idx] = nil
+			ch.Logf(ctx, "cache/aememcache.GetMulti: gob.Decode error key=%s err=%s", key.String(), err.Error())
+			continue
 		}
 		resultList[idx] = &storagecache.CacheItem{
 			Key:          key,
