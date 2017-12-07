@@ -1,3 +1,17 @@
+<a name="0.10.0"></a>
+# [0.10.0](https://github.com/mercari/datastore/compare/v0.9.0...v0.10.0) (2017-12-07)
+
+
+### Bug Fixes
+
+* **cache/aememcache:** skip entity when gob encode & decode error occured ([2c3f8da](https://github.com/mercari/datastore/commit/2c3f8da))
+* **core:** change order of application about CacheStrategy to first in - first apply ([231f40b](https://github.com/mercari/datastore/commit/231f40b))
+
+### BREAKING CHANGES
+
+Change the order of application of CacheStrategy first in - last apply to first in - first apply.
+
+
 <a name="0.9.0"></a>
 # [0.9.0](https://github.com/mercari/datastore/compare/v0.8.2...v0.9.0) (2017-12-06)
 
