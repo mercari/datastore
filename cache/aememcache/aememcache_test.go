@@ -53,13 +53,13 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -69,11 +69,11 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -138,13 +138,13 @@ func TestAEMemcacheCache_Query(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -154,11 +154,11 @@ func TestAEMemcacheCache_Query(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -393,13 +393,12 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
-
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	// setup. strategies are first in - first apply.
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -410,11 +409,11 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -647,13 +646,12 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
-
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	// setup. strategies are first in - first apply.
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -664,11 +662,11 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -709,7 +707,10 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			client.RemoveCacheStrategy(aLog)
 			client.AppendCacheStrategy(ch)
+			client.AppendCacheStrategy(aLog)
 		}
 	}
 
@@ -750,14 +751,14 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		after: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
 		before: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
 		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
+		before: GetMultiWithoutTx #5, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		cache/aememcache.GetMulti: incoming len=10
 		cache/aememcache.GetMulti: got len=5
-		before: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
 		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
 		after: GetMultiWithoutTx #5, err=datastore: no such entity
-		before: GetMultiWithoutTx #5, err=datastore: no such entity
 		cache/aememcache.SetMulti: incoming len=4
 		cache/aememcache.SetMulti: len=4
+		before: GetMultiWithoutTx #5, err=datastore: no such entity
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {

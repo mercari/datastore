@@ -26,13 +26,13 @@ func TestLocalCache_Basic(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -42,11 +42,11 @@ func TestLocalCache_Basic(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -109,13 +109,13 @@ func TestLocalCache_WithIncludeKinds(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New(storagecache.WithIncludeKinds("DataA"))
@@ -126,11 +126,11 @@ func TestLocalCache_WithIncludeKinds(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -333,13 +333,13 @@ func TestLocalCache_WithExcludeKinds(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New(storagecache.WithExcludeKinds("DataA"))
@@ -350,11 +350,11 @@ func TestLocalCache_WithExcludeKinds(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -557,13 +557,13 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New(storagecache.WithKeyFilter(func(key datastore.Key) bool {
@@ -576,11 +576,11 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -817,13 +817,13 @@ func TestLocalCache_Query(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -833,11 +833,11 @@ func TestLocalCache_Query(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -936,13 +936,13 @@ func TestLocalCache_Transaction(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -952,11 +952,11 @@ func TestLocalCache_Transaction(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -1125,13 +1125,13 @@ func TestLocalCache_MultiError(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	ch := New()
@@ -1142,11 +1142,11 @@ func TestLocalCache_MultiError(t *testing.T) {
 		client.RemoveCacheStrategy(ch)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -1184,7 +1184,9 @@ func TestLocalCache_MultiError(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			client.RemoveCacheStrategy(aLog)
 			client.AppendCacheStrategy(ch)
+			client.AppendCacheStrategy(aLog)
 		}
 	}
 
@@ -1239,6 +1241,7 @@ func TestLocalCache_MultiError(t *testing.T) {
 		before: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
 		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
 		cache/localcache.DeleteCache: key=/Data,10
+		before: GetMultiWithoutTx #5, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		cache/localcache.GetMulti: len=10
 		cache/localcache.GetMulti: idx=0 key=/Data,1
 		cache/localcache.GetMulti: idx=1 key=/Data,2
@@ -1260,15 +1263,14 @@ func TestLocalCache_MultiError(t *testing.T) {
 		cache/localcache.GetMulti: idx=7, missed key=/Data,8
 		cache/localcache.GetMulti: idx=8, hit key=/Data,9 len(ps)=1
 		cache/localcache.GetMulti: idx=9, missed key=/Data,10
-		before: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
 		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
 		after: GetMultiWithoutTx #5, err=datastore: no such entity
-		before: GetMultiWithoutTx #5, err=datastore: no such entity
 		cache/localcache.SetMulti: len=4
 		cache/localcache.SetMulti: idx=0 key=/Data,2 len(ps)=1
 		cache/localcache.SetMulti: idx=1 key=/Data,4 len(ps)=1
 		cache/localcache.SetMulti: idx=2 key=/Data,8 len(ps)=1
 		cache/localcache.SetMulti: idx=3 key=/Data,10 len(ps)=1
+		before: GetMultiWithoutTx #5, err=datastore: no such entity
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {

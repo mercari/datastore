@@ -37,13 +37,13 @@ func FishBone_QueryWithoutTx(t *testing.T, ctx context.Context, client datastore
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	m := fishbone.New()
@@ -53,11 +53,11 @@ func FishBone_QueryWithoutTx(t *testing.T, ctx context.Context, client datastore
 		client.RemoveCacheStrategy(m)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -177,13 +177,13 @@ func FishBone_QueryWithTx(t *testing.T, ctx context.Context, client datastore.Cl
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	m := fishbone.New()
@@ -193,11 +193,11 @@ func FishBone_QueryWithTx(t *testing.T, ctx context.Context, client datastore.Cl
 		client.RemoveCacheStrategy(m)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.

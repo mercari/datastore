@@ -23,13 +23,13 @@ func TestFishBone_QueryWithoutTx(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	m := New()
@@ -39,11 +39,11 @@ func TestFishBone_QueryWithoutTx(t *testing.T) {
 		client.RemoveCacheStrategy(m)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.
@@ -159,13 +159,13 @@ func TestFishBone_QueryWithTx(t *testing.T) {
 		logs = append(logs, fmt.Sprintf(format, args...))
 	}
 
-	// setup. strategies are first in - last apply.
+	// setup. strategies are first in - first apply.
 
-	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendCacheStrategy(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveCacheStrategy(bLog)
 	}()
 
 	m := New()
@@ -175,11 +175,11 @@ func TestFishBone_QueryWithTx(t *testing.T) {
 		client.RemoveCacheStrategy(m)
 	}()
 
-	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendCacheStrategy(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveCacheStrategy(aLog)
 	}()
 
 	// exec.

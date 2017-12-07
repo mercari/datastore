@@ -46,21 +46,17 @@ func NewCacheBridge(info *datastore.CacheInfo, ocb OriginalClientBridge, otb Ori
 	return cb
 }
 
-// TODO 全体的にcbは使いまわしたい Query周りでは1つのcbが複数回再利用されるかもしれないので破壊的変更の競合が怖い
-
 func (cb *CacheBridge) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.ocb.PutMulti(info.Context, keys, psList)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -69,18 +65,16 @@ func (cb *CacheBridge) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datas
 }
 
 func (cb *CacheBridge) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.otb.PutMulti(keys, psList)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -89,18 +83,16 @@ func (cb *CacheBridge) PutMultiWithTx(info *datastore.CacheInfo, keys []datastor
 }
 
 func (cb *CacheBridge) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.ocb.GetMulti(info.Context, keys, psList)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -109,18 +101,16 @@ func (cb *CacheBridge) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datas
 }
 
 func (cb *CacheBridge) GetMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.otb.GetMulti(keys, psList)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -129,18 +119,16 @@ func (cb *CacheBridge) GetMultiWithTx(info *datastore.CacheInfo, keys []datastor
 }
 
 func (cb *CacheBridge) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key) error {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.ocb.DeleteMulti(info.Context, keys)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -149,18 +137,16 @@ func (cb *CacheBridge) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []da
 }
 
 func (cb *CacheBridge) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key) error {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.otb.DeleteMulti(keys)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -169,18 +155,16 @@ func (cb *CacheBridge) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datas
 }
 
 func (cb *CacheBridge) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction, commit datastore.Commit) error {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return nil
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -189,18 +173,16 @@ func (cb *CacheBridge) PostCommit(info *datastore.CacheInfo, tx datastore.Transa
 }
 
 func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return nil
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -209,18 +191,16 @@ func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo, tx datastore.Tran
 }
 
 func (cb *CacheBridge) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.ocb.Run(info.Context, q, qDump)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -229,18 +209,16 @@ func (cb *CacheBridge) Run(info *datastore.CacheInfo, q datastore.Query, qDump *
 }
 
 func (cb *CacheBridge) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.ocb.GetAll(info.Context, q, qDump, psList)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -249,18 +227,16 @@ func (cb *CacheBridge) GetAll(info *datastore.CacheInfo, q datastore.Query, qDum
 }
 
 func (cb *CacheBridge) Next(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
-	l := len(cb.cs)
-	if l == 0 {
+	if len(cb.cs) == 0 {
 		return cb.oib.Next(iter, ps)
 	}
 
-	// call last strategy
-	current := cb.cs[l-1]
+	current := cb.cs[0]
 	left := &CacheBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[:l-1],
+		cs:   cb.cs[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
