@@ -41,7 +41,7 @@ func TestAEDatastoreWithAEMemcacheTestSuite(t *testing.T) {
 
 	for name, test := range testsuite.TestSuite {
 		t.Run(name, func(t *testing.T) {
-			// CacheStrategyの一番最初に別のキャッシュレイヤを追加すると落ちるテストを無視させる
+			// Skip the failure that happens when you firstly appended another cache layer.
 			switch name {
 			case
 				"LocalCache_Basic",
