@@ -47,7 +47,10 @@ func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
 
 	b.b.Put(keys[0], src, func(key datastore.Key, err error) error {
 		if err != nil {
-			return h(key, err)
+			if h != nil {
+				err = h(key, err)
+			}
+			return err
 		}
 
 		err = b.bm.setStructKey(src, key)
