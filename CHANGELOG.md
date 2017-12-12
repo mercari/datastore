@@ -1,3 +1,13 @@
+<a name="0.10.1"></a>
+## [0.10.1](https://github.com/mercari/datastore/compare/v0.10.0...v0.10.1) (2017-12-12)
+
+
+### Bug Fixes
+
+* **core:** fix deadlock when recursive batch calling ([5162647](https://github.com/mercari/datastore/commit/5162647))
+
+
+
 <a name="0.10.0"></a>
 # [0.10.0](https://github.com/mercari/datastore/compare/v0.9.0...v0.10.0) (2017-12-07)
 
