@@ -30,13 +30,14 @@ $ go get -u go.mercari.io/datastore
         * Rename property like CreatedAt to createdAt or created_at and reverse it
 * Re-implement PropertyLoadSaver
     * Pass context.Context to Save & Load method
-    * It can catch entity from the cache layers as well as from the datastore
 * Add retry feature to each RPC
     * e.g. Retry AllocateID when it failed
-* Add cache layer
+* Add middleware layer
     * About...
         * Local Cache
         * AE Memcache
+        * Logging
+        * Retry
         * etc...
     * Easy to ON/OFF switching
 * Add some useful methods
@@ -70,20 +71,20 @@ TODO
     * Test code that works in AppEngine production environment
 * `boom`
     * [goon](https://github.com/mjibson/goon) likes interface for this package
-* `cache`
-    * Implementation of cache layer strategies
-    * `cache/aememcache`
-        * Entity caching with [AE Memcache](https://cloud.google.com/appengine/docs/standard/go/memcache/using)
-    * `cache/dslog`
-        * Datastore operation logging in cache layer
-    * `cache/fishbone`
-        * Replace query by KeysOnly query with Get ops
-    * `cache/localcache`
-        * Entity caching with machine local memory
-    * `cache/storagecache`
-        * Entity cacheing base code
 * `clouddatastore`
     * Datastore Wrapper implementation for Cloud Datastore
+* `dsmiddleware`
+    * Various processing can be intercepted
+    * `dsmiddleware/aememcache`
+        * Entity caching with [AE Memcache](https://cloud.google.com/appengine/docs/standard/go/memcache/using)
+    * `dsmiddleware/dslog`
+        * Datastore operation logging in cache layer
+    * `dsmiddleware/fishbone`
+        * Replace query by KeysOnly query with Get ops
+    * `dsmiddleware/localcache`
+        * Entity caching with machine local memory
+    * `dsmiddleware/storagecache`
+        * Entity cacheing base code
 * `internal`
     * internal package
 * `testbed`

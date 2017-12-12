@@ -8,8 +8,8 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/cache/dslog"
-	"go.mercari.io/datastore/cache/fishbone"
+	"go.mercari.io/datastore/dsmiddleware/dslog"
+	"go.mercari.io/datastore/dsmiddleware/fishbone"
 	"go.mercari.io/datastore/testsuite"
 	"google.golang.org/api/iterator"
 )
@@ -40,24 +40,24 @@ func FishBone_QueryWithoutTx(t *testing.T, ctx context.Context, client datastore
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	m := fishbone.New()
-	client.AppendCacheStrategy(m)
+	client.AppendMiddleware(m)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(m)
+		client.RemoveMiddleware(m)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -180,24 +180,24 @@ func FishBone_QueryWithTx(t *testing.T, ctx context.Context, client datastore.Cl
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	m := fishbone.New()
-	client.AppendCacheStrategy(m)
+	client.AppendMiddleware(m)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(m)
+		client.RemoveMiddleware(m)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.

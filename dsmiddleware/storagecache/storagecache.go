@@ -7,9 +7,9 @@ import (
 	"go.mercari.io/datastore"
 )
 
-var _ datastore.CacheStrategy = &cacheHandler{}
+var _ datastore.Middleware = &cacheHandler{}
 
-func New(s Storage, opts ...CacheOption) datastore.CacheStrategy {
+func New(s Storage, opts ...CacheOption) datastore.Middleware {
 	ch := &cacheHandler{
 		s: s,
 	}
@@ -32,7 +32,7 @@ type contextTx struct{}
 type Storage interface {
 	SetMulti(ctx context.Context, is []*CacheItem) error
 	// GetMulti returns slice of CacheItem of the same length as Keys of the argument.
-	// If not in the cache, the value of the corresponding element is nil.
+	// If not in the dsmiddleware, the value of the corresponding element is nil.
 	GetMulti(ctx context.Context, keys []datastore.Key) ([]*CacheItem, error)
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
 }
@@ -83,7 +83,7 @@ func (ch *cacheHandler) target(key datastore.Key) bool {
 	return true
 }
 
-func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
+func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	keys, err := info.Next.PutMultiWithoutTx(info, keys, psList)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.CacheInfo, keys []data
 	cis := make([]*CacheItem, 0, len(keys))
 	for idx, key := range keys {
 		if key.Incomplete() {
-			// 発生し得ないはずだが他のCacheStrategyがやらかすかもしれないので
+			// 発生し得ないはずだが他のMiddlewareがやらかすかもしれないので
 			continue
 		} else if !ch.target(key) {
 			continue
@@ -107,13 +107,13 @@ func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.CacheInfo, keys []data
 	}
 	err = ch.s.SetMulti(info.Context, cis)
 	if err != nil {
-		ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.SetMulti err=%s", err.Error())
+		ch.logf(info.Context, "dsmiddleware/storagecache.GetMultiWithoutTx: error on storage.SetMulti err=%s", err.Error())
 	}
 
 	return keys, nil
 }
 
-func (ch *cacheHandler) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
+func (ch *cacheHandler) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
 	pKeys, err := info.Next.PutMultiWithTx(info, keys, psList)
 
 	ch.m.Lock()
@@ -146,10 +146,10 @@ func (ch *cacheHandler) PutMultiWithTx(info *datastore.CacheInfo, keys []datasto
 	return pKeys, err
 }
 
-func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	// strategy summary
-	//   When we have a cache, don't get it.
-	//   When we don't have a cache, passes arguments to next strategy.
+	//   When we have a dsmiddleware, don't get it.
+	//   When we don't have a dsmiddleware, passes arguments to next strategy.
 
 	// 最終的に各所からかき集めてきたdatastore.PropertyListを統合してpsListにする
 	// 1. psListをkeysと同じ長さまで伸長し、任意の場所にindexアクセスできるようにする
@@ -174,7 +174,7 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []data
 		if len(filteredKey) != 0 {
 			cis, err := ch.s.GetMulti(info.Context, filteredKey)
 			if err != nil {
-				ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.GetMulti err=%s", err.Error())
+				ch.logf(info.Context, "dsmiddleware/storagecache.GetMultiWithoutTx: error on storage.GetMulti err=%s", err.Error())
 
 				return info.Next.GetMultiWithoutTx(info, keys, psList)
 			}
@@ -238,7 +238,7 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []data
 			if len(cis) != 0 {
 				err := ch.s.SetMulti(info.Context, cis)
 				if err != nil {
-					ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.SetMulti err=%s", err.Error())
+					ch.logf(info.Context, "dsmiddleware/storagecache.GetMultiWithoutTx: error on storage.SetMulti err=%s", err.Error())
 				}
 			}
 		}
@@ -251,11 +251,11 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.CacheInfo, keys []data
 	return nil
 }
 
-func (ch *cacheHandler) GetMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+func (ch *cacheHandler) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	err := info.Next.GetMultiWithTx(info, keys, psList)
 
 	// strategy summary
-	//   don't add to cache in tx. It may be complicated and become a spot of bugs
+	//   don't add to dsmiddleware in tx. It may be complicated and become a spot of bugs
 
 	ch.m.Lock()
 	defer ch.m.Unlock()
@@ -282,7 +282,7 @@ func (ch *cacheHandler) GetMultiWithTx(info *datastore.CacheInfo, keys []datasto
 	return err
 }
 
-func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key) error {
+func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	err := info.Next.DeleteMultiWithoutTx(info, keys)
 
 	filteredKeys := make([]datastore.Key, 0, len(keys))
@@ -299,13 +299,13 @@ func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []d
 
 	sErr := ch.s.DeleteMulti(info.Context, filteredKeys)
 	if sErr != nil {
-		ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", err.Error())
+		ch.logf(info.Context, "dsmiddleware/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", err.Error())
 	}
 
 	return err
 }
 
-func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key) error {
+func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	err := info.Next.DeleteMultiWithTx(info, keys)
 
 	ch.m.Lock()
@@ -334,7 +334,7 @@ func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.CacheInfo, keys []data
 	return err
 }
 
-func (ch *cacheHandler) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction, commit datastore.Commit) error {
+func (ch *cacheHandler) PostCommit(info *datastore.MiddlewareInfo, tx datastore.Transaction, commit datastore.Commit) error {
 
 	ch.m.Lock()
 	defer ch.m.Unlock()
@@ -380,13 +380,13 @@ func (ch *cacheHandler) PostCommit(info *datastore.CacheInfo, tx datastore.Trans
 	sErr := ch.s.DeleteMulti(baseCtx, filteredKeys)
 	nErr := info.Next.PostCommit(info, tx, commit)
 	if sErr != nil {
-		ch.logf(info.Context, "cache/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", sErr.Error())
+		ch.logf(info.Context, "dsmiddleware/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", sErr.Error())
 	}
 
 	return nErr
 }
 
-func (ch *cacheHandler) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
+func (ch *cacheHandler) PostRollback(info *datastore.MiddlewareInfo, tx datastore.Transaction) error {
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
@@ -400,14 +400,14 @@ func (ch *cacheHandler) PostRollback(info *datastore.CacheInfo, tx datastore.Tra
 	return info.Next.PostRollback(info, tx)
 }
 
-func (ch *cacheHandler) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
+func (ch *cacheHandler) Run(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
 	return info.Next.Run(info, q, qDump)
 }
 
-func (ch *cacheHandler) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
+func (ch *cacheHandler) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
 	return info.Next.GetAll(info, q, qDump, psList)
 }
 
-func (ch *cacheHandler) Next(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
+func (ch *cacheHandler) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	return info.Next.Next(info, q, qDump, iter, ps)
 }

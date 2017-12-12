@@ -110,7 +110,7 @@ func (ocb *originalClientBridgeImpl) Run(ctx context.Context, q w.Query, qDump *
 		q:      qImpl,
 		qDump:  qDump,
 		t:      iter,
-		cacheInfo: &w.CacheInfo{
+		cacheInfo: &w.MiddlewareInfo{
 			Context:     ctx,
 			Client:      ocb.d,
 			Transaction: qDump.Transaction,

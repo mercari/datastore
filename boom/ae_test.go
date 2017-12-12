@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"go.mercari.io/datastore/cache/aememcache"
+	"go.mercari.io/datastore/dsmiddleware/aememcache"
 	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/appengine/memcache"
 )
@@ -17,7 +17,7 @@ func TestBoom_AEMemcache(t *testing.T) {
 	ch.Logf = func(ctx context.Context, format string, args ...interface{}) {
 		t.Logf(format, args...)
 	}
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 
 	type Data struct {
 		ID   int64 `boom:"id"`

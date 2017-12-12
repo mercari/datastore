@@ -25,10 +25,10 @@ func TestDsLog_Basic(t *testing.T) {
 	}
 	logger := NewLogger("log: ", logf)
 
-	client.AppendCacheStrategy(logger)
+	client.AppendMiddleware(logger)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(logger)
+		client.RemoveMiddleware(logger)
 	}()
 
 	type Data struct {
@@ -76,10 +76,10 @@ func TestDsLog_Query(t *testing.T) {
 	}
 	logger := NewLogger("log: ", logf)
 
-	client.AppendCacheStrategy(logger)
+	client.AppendMiddleware(logger)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(logger)
+		client.RemoveMiddleware(logger)
 	}()
 
 	type Data struct {
@@ -178,10 +178,10 @@ func TestDsLog_Transaction(t *testing.T) {
 	}
 	logger := NewLogger("log: ", logf)
 
-	client.AppendCacheStrategy(logger)
+	client.AppendMiddleware(logger)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(logger)
+		client.RemoveMiddleware(logger)
 	}()
 
 	type Data struct {

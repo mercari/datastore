@@ -8,9 +8,9 @@ import (
 	"go.mercari.io/datastore"
 )
 
-var _ datastore.CacheStrategy = &logger{}
+var _ datastore.Middleware = &logger{}
 
-func NewLogger(prefix string, logf func(ctx context.Context, format string, args ...interface{})) datastore.CacheStrategy {
+func NewLogger(prefix string, logf func(ctx context.Context, format string, args ...interface{})) datastore.Middleware {
 	return &logger{Prefix: prefix, Logf: logf, counter: 1}
 }
 
@@ -39,7 +39,7 @@ func (l *logger) KeysToString(keys []datastore.Key) string {
 	return strings.Join(keyStrings, ", ")
 }
 
-func (l *logger) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
+func (l *logger) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -58,7 +58,7 @@ func (l *logger) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.K
 	return keys, err
 }
 
-func (l *logger) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
+func (l *logger) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -94,7 +94,7 @@ func (l *logger) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key,
 	return pKeys, err
 }
 
-func (l *logger) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+func (l *logger) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -111,7 +111,7 @@ func (l *logger) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.K
 	return err
 }
 
-func (l *logger) GetMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+func (l *logger) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -128,7 +128,7 @@ func (l *logger) GetMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key,
 	return err
 }
 
-func (l *logger) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key) error {
+func (l *logger) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -145,7 +145,7 @@ func (l *logger) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []datastor
 	return err
 }
 
-func (l *logger) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key) error {
+func (l *logger) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -162,7 +162,7 @@ func (l *logger) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datastore.K
 	return err
 }
 
-func (l *logger) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction, commit datastore.Commit) error {
+func (l *logger) PostCommit(info *datastore.MiddlewareInfo, tx datastore.Transaction, commit datastore.Commit) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -204,7 +204,7 @@ func (l *logger) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction,
 	return info.Next.PostCommit(info, tx, commit)
 }
 
-func (l *logger) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
+func (l *logger) PostRollback(info *datastore.MiddlewareInfo, tx datastore.Transaction) error {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -215,7 +215,7 @@ func (l *logger) PostRollback(info *datastore.CacheInfo, tx datastore.Transactio
 	return info.Next.PostRollback(info, tx)
 }
 
-func (l *logger) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
+func (l *logger) Run(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -226,7 +226,7 @@ func (l *logger) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datast
 	return info.Next.Run(info, q, qDump)
 }
 
-func (l *logger) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
+func (l *logger) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1
@@ -245,7 +245,7 @@ func (l *logger) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *dat
 	return keys, err
 }
 
-func (l *logger) Next(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
+func (l *logger) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
 	l.counter += 1

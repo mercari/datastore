@@ -8,25 +8,25 @@ import (
 	"strings"
 )
 
-type CacheStrategy interface {
-	PutMultiWithoutTx(info *CacheInfo, keys []Key, psList []PropertyList) ([]Key, error)
-	PutMultiWithTx(info *CacheInfo, keys []Key, psList []PropertyList) ([]PendingKey, error)
-	GetMultiWithoutTx(info *CacheInfo, keys []Key, psList []PropertyList) error
-	GetMultiWithTx(info *CacheInfo, keys []Key, psList []PropertyList) error
-	DeleteMultiWithoutTx(info *CacheInfo, keys []Key) error
-	DeleteMultiWithTx(info *CacheInfo, keys []Key) error
-	PostCommit(info *CacheInfo, tx Transaction, commit Commit) error
-	PostRollback(info *CacheInfo, tx Transaction) error
-	Run(info *CacheInfo, q Query, qDump *QueryDump) Iterator
-	GetAll(info *CacheInfo, q Query, qDump *QueryDump, psList *[]PropertyList) ([]Key, error)
-	Next(info *CacheInfo, q Query, qDump *QueryDump, iter Iterator, ps *PropertyList) (Key, error)
+type Middleware interface {
+	PutMultiWithoutTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) ([]Key, error)
+	PutMultiWithTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) ([]PendingKey, error)
+	GetMultiWithoutTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) error
+	GetMultiWithTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) error
+	DeleteMultiWithoutTx(info *MiddlewareInfo, keys []Key) error
+	DeleteMultiWithTx(info *MiddlewareInfo, keys []Key) error
+	PostCommit(info *MiddlewareInfo, tx Transaction, commit Commit) error
+	PostRollback(info *MiddlewareInfo, tx Transaction) error
+	Run(info *MiddlewareInfo, q Query, qDump *QueryDump) Iterator
+	GetAll(info *MiddlewareInfo, q Query, qDump *QueryDump, psList *[]PropertyList) ([]Key, error)
+	Next(info *MiddlewareInfo, q Query, qDump *QueryDump, iter Iterator, ps *PropertyList) (Key, error)
 }
 
-type CacheInfo struct {
+type MiddlewareInfo struct {
 	Context     context.Context
 	Client      Client
 	Transaction Transaction
-	Next        CacheStrategy
+	Next        Middleware
 }
 
 type QueryDump struct {

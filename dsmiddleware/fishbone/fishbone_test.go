@@ -8,7 +8,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/cache/dslog"
+	"go.mercari.io/datastore/dsmiddleware/dslog"
 	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/api/iterator"
 )
@@ -26,24 +26,24 @@ func TestFishBone_QueryWithoutTx(t *testing.T) {
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	m := New()
-	client.AppendCacheStrategy(m)
+	client.AppendMiddleware(m)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(m)
+		client.RemoveMiddleware(m)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -162,24 +162,24 @@ func TestFishBone_QueryWithTx(t *testing.T) {
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	m := New()
-	client.AppendCacheStrategy(m)
+	client.AppendMiddleware(m)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(m)
+		client.RemoveMiddleware(m)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
