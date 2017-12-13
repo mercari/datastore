@@ -10,34 +10,15 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/cache/dslog"
-	"go.mercari.io/datastore/cache/localcache"
-	"go.mercari.io/datastore/cache/storagecache"
-	"go.mercari.io/datastore/testsuite"
+	"go.mercari.io/datastore/dsmiddleware/dslog"
+	"go.mercari.io/datastore/dsmiddleware/storagecache"
+	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/api/iterator"
 )
 
-var TestSuite = map[string]testsuite.Test{
-	"LocalCache_Basic":            LocalCache_Basic,
-	"LocalCache_WithIncludeKinds": LocalCache_WithIncludeKinds,
-	"LocalCache_WithExcludeKinds": LocalCache_WithExcludeKinds,
-	"LocalCache_WithKeyFilter":    LocalCache_WithKeyFilter,
-	"LocalCache_FlushLocalCache":  LocalCache_FlushLocalCache,
-	"LocalCache_Query":            LocalCache_Query,
-	"LocalCache_Transaction":      LocalCache_Transaction,
-}
-
-func init() {
-	testsuite.MergeTestSuite(TestSuite)
-}
-
-func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestLocalCache_Basic(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -48,24 +29,24 @@ func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New()
-	client.AppendCacheStrategy(ch)
+	ch := New()
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -74,7 +55,7 @@ func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client
 		Name string
 	}
 
-	// Put. add to cache.
+	// Put. add to dsmiddleware.
 	key := client.IDKey("Data", 111, nil)
 	objBefore := &Data{Name: "Data"}
 	_, err := client.Put(ctx, key, objBefore)
@@ -86,7 +67,7 @@ func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client
 		t.Fatalf("unexpected: %v", v)
 	}
 
-	// Get. from cache.
+	// Get. from dsmiddleware.
 	objAfter := &Data{}
 	err = client.Get(ctx, key, objAfter)
 	if err != nil {
@@ -118,13 +99,9 @@ func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client
 	}
 }
 
-func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestLocalCache_WithIncludeKinds(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -135,25 +112,25 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New(storagecache.WithIncludeKinds("DataA"))
+	ch := New(storagecache.WithIncludeKinds("DataA"))
 	ch.Logf = logf
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -162,7 +139,7 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 		Name string
 	}
 
-	{ // Put. cache target.
+	{ // Put. dsmiddleware target.
 		key := client.IDKey("DataA", 111, nil)
 		objBefore := &Data{Name: "A"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -184,7 +161,7 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 			t.Fatal(err)
 		}
 	}
-	{ // Put. cache ignored.
+	{ // Put. dsmiddleware ignored.
 		key := client.IDKey("DataB", 111, nil)
 		objBefore := &Data{Name: "B"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -206,7 +183,7 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 			t.Fatal(err)
 		}
 	}
-	{ // Put. cache target & ignored.
+	{ // Put. dsmiddleware target & ignored.
 		keyInc := client.IDKey("DataA", 111, nil)
 		keyExc := client.IDKey("DataB", 111, nil)
 
@@ -282,17 +259,17 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/DataA,111]
 		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/DataA,111]
 		after: PutMultiWithoutTx #1, keys=[/DataA,111]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataA,111 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataA,111 len(ps)=1
 		before: PutMultiWithoutTx #1, keys=[/DataA,111]
 		before: GetMultiWithoutTx #2, len(keys)=1, keys=[/DataA,111]
-		cache/localcache.GetMulti: len=1
-		cache/localcache.GetMulti: idx=0 key=/DataA,111
-		cache/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
+		dsmiddleware/localcache.GetMulti: len=1
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataA,111
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
 		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/DataA,111]
 		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/DataA,111]
-		cache/localcache.DeleteMulti: len=1
-		cache/localcache.DeleteMulti: idx=0 key=/DataA,111
+		dsmiddleware/localcache.DeleteMulti: len=1
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataA,111
 		before: PutMultiWithoutTx #4, len(keys)=1, keys=[/DataB,111]
 		after: PutMultiWithoutTx #3, len(keys)=1, keys=[/DataB,111]
 		after: PutMultiWithoutTx #3, keys=[/DataB,111]
@@ -304,41 +281,41 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 		before: PutMultiWithoutTx #7, len(keys)=2, keys=[/DataA,111, /DataB,111]
 		after: PutMultiWithoutTx #6, len(keys)=2, keys=[/DataA,111, /DataB,111]
 		after: PutMultiWithoutTx #6, keys=[/DataA,111, /DataB,111]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataA,111 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataA,111 len(ps)=1
 		before: PutMultiWithoutTx #7, keys=[/DataA,111, /DataB,111]
 		before: GetMultiWithoutTx #8, len(keys)=2, keys=[/DataA,111, /DataB,111]
-		cache/localcache.GetMulti: len=1
-		cache/localcache.GetMulti: idx=0 key=/DataA,111
-		cache/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
+		dsmiddleware/localcache.GetMulti: len=1
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataA,111
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
 		after: GetMultiWithoutTx #7, len(keys)=1, keys=[/DataB,111]
 		before: DeleteMultiWithoutTx #9, len(keys)=2, keys=[/DataA,111, /DataB,111]
 		after: DeleteMultiWithoutTx #8, len(keys)=2, keys=[/DataA,111, /DataB,111]
-		cache/localcache.DeleteMulti: len=1
-		cache/localcache.DeleteMulti: idx=0 key=/DataA,111
+		dsmiddleware/localcache.DeleteMulti: len=1
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataA,111
 		before: PutMultiWithoutTx #10, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: PutMultiWithoutTx #9, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: PutMultiWithoutTx #9, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.SetMulti: len=2
-		cache/localcache.SetMulti: idx=0 key=/DataA,111 len(ps)=1
-		cache/localcache.SetMulti: idx=1 key=/DataA,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=2
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataA,111 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=1 key=/DataA,222 len(ps)=1
 		before: PutMultiWithoutTx #10, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.DeleteCache: key=/DataA,222
-		cache/localcache.DeleteCache: key=/DataB,222
+		dsmiddleware/localcache.DeleteCache: key=/DataA,222
+		dsmiddleware/localcache.DeleteCache: key=/DataB,222
 		before: GetMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.GetMulti: len=2
-		cache/localcache.GetMulti: idx=0 key=/DataA,111
-		cache/localcache.GetMulti: idx=1 key=/DataA,222
-		cache/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
-		cache/localcache.GetMulti: idx=1, missed key=/DataA,222
+		dsmiddleware/localcache.GetMulti: len=2
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataA,111
+		dsmiddleware/localcache.GetMulti: idx=1 key=/DataA,222
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataA,111 len(ps)=1
+		dsmiddleware/localcache.GetMulti: idx=1, missed key=/DataA,222
 		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.DeleteMulti: len=2
-		cache/localcache.DeleteMulti: idx=0 key=/DataA,111
-		cache/localcache.DeleteMulti: idx=1 key=/DataA,222
+		dsmiddleware/localcache.DeleteMulti: len=2
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataA,111
+		dsmiddleware/localcache.DeleteMulti: idx=1 key=/DataA,222
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {
@@ -346,13 +323,9 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 	}
 }
 
-func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestLocalCache_WithExcludeKinds(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -363,25 +336,25 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New(storagecache.WithExcludeKinds("DataA"))
+	ch := New(storagecache.WithExcludeKinds("DataA"))
 	ch.Logf = logf
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -390,7 +363,7 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 		Name string
 	}
 
-	{ // Put. ignored kind.
+	{ // Put. dsmiddleware target.
 		key := client.IDKey("DataA", 111, nil)
 		objBefore := &Data{Name: "A"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -412,7 +385,7 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 			t.Fatal(err)
 		}
 	}
-	{ // Put. cache ignored.
+	{ // Put. dsmiddleware ignored.
 		key := client.IDKey("DataB", 111, nil)
 		objBefore := &Data{Name: "B"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -434,7 +407,7 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 			t.Fatal(err)
 		}
 	}
-	{ // Put. cache target & ignored.
+	{ // Put. dsmiddleware target & ignored.
 		keyInc := client.IDKey("DataA", 111, nil)
 		keyExc := client.IDKey("DataB", 111, nil)
 
@@ -518,55 +491,55 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 		before: PutMultiWithoutTx #4, len(keys)=1, keys=[/DataB,111]
 		after: PutMultiWithoutTx #4, len(keys)=1, keys=[/DataB,111]
 		after: PutMultiWithoutTx #4, keys=[/DataB,111]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataB,111 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataB,111 len(ps)=1
 		before: PutMultiWithoutTx #4, keys=[/DataB,111]
 		before: GetMultiWithoutTx #5, len(keys)=1, keys=[/DataB,111]
-		cache/localcache.GetMulti: len=1
-		cache/localcache.GetMulti: idx=0 key=/DataB,111
-		cache/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
+		dsmiddleware/localcache.GetMulti: len=1
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataB,111
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
 		before: DeleteMultiWithoutTx #6, len(keys)=1, keys=[/DataB,111]
 		after: DeleteMultiWithoutTx #5, len(keys)=1, keys=[/DataB,111]
-		cache/localcache.DeleteMulti: len=1
-		cache/localcache.DeleteMulti: idx=0 key=/DataB,111
+		dsmiddleware/localcache.DeleteMulti: len=1
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataB,111
 		before: PutMultiWithoutTx #7, len(keys)=2, keys=[/DataA,111, /DataB,111]
 		after: PutMultiWithoutTx #6, len(keys)=2, keys=[/DataA,111, /DataB,111]
 		after: PutMultiWithoutTx #6, keys=[/DataA,111, /DataB,111]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataB,111 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataB,111 len(ps)=1
 		before: PutMultiWithoutTx #7, keys=[/DataA,111, /DataB,111]
 		before: GetMultiWithoutTx #8, len(keys)=2, keys=[/DataA,111, /DataB,111]
-		cache/localcache.GetMulti: len=1
-		cache/localcache.GetMulti: idx=0 key=/DataB,111
-		cache/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
+		dsmiddleware/localcache.GetMulti: len=1
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataB,111
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
 		after: GetMultiWithoutTx #7, len(keys)=1, keys=[/DataA,111]
 		before: DeleteMultiWithoutTx #9, len(keys)=2, keys=[/DataA,111, /DataB,111]
 		after: DeleteMultiWithoutTx #8, len(keys)=2, keys=[/DataA,111, /DataB,111]
-		cache/localcache.DeleteMulti: len=1
-		cache/localcache.DeleteMulti: idx=0 key=/DataB,111
+		dsmiddleware/localcache.DeleteMulti: len=1
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataB,111
 		before: PutMultiWithoutTx #10, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: PutMultiWithoutTx #9, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: PutMultiWithoutTx #9, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.SetMulti: len=2
-		cache/localcache.SetMulti: idx=0 key=/DataB,111 len(ps)=1
-		cache/localcache.SetMulti: idx=1 key=/DataB,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=2
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataB,111 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=1 key=/DataB,222 len(ps)=1
 		before: PutMultiWithoutTx #10, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.DeleteCache: key=/DataA,222
-		cache/localcache.DeleteCache: key=/DataB,222
+		dsmiddleware/localcache.DeleteCache: key=/DataA,222
+		dsmiddleware/localcache.DeleteCache: key=/DataB,222
 		before: GetMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.GetMulti: len=2
-		cache/localcache.GetMulti: idx=0 key=/DataB,111
-		cache/localcache.GetMulti: idx=1 key=/DataB,222
-		cache/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
-		cache/localcache.GetMulti: idx=1, missed key=/DataB,222
+		dsmiddleware/localcache.GetMulti: len=2
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataB,111
+		dsmiddleware/localcache.GetMulti: idx=1 key=/DataB,222
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataB,111 len(ps)=1
+		dsmiddleware/localcache.GetMulti: idx=1, missed key=/DataB,222
 		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataA,222, /DataB,222]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataB,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataB,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.DeleteMulti: len=2
-		cache/localcache.DeleteMulti: idx=0 key=/DataB,111
-		cache/localcache.DeleteMulti: idx=1 key=/DataB,222
+		dsmiddleware/localcache.DeleteMulti: len=2
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataB,111
+		dsmiddleware/localcache.DeleteMulti: idx=1 key=/DataB,222
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {
@@ -574,13 +547,9 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 	}
 }
 
-func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestLocalCache_WithKeyFilter(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -591,27 +560,27 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New(storagecache.WithKeyFilter(func(key datastore.Key) bool {
+	ch := New(storagecache.WithKeyFilter(func(key datastore.Key) bool {
 		return key.ID() != 111
 	}))
 	ch.Logf = logf
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -620,7 +589,7 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 		Name string
 	}
 
-	{ // Put. cache target.
+	{ // Put. dsmiddleware target.
 		key := client.IDKey("DataA", 222, nil)
 		objBefore := &Data{Name: "A"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -642,7 +611,7 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 			t.Fatal(err)
 		}
 	}
-	{ // Put. cache ignored.
+	{ // Put. dsmiddleware ignored.
 		key := client.IDKey("DataB", 111, nil)
 		objBefore := &Data{Name: "B"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -664,7 +633,7 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 			t.Fatal(err)
 		}
 	}
-	{ // Put. cache target & ignored.
+	{ // Put. dsmiddleware target & ignored.
 		keyIgnore := client.IDKey("DataA", 111, nil)
 		keyTarget := client.IDKey("DataB", 222, nil)
 
@@ -740,17 +709,17 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/DataA,222]
 		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/DataA,222]
 		after: PutMultiWithoutTx #1, keys=[/DataA,222]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
 		before: PutMultiWithoutTx #1, keys=[/DataA,222]
 		before: GetMultiWithoutTx #2, len(keys)=1, keys=[/DataA,222]
-		cache/localcache.GetMulti: len=1
-		cache/localcache.GetMulti: idx=0 key=/DataA,222
-		cache/localcache.GetMulti: idx=0, hit key=/DataA,222 len(ps)=1
+		dsmiddleware/localcache.GetMulti: len=1
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataA,222
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataA,222 len(ps)=1
 		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/DataA,222]
 		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/DataA,222]
-		cache/localcache.DeleteMulti: len=1
-		cache/localcache.DeleteMulti: idx=0 key=/DataA,222
+		dsmiddleware/localcache.DeleteMulti: len=1
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataA,222
 		before: PutMultiWithoutTx #4, len(keys)=1, keys=[/DataB,111]
 		after: PutMultiWithoutTx #3, len(keys)=1, keys=[/DataB,111]
 		after: PutMultiWithoutTx #3, keys=[/DataB,111]
@@ -762,41 +731,41 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 		before: PutMultiWithoutTx #7, len(keys)=2, keys=[/DataA,111, /DataB,222]
 		after: PutMultiWithoutTx #6, len(keys)=2, keys=[/DataA,111, /DataB,222]
 		after: PutMultiWithoutTx #6, keys=[/DataA,111, /DataB,222]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataB,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataB,222 len(ps)=1
 		before: PutMultiWithoutTx #7, keys=[/DataA,111, /DataB,222]
 		before: GetMultiWithoutTx #8, len(keys)=2, keys=[/DataA,111, /DataB,222]
-		cache/localcache.GetMulti: len=1
-		cache/localcache.GetMulti: idx=0 key=/DataB,222
-		cache/localcache.GetMulti: idx=0, hit key=/DataB,222 len(ps)=1
+		dsmiddleware/localcache.GetMulti: len=1
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataB,222
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/DataB,222 len(ps)=1
 		after: GetMultiWithoutTx #7, len(keys)=1, keys=[/DataA,111]
 		before: DeleteMultiWithoutTx #9, len(keys)=2, keys=[/DataA,111, /DataB,222]
 		after: DeleteMultiWithoutTx #8, len(keys)=2, keys=[/DataA,111, /DataB,222]
-		cache/localcache.DeleteMulti: len=1
-		cache/localcache.DeleteMulti: idx=0 key=/DataB,222
+		dsmiddleware/localcache.DeleteMulti: len=1
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataB,222
 		before: PutMultiWithoutTx #10, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: PutMultiWithoutTx #9, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: PutMultiWithoutTx #9, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.SetMulti: len=2
-		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
-		cache/localcache.SetMulti: idx=1 key=/DataB,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=2
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=1 key=/DataB,222 len(ps)=1
 		before: PutMultiWithoutTx #10, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.DeleteCache: key=/DataA,111
-		cache/localcache.DeleteCache: key=/DataA,222
+		dsmiddleware/localcache.DeleteCache: key=/DataA,111
+		dsmiddleware/localcache.DeleteCache: key=/DataA,222
 		before: GetMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.GetMulti: len=2
-		cache/localcache.GetMulti: idx=0 key=/DataA,222
-		cache/localcache.GetMulti: idx=1 key=/DataB,222
-		cache/localcache.GetMulti: idx=0, missed key=/DataA,222
-		cache/localcache.GetMulti: idx=1, hit key=/DataB,222 len(ps)=1
+		dsmiddleware/localcache.GetMulti: len=2
+		dsmiddleware/localcache.GetMulti: idx=0 key=/DataA,222
+		dsmiddleware/localcache.GetMulti: idx=1 key=/DataB,222
+		dsmiddleware/localcache.GetMulti: idx=0, missed key=/DataA,222
+		dsmiddleware/localcache.GetMulti: idx=1, hit key=/DataB,222 len(ps)=1
 		after: GetMultiWithoutTx #10, len(keys)=3, keys=[/DataA,111, /DataA,222, /DataB,111]
-		cache/localcache.SetMulti: len=1
-		cache/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
+		dsmiddleware/localcache.SetMulti: len=1
+		dsmiddleware/localcache.SetMulti: idx=0 key=/DataA,222 len(ps)=1
 		before: DeleteMultiWithoutTx #12, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
 		after: DeleteMultiWithoutTx #11, len(keys)=4, keys=[/DataA,111, /DataA,222, /DataB,111, /DataB,222]
-		cache/localcache.DeleteMulti: len=2
-		cache/localcache.DeleteMulti: idx=0 key=/DataA,222
-		cache/localcache.DeleteMulti: idx=1 key=/DataB,222
+		dsmiddleware/localcache.DeleteMulti: len=2
+		dsmiddleware/localcache.DeleteMulti: idx=0 key=/DataA,222
+		dsmiddleware/localcache.DeleteMulti: idx=1 key=/DataB,222
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {
@@ -804,26 +773,22 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 	}
 }
 
-func LocalCache_FlushLocalCache(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestLocalCache_FlushLocalCache(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
 
-	ch := localcache.New()
-	client.AppendCacheStrategy(ch)
+	ch := New()
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	type Data struct {
 		Name string
 	}
 
-	// Put. add to cache.
+	// Put. add to dsmiddleware.
 	key := client.IDKey("Data", 111, nil)
 	objBefore := &Data{Name: "Data"}
 	_, err := client.Put(ctx, key, objBefore)
@@ -842,13 +807,9 @@ func LocalCache_FlushLocalCache(t *testing.T, ctx context.Context, client datast
 	}
 }
 
-func LocalCache_Query(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestLocalCache_Query(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -859,24 +820,24 @@ func LocalCache_Query(t *testing.T, ctx context.Context, client datastore.Client
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New()
-	client.AppendCacheStrategy(ch)
+	ch := New()
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -965,13 +926,9 @@ func LocalCache_Query(t *testing.T, ctx context.Context, client datastore.Client
 	}
 }
 
-func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.Client) {
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestLocalCache_Transaction(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
 
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
@@ -982,24 +939,24 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New()
-	client.AppendCacheStrategy(ch)
+	ch := New()
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -1010,7 +967,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 
 	key := client.NameKey("Data", "a", nil)
 
-	// put to cache
+	// put to dsmiddleware
 	_, err := client.Put(ctx, key, &Data{Name: "Before"})
 	if err != nil {
 		t.Fatal(err)
@@ -1025,7 +982,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 			t.Fatal(err)
 		}
 
-		// don't put to cache before commit
+		// don't put to dsmiddleware before commit
 		key2 := client.NameKey("Data", "b", nil)
 		_, err = tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -1041,7 +998,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 			t.Fatal(err)
 		}
 
-		// don't delete from cache before commit
+		// don't delete from dsmiddleware before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
@@ -1066,7 +1023,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 			t.Fatal(err)
 		}
 
-		// don't put to cache before commit
+		// don't put to dsmiddleware before commit
 		key2 := client.IncompleteKey("Data", nil)
 		pKey, err := tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -1082,7 +1039,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 			t.Fatal(err)
 		}
 
-		// don't delete from cache before commit
+		// don't delete from dsmiddleware before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
@@ -1101,12 +1058,19 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 		if v := key3.Name(); v != key2.Name() {
 			t.Errorf("unexpected: %v", v)
 		}
-		// commited, but don't put to cache in tx.
+		// commited, but don't put to dsmiddleware in tx.
 		if v := ch.Has(key3); v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
 		if v := ch.Len(); v != 0 {
+			for keyStr := range ch.cache {
+				key, err := client.DecodeKey(keyStr)
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Log(key.String())
+			}
 			t.Fatalf("unexpected: %v", v)
 		}
 	}
@@ -1147,6 +1111,169 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 	}
 
 	if v := strings.Join(logs, "\n") + "\n"; !expected.MatchString(v) {
+		t.Errorf("unexpected: %v", v)
+	}
+}
+
+func TestLocalCache_MultiError(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	var logs []string
+	logf := func(ctx context.Context, format string, args ...interface{}) {
+		t.Logf(format, args...)
+		logs = append(logs, fmt.Sprintf(format, args...))
+	}
+
+	// setup. strategies are first in - first apply.
+
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendMiddleware(bLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveMiddleware(bLog)
+	}()
+
+	ch := New()
+	ch.Logf = logf
+	client.AppendMiddleware(ch)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveMiddleware(ch)
+	}()
+
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendMiddleware(aLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveMiddleware(aLog)
+	}()
+
+	// exec.
+
+	type Data struct {
+		Name string
+	}
+
+	const size = 10
+
+	keys := make([]datastore.Key, 0, size)
+	list := make([]*Data, 0, size)
+	for i := 1; i <= size; i++ {
+		keys = append(keys, client.IDKey("Data", int64(i), nil))
+		list = append(list, &Data{
+			Name: fmt.Sprintf("#%d", i),
+		})
+	}
+
+	_, err := client.PutMulti(ctx, keys, list)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, key := range keys {
+		if key.ID()%2 == 0 {
+			// delete dsmiddleware id=2, 4, 6, 8, 10
+			ch.DeleteCache(ctx, key)
+		}
+		if key.ID()%3 == 0 {
+			// Delete entity where out of aememcache scope
+			// delete entity id=3, 6, 9
+			client.RemoveMiddleware(ch)
+			err := client.Delete(ctx, key)
+			if err != nil {
+				t.Fatal(err)
+			}
+			client.RemoveMiddleware(aLog)
+			client.AppendMiddleware(ch)
+			client.AppendMiddleware(aLog)
+		}
+	}
+
+	list = make([]*Data, size)
+	err = client.GetMulti(ctx, keys, list)
+	merr, ok := err.(datastore.MultiError)
+	if !ok {
+		t.Fatal(err)
+	}
+
+	if v := len(merr); v != size {
+		t.Fatalf("unexpected: %v", v)
+	}
+	for idx, err := range merr {
+		key := keys[idx]
+		if key.ID()%2 == 0 && key.ID()%3 == 0 {
+			// not exists on memcache & datastore both
+			if err != datastore.ErrNoSuchEntity {
+				t.Error(err)
+			}
+		} else {
+			if v := list[idx].Name; v != fmt.Sprintf("#%d", idx+1) {
+				t.Errorf("unexpected: %v", v)
+			}
+		}
+	}
+
+	expected := heredoc.Doc(`
+		before: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		after: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		dsmiddleware/localcache.SetMulti: len=10
+		dsmiddleware/localcache.SetMulti: idx=0 key=/Data,1 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=1 key=/Data,2 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=2 key=/Data,3 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=3 key=/Data,4 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=4 key=/Data,5 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=5 key=/Data,6 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=6 key=/Data,7 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=7 key=/Data,8 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=8 key=/Data,9 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=9 key=/Data,10 len(ps)=1
+		before: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		dsmiddleware/localcache.DeleteCache: key=/Data,2
+		before: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
+		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
+		dsmiddleware/localcache.DeleteCache: key=/Data,4
+		dsmiddleware/localcache.DeleteCache: key=/Data,6
+		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
+		after: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
+		dsmiddleware/localcache.DeleteCache: key=/Data,8
+		before: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
+		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
+		dsmiddleware/localcache.DeleteCache: key=/Data,10
+		before: GetMultiWithoutTx #5, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
+		dsmiddleware/localcache.GetMulti: len=10
+		dsmiddleware/localcache.GetMulti: idx=0 key=/Data,1
+		dsmiddleware/localcache.GetMulti: idx=1 key=/Data,2
+		dsmiddleware/localcache.GetMulti: idx=2 key=/Data,3
+		dsmiddleware/localcache.GetMulti: idx=3 key=/Data,4
+		dsmiddleware/localcache.GetMulti: idx=4 key=/Data,5
+		dsmiddleware/localcache.GetMulti: idx=5 key=/Data,6
+		dsmiddleware/localcache.GetMulti: idx=6 key=/Data,7
+		dsmiddleware/localcache.GetMulti: idx=7 key=/Data,8
+		dsmiddleware/localcache.GetMulti: idx=8 key=/Data,9
+		dsmiddleware/localcache.GetMulti: idx=9 key=/Data,10
+		dsmiddleware/localcache.GetMulti: idx=0, hit key=/Data,1 len(ps)=1
+		dsmiddleware/localcache.GetMulti: idx=1, missed key=/Data,2
+		dsmiddleware/localcache.GetMulti: idx=2, hit key=/Data,3 len(ps)=1
+		dsmiddleware/localcache.GetMulti: idx=3, missed key=/Data,4
+		dsmiddleware/localcache.GetMulti: idx=4, hit key=/Data,5 len(ps)=1
+		dsmiddleware/localcache.GetMulti: idx=5, missed key=/Data,6
+		dsmiddleware/localcache.GetMulti: idx=6, hit key=/Data,7 len(ps)=1
+		dsmiddleware/localcache.GetMulti: idx=7, missed key=/Data,8
+		dsmiddleware/localcache.GetMulti: idx=8, hit key=/Data,9 len(ps)=1
+		dsmiddleware/localcache.GetMulti: idx=9, missed key=/Data,10
+		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
+		after: GetMultiWithoutTx #5, err=datastore: no such entity
+		dsmiddleware/localcache.SetMulti: len=4
+		dsmiddleware/localcache.SetMulti: idx=0 key=/Data,2 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=1 key=/Data,4 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=2 key=/Data,8 len(ps)=1
+		dsmiddleware/localcache.SetMulti: idx=3 key=/Data,10 len(ps)=1
+		before: GetMultiWithoutTx #5, err=datastore: no such entity
+	`)
+
+	if v := strings.Join(logs, "\n") + "\n"; v != expected {
 		t.Errorf("unexpected: %v", v)
 	}
 }

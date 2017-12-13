@@ -16,7 +16,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/golang/protobuf/proto"
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/cache/dslog"
+	"go.mercari.io/datastore/dsmiddleware/dslog"
 	memcachepb "go.mercari.io/datastore/internal/pb/memcache"
 	"go.mercari.io/datastore/internal/testutils"
 	netcontext "golang.org/x/net/context"
@@ -56,24 +56,24 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	ch := New()
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -82,7 +82,7 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		Name string
 	}
 
-	// Put. add to cache.
+	// Put. add to dsmiddleware.
 	key := client.IDKey("Data", 111, nil)
 	objBefore := &Data{Name: "Data"}
 	_, err := client.Put(ctx, key, objBefore)
@@ -95,7 +95,7 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Get. from cache.
+	// Get. from dsmiddleware.
 	objAfter := &Data{}
 	err = client.Get(ctx, key, objAfter)
 	if err != nil {
@@ -141,24 +141,24 @@ func TestAEMemcacheCache_Query(t *testing.T) {
 	// setup. strategies are first in - first apply.
 
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	ch := New()
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -395,25 +395,25 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 
 	// setup. strategies are first in - first apply.
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	ch := New()
 	ch.raiseMemcacheError = true
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -432,7 +432,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 
 	key := client.NameKey("Data", "a", nil)
 
-	// put to cache
+	// put to dsmiddleware
 	_, err = client.Put(ctx, key, &Data{Name: "Before"})
 	if err != nil {
 		t.Fatal(err)
@@ -448,7 +448,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to cache before commit
+		// don't put to dsmiddleware before commit
 		key2 := client.NameKey("Data", "b", nil)
 		_, err = tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -465,7 +465,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't delete from cache before commit
+		// don't delete from dsmiddleware before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
@@ -495,7 +495,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to cache before commit
+		// don't put to dsmiddleware before commit
 		key2 := client.IncompleteKey("Data", nil)
 		pKey, err := tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -515,7 +515,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't delete from cache before commit
+		// don't delete from dsmiddleware before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
@@ -535,7 +535,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		if v := key3.Name(); v != key2.Name() {
 			t.Errorf("unexpected: %v", v)
 		}
-		// commited, but don't put to cache in tx.
+		// commited, but don't put to dsmiddleware in tx.
 		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key3.Encode()))
 		if err != memcache.ErrCacheMiss {
 			t.Fatal(err)
@@ -648,25 +648,25 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 
 	// setup. strategies are first in - first apply.
 	bLog := dslog.NewLogger("before: ", logf)
-	client.AppendCacheStrategy(bLog)
+	client.AppendMiddleware(bLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(bLog)
+		client.RemoveMiddleware(bLog)
 	}()
 
 	ch := New()
 	ch.Logf = logf
-	client.AppendCacheStrategy(ch)
+	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(ch)
+		client.RemoveMiddleware(ch)
 	}()
 
 	aLog := dslog.NewLogger("after: ", logf)
-	client.AppendCacheStrategy(aLog)
+	client.AppendMiddleware(aLog)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(aLog)
+		client.RemoveMiddleware(aLog)
 	}()
 
 	// exec.
@@ -693,7 +693,7 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 
 	for _, key := range keys {
 		if key.ID()%2 == 0 {
-			// delete cache id=2, 4, 6, 8, 10
+			// delete dsmiddleware id=2, 4, 6, 8, 10
 			err := memcache.Delete(ctx, ch.cacheKey(key))
 			if err != nil {
 				t.Fatal(err)
@@ -702,15 +702,15 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		if key.ID()%3 == 0 {
 			// Delete entity where out of aememcache scope
 			// delete entity id=3, 6, 9
-			client.RemoveCacheStrategy(ch)
+			client.RemoveMiddleware(ch)
 			err := client.Delete(ctx, key)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			client.RemoveCacheStrategy(aLog)
-			client.AppendCacheStrategy(ch)
-			client.AppendCacheStrategy(aLog)
+			client.RemoveMiddleware(aLog)
+			client.AppendMiddleware(ch)
+			client.AppendMiddleware(aLog)
 		}
 	}
 
@@ -742,8 +742,8 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		before: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		after: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
-		cache/aememcache.SetMulti: incoming len=10
-		cache/aememcache.SetMulti: len=10
+		dsmiddleware/aememcache.SetMulti: incoming len=10
+		dsmiddleware/aememcache.SetMulti: len=10
 		before: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		before: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
 		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
@@ -752,12 +752,12 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		before: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
 		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
 		before: GetMultiWithoutTx #5, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
-		cache/aememcache.GetMulti: incoming len=10
-		cache/aememcache.GetMulti: got len=5
+		dsmiddleware/aememcache.GetMulti: incoming len=10
+		dsmiddleware/aememcache.GetMulti: got len=5
 		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
 		after: GetMultiWithoutTx #5, err=datastore: no such entity
-		cache/aememcache.SetMulti: incoming len=4
-		cache/aememcache.SetMulti: len=4
+		dsmiddleware/aememcache.SetMulti: incoming len=4
+		dsmiddleware/aememcache.SetMulti: len=4
 		before: GetMultiWithoutTx #5, err=datastore: no such entity
 	`)
 

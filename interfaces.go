@@ -35,8 +35,8 @@ type Client interface {
 	DecodeCursor(s string) (Cursor, error)
 
 	Batch() *Batch
-	AppendCacheStrategy(strategy CacheStrategy) // NOTE First-In Last-Apply
-	RemoveCacheStrategy(strategy CacheStrategy) bool
+	AppendMiddleware(middleware Middleware) // NOTE First-In First-Apply
+	RemoveMiddleware(middleware Middleware) bool
 	SwapContext(ctx context.Context) context.Context
 }
 

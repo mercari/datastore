@@ -6,14 +6,14 @@ import (
 	"go.mercari.io/datastore"
 )
 
-var _ datastore.CacheStrategy = &CacheBridge{}
+var _ datastore.Middleware = &MiddlewareBridge{}
 
-type CacheBridge struct {
+type MiddlewareBridge struct {
 	ocb  OriginalClientBridge
 	otb  OriginalTransactionBridge
 	oib  OriginalIteratorBridge
-	cs   []datastore.CacheStrategy
-	Info *datastore.CacheInfo
+	mws  []datastore.Middleware
+	Info *datastore.MiddlewareInfo
 }
 
 type OriginalClientBridge interface {
@@ -34,29 +34,29 @@ type OriginalIteratorBridge interface {
 	Next(iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error)
 }
 
-func NewCacheBridge(info *datastore.CacheInfo, ocb OriginalClientBridge, otb OriginalTransactionBridge, oib OriginalIteratorBridge, cs []datastore.CacheStrategy) *CacheBridge {
-	cb := &CacheBridge{
+func NewCacheBridge(info *datastore.MiddlewareInfo, ocb OriginalClientBridge, otb OriginalTransactionBridge, oib OriginalIteratorBridge, mws []datastore.Middleware) *MiddlewareBridge {
+	cb := &MiddlewareBridge{
 		ocb:  ocb,
 		otb:  otb,
 		oib:  oib,
-		cs:   cs,
+		mws:  mws,
 		Info: info,
 	}
 	cb.Info.Next = cb
 	return cb
 }
 
-func (cb *CacheBridge) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
+	if len(cb.mws) == 0 {
 		return cb.ocb.PutMulti(info.Context, keys, psList)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -64,17 +64,17 @@ func (cb *CacheBridge) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datas
 	return current.PutMultiWithoutTx(left.Info, keys, psList)
 }
 
-func (cb *CacheBridge) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
+	if len(cb.mws) == 0 {
 		return cb.otb.PutMulti(keys, psList)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -82,17 +82,17 @@ func (cb *CacheBridge) PutMultiWithTx(info *datastore.CacheInfo, keys []datastor
 	return current.PutMultiWithTx(left.Info, keys, psList)
 }
 
-func (cb *CacheBridge) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+	if len(cb.mws) == 0 {
 		return cb.ocb.GetMulti(info.Context, keys, psList)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -100,17 +100,17 @@ func (cb *CacheBridge) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datas
 	return current.GetMultiWithoutTx(left.Info, keys, psList)
 }
 
-func (cb *CacheBridge) GetMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+	if len(cb.mws) == 0 {
 		return cb.otb.GetMulti(keys, psList)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -118,17 +118,17 @@ func (cb *CacheBridge) GetMultiWithTx(info *datastore.CacheInfo, keys []datastor
 	return current.GetMultiWithTx(left.Info, keys, psList)
 }
 
-func (cb *CacheBridge) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key) error {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
+	if len(cb.mws) == 0 {
 		return cb.ocb.DeleteMulti(info.Context, keys)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -136,17 +136,17 @@ func (cb *CacheBridge) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []da
 	return current.DeleteMultiWithoutTx(left.Info, keys)
 }
 
-func (cb *CacheBridge) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key) error {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
+	if len(cb.mws) == 0 {
 		return cb.otb.DeleteMulti(keys)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -154,17 +154,17 @@ func (cb *CacheBridge) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datas
 	return current.DeleteMultiWithTx(left.Info, keys)
 }
 
-func (cb *CacheBridge) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction, commit datastore.Commit) error {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) PostCommit(info *datastore.MiddlewareInfo, tx datastore.Transaction, commit datastore.Commit) error {
+	if len(cb.mws) == 0 {
 		return nil
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -172,17 +172,17 @@ func (cb *CacheBridge) PostCommit(info *datastore.CacheInfo, tx datastore.Transa
 	return current.PostCommit(left.Info, tx, commit)
 }
 
-func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) PostRollback(info *datastore.MiddlewareInfo, tx datastore.Transaction) error {
+	if len(cb.mws) == 0 {
 		return nil
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -190,17 +190,17 @@ func (cb *CacheBridge) PostRollback(info *datastore.CacheInfo, tx datastore.Tran
 	return current.PostRollback(left.Info, tx)
 }
 
-func (cb *CacheBridge) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) Run(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
+	if len(cb.mws) == 0 {
 		return cb.ocb.Run(info.Context, q, qDump)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -208,17 +208,17 @@ func (cb *CacheBridge) Run(info *datastore.CacheInfo, q datastore.Query, qDump *
 	return current.Run(left.Info, q, qDump)
 }
 
-func (cb *CacheBridge) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
+	if len(cb.mws) == 0 {
 		return cb.ocb.GetAll(info.Context, q, qDump, psList)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left
@@ -226,17 +226,17 @@ func (cb *CacheBridge) GetAll(info *datastore.CacheInfo, q datastore.Query, qDum
 	return current.GetAll(left.Info, q, qDump, psList)
 }
 
-func (cb *CacheBridge) Next(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
-	if len(cb.cs) == 0 {
+func (cb *MiddlewareBridge) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
+	if len(cb.mws) == 0 {
 		return cb.oib.Next(iter, ps)
 	}
 
-	current := cb.cs[0]
-	left := &CacheBridge{
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
 		ocb:  cb.ocb,
 		otb:  cb.otb,
 		oib:  cb.oib,
-		cs:   cb.cs[1:],
+		mws:  cb.mws[1:],
 		Info: cb.Info,
 	}
 	left.Info.Next = left

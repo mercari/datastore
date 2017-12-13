@@ -16,9 +16,9 @@ import (
 
 // TODO アプリケーション側で実装する場合のベストプラクティス的コードをどこかに作成してリンクを置く
 
-var _ datastore.CacheStrategy = &modifier{}
+var _ datastore.Middleware = &modifier{}
 
-func New() datastore.CacheStrategy {
+func New() datastore.Middleware {
 	return &modifier{}
 }
 
@@ -27,39 +27,39 @@ type contextQuery struct{}
 type modifier struct {
 }
 
-func (m *modifier) PutMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
+func (m *modifier) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	return info.Next.PutMultiWithoutTx(info, keys, psList)
 }
 
-func (m *modifier) PutMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
+func (m *modifier) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
 	return info.Next.PutMultiWithTx(info, keys, psList)
 }
 
-func (m *modifier) GetMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+func (m *modifier) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	return info.Next.GetMultiWithoutTx(info, keys, psList)
 }
 
-func (m *modifier) GetMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
+func (m *modifier) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	return info.Next.GetMultiWithTx(info, keys, psList)
 }
 
-func (m *modifier) DeleteMultiWithoutTx(info *datastore.CacheInfo, keys []datastore.Key) error {
+func (m *modifier) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	return info.Next.DeleteMultiWithoutTx(info, keys)
 }
 
-func (m *modifier) DeleteMultiWithTx(info *datastore.CacheInfo, keys []datastore.Key) error {
+func (m *modifier) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	return info.Next.DeleteMultiWithTx(info, keys)
 }
 
-func (m *modifier) PostCommit(info *datastore.CacheInfo, tx datastore.Transaction, commit datastore.Commit) error {
+func (m *modifier) PostCommit(info *datastore.MiddlewareInfo, tx datastore.Transaction, commit datastore.Commit) error {
 	return info.Next.PostCommit(info, tx, commit)
 }
 
-func (m *modifier) PostRollback(info *datastore.CacheInfo, tx datastore.Transaction) error {
+func (m *modifier) PostRollback(info *datastore.MiddlewareInfo, tx datastore.Transaction) error {
 	return info.Next.PostRollback(info, tx)
 }
 
-func (m *modifier) Run(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
+func (m *modifier) Run(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
 	if qDump.KeysOnly {
 		return info.Next.Run(info, q, qDump)
 	}
@@ -84,7 +84,7 @@ func (m *modifier) Run(info *datastore.CacheInfo, q datastore.Query, qDump *data
 	return info.Next.Run(info, q, qDump)
 }
 
-func (m *modifier) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
+func (m *modifier) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
 	if qDump.KeysOnly {
 		return info.Next.GetAll(info, q, qDump, psList)
 	}
@@ -125,7 +125,7 @@ func (m *modifier) GetAll(info *datastore.CacheInfo, q datastore.Query, qDump *d
 	return keys, nil
 }
 
-func (m *modifier) Next(info *datastore.CacheInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
+func (m *modifier) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	mQDumpMap, ok := info.Context.Value(contextQuery{}).(map[*modifier]map[*datastore.QueryDump]bool)
 	if !ok {
 		return info.Next.Next(info, q, qDump, iter, ps)

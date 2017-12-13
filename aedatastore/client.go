@@ -13,8 +13,8 @@ import (
 var _ w.Client = (*datastoreImpl)(nil)
 
 type datastoreImpl struct {
-	ctx             context.Context
-	cacheStrategies []w.CacheStrategy
+	ctx         context.Context
+	middlewares []w.Middleware
 }
 
 func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dst interface{}) error {
@@ -29,11 +29,11 @@ func (d *datastoreImpl) Get(ctx context.Context, key w.Key, dst interface{}) err
 }
 
 func (d *datastoreImpl) GetMulti(ctx context.Context, keys []w.Key, dst interface{}) error {
-	cacheInfo := &w.CacheInfo{
+	cacheInfo := &w.MiddlewareInfo{
 		Context: ctx,
 		Client:  d,
 	}
-	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
 	return shared.GetMultiOps(ctx, keys, dst, func(keys []w.Key, dst []w.PropertyList) error {
 		return cb.GetMultiWithoutTx(cacheInfo, keys, dst)
@@ -52,11 +52,11 @@ func (d *datastoreImpl) Put(ctx context.Context, key w.Key, src interface{}) (w.
 }
 
 func (d *datastoreImpl) PutMulti(ctx context.Context, keys []w.Key, src interface{}) ([]w.Key, error) {
-	cacheInfo := &w.CacheInfo{
+	cacheInfo := &w.MiddlewareInfo{
 		Context: ctx,
 		Client:  d,
 	}
-	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
 	keys, _, err := shared.PutMultiOps(ctx, keys, src, func(keys []w.Key, src []w.PropertyList) ([]w.Key, []w.PendingKey, error) {
 		keys, err := cb.PutMultiWithoutTx(cacheInfo, keys, src)
@@ -81,11 +81,11 @@ func (d *datastoreImpl) Delete(ctx context.Context, key w.Key) error {
 }
 
 func (d *datastoreImpl) DeleteMulti(ctx context.Context, keys []w.Key) error {
-	cacheInfo := &w.CacheInfo{
+	cacheInfo := &w.MiddlewareInfo{
 		Context: ctx,
 		Client:  d,
 	}
-	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
 	return shared.DeleteMultiOps(ctx, keys, func(keys []w.Key) error {
 		return cb.DeleteMultiWithoutTx(cacheInfo, keys)
@@ -101,11 +101,11 @@ func (d *datastoreImpl) NewTransaction(ctx context.Context) (w.Transaction, erro
 	txCtx := context.WithValue(ext.txCtx, contextTransaction{}, ext)
 	txImpl := &transactionImpl{
 		client: &datastoreImpl{
-			ctx:             txCtx,
-			cacheStrategies: d.cacheStrategies,
+			ctx:         txCtx,
+			middlewares: d.middlewares,
 		},
 	}
-	txImpl.cacheInfo = &w.CacheInfo{
+	txImpl.cacheInfo = &w.MiddlewareInfo{
 		Context:     txCtx,
 		Client:      d,
 		Transaction: txImpl,
@@ -125,11 +125,11 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 	txCtx := context.WithValue(ext.txCtx, contextTransaction{}, ext)
 	txImpl := &transactionImpl{
 		client: &datastoreImpl{
-			ctx:             txCtx,
-			cacheStrategies: d.cacheStrategies,
+			ctx:         txCtx,
+			middlewares: d.middlewares,
 		},
 	}
-	txImpl.cacheInfo = &w.CacheInfo{
+	txImpl.cacheInfo = &w.MiddlewareInfo{
 		Context:     txCtx,
 		Client:      d,
 		Transaction: txImpl,
@@ -152,11 +152,11 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 }
 
 func (d *datastoreImpl) Run(ctx context.Context, q w.Query) w.Iterator {
-	cacheInfo := &w.CacheInfo{
+	cacheInfo := &w.MiddlewareInfo{
 		Context: ctx,
 		Client:  d,
 	}
-	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
 	return cb.Run(cb.Info, q, q.Dump())
 }
@@ -219,12 +219,12 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 	}
 
 	qDump := q.Dump()
-	cacheInfo := &w.CacheInfo{
+	cacheInfo := &w.MiddlewareInfo{
 		Context:     ctx,
 		Client:      d,
 		Transaction: qDump.Transaction,
 	}
-	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.cacheStrategies)
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 	return shared.GetAllOps(ctx, qDump, dst, func(dst *[]w.PropertyList) ([]w.Key, error) {
 		return cb.GetAll(cacheInfo, q, qDump, dst)
 	})
@@ -298,21 +298,21 @@ func (d *datastoreImpl) Batch() *w.Batch {
 	return &w.Batch{Client: d}
 }
 
-func (d *datastoreImpl) AppendCacheStrategy(strategy w.CacheStrategy) {
-	d.cacheStrategies = append(d.cacheStrategies, strategy)
+func (d *datastoreImpl) AppendMiddleware(mw w.Middleware) {
+	d.middlewares = append(d.middlewares, mw)
 }
 
-func (d *datastoreImpl) RemoveCacheStrategy(strategy w.CacheStrategy) bool {
-	list := make([]w.CacheStrategy, 0, len(d.cacheStrategies))
+func (d *datastoreImpl) RemoveMiddleware(md w.Middleware) bool {
+	list := make([]w.Middleware, 0, len(d.middlewares))
 	found := false
-	for _, old := range d.cacheStrategies {
-		if old == strategy {
+	for _, old := range d.middlewares {
+		if old == md {
 			found = true
 			continue
 		}
 		list = append(list, old)
 	}
-	d.cacheStrategies = list
+	d.middlewares = list
 
 	return found
 }

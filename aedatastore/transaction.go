@@ -92,7 +92,7 @@ func getTxExtractor(ctx context.Context) *txExtractor {
 
 type transactionImpl struct {
 	client    *datastoreImpl
-	cacheInfo *w.CacheInfo
+	cacheInfo *w.MiddlewareInfo
 }
 
 type commitImpl struct {
@@ -110,7 +110,7 @@ func (tx *transactionImpl) Get(key w.Key, dst interface{}) error {
 }
 
 func (tx *transactionImpl) GetMulti(keys []w.Key, dst interface{}) error {
-	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.middlewares)
 
 	err := shared.GetMultiOps(tx.client.ctx, keys, dst, func(keys []w.Key, dst []w.PropertyList) error {
 		return cb.GetMultiWithTx(tx.cacheInfo, keys, dst)
@@ -131,7 +131,7 @@ func (tx *transactionImpl) Put(key w.Key, src interface{}) (w.PendingKey, error)
 }
 
 func (tx *transactionImpl) PutMulti(keys []w.Key, src interface{}) ([]w.PendingKey, error) {
-	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.middlewares)
 
 	_, pKeys, err := shared.PutMultiOps(tx.client.ctx, keys, src, func(keys []w.Key, src []w.PropertyList) ([]w.Key, []w.PendingKey, error) {
 		pKeys, err := cb.PutMultiWithTx(tx.cacheInfo, keys, src)
@@ -157,7 +157,7 @@ func (tx *transactionImpl) Delete(key w.Key) error {
 }
 
 func (tx *transactionImpl) DeleteMulti(keys []w.Key) error {
-	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.middlewares)
 
 	err := shared.DeleteMultiOps(tx.client.ctx, keys, func(keys []w.Key) error {
 		return cb.DeleteMultiWithTx(tx.cacheInfo, keys)
@@ -177,7 +177,7 @@ func (tx *transactionImpl) Commit() (w.Commit, error) {
 		return nil, err
 	}
 
-	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.middlewares)
 	commitImpl := &commitImpl{}
 	err = cb.PostCommit(tx.cacheInfo, tx, commitImpl)
 
@@ -199,7 +199,7 @@ func (tx *transactionImpl) Rollback() error {
 		return err
 	}
 
-	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.cacheStrategies)
+	cb := shared.NewCacheBridge(tx.cacheInfo, &originalClientBridgeImpl{tx.client}, &originalTransactionBridgeImpl{tx: tx}, nil, tx.client.middlewares)
 	return cb.PostRollback(tx.cacheInfo, tx)
 }
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/cache/dslog"
+	"go.mercari.io/datastore/dsmiddleware/dslog"
 	"go.mercari.io/datastore/testsuite"
 	"google.golang.org/api/iterator"
 )
@@ -40,10 +40,10 @@ func DsLog_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 	logger := dslog.NewLogger("log: ", logf)
 
-	client.AppendCacheStrategy(logger)
+	client.AppendMiddleware(logger)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(logger)
+		client.RemoveMiddleware(logger)
 	}()
 
 	type Data struct {
@@ -95,10 +95,10 @@ func DsLog_Query(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 	logger := dslog.NewLogger("log: ", logf)
 
-	client.AppendCacheStrategy(logger)
+	client.AppendMiddleware(logger)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(logger)
+		client.RemoveMiddleware(logger)
 	}()
 
 	type Data struct {
@@ -201,10 +201,10 @@ func DsLog_Transaction(t *testing.T, ctx context.Context, client datastore.Clien
 	}
 	logger := dslog.NewLogger("log: ", logf)
 
-	client.AppendCacheStrategy(logger)
+	client.AppendMiddleware(logger)
 	defer func() {
 		// stop logging before cleanUp func called.
-		client.RemoveCacheStrategy(logger)
+		client.RemoveMiddleware(logger)
 	}()
 
 	type Data struct {
