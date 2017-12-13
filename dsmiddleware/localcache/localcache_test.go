@@ -55,7 +55,7 @@ func TestLocalCache_Basic(t *testing.T) {
 		Name string
 	}
 
-	// Put. add to dsmiddleware.
+	// Put. add to cache.
 	key := client.IDKey("Data", 111, nil)
 	objBefore := &Data{Name: "Data"}
 	_, err := client.Put(ctx, key, objBefore)
@@ -67,7 +67,7 @@ func TestLocalCache_Basic(t *testing.T) {
 		t.Fatalf("unexpected: %v", v)
 	}
 
-	// Get. from dsmiddleware.
+	// Get. from cache.
 	objAfter := &Data{}
 	err = client.Get(ctx, key, objAfter)
 	if err != nil {
@@ -139,7 +139,7 @@ func TestLocalCache_WithIncludeKinds(t *testing.T) {
 		Name string
 	}
 
-	{ // Put. dsmiddleware target.
+	{ // Put. cache target.
 		key := client.IDKey("DataA", 111, nil)
 		objBefore := &Data{Name: "A"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -161,7 +161,7 @@ func TestLocalCache_WithIncludeKinds(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	{ // Put. dsmiddleware ignored.
+	{ // Put. cache ignored.
 		key := client.IDKey("DataB", 111, nil)
 		objBefore := &Data{Name: "B"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -183,7 +183,7 @@ func TestLocalCache_WithIncludeKinds(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	{ // Put. dsmiddleware target & ignored.
+	{ // Put. cache target & ignored.
 		keyInc := client.IDKey("DataA", 111, nil)
 		keyExc := client.IDKey("DataB", 111, nil)
 
@@ -363,7 +363,7 @@ func TestLocalCache_WithExcludeKinds(t *testing.T) {
 		Name string
 	}
 
-	{ // Put. dsmiddleware target.
+	{ // Put. cache target.
 		key := client.IDKey("DataA", 111, nil)
 		objBefore := &Data{Name: "A"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -385,7 +385,7 @@ func TestLocalCache_WithExcludeKinds(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	{ // Put. dsmiddleware ignored.
+	{ // Put. cache ignored.
 		key := client.IDKey("DataB", 111, nil)
 		objBefore := &Data{Name: "B"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -407,7 +407,7 @@ func TestLocalCache_WithExcludeKinds(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	{ // Put. dsmiddleware target & ignored.
+	{ // Put. cache target & ignored.
 		keyInc := client.IDKey("DataA", 111, nil)
 		keyExc := client.IDKey("DataB", 111, nil)
 
@@ -589,7 +589,7 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 		Name string
 	}
 
-	{ // Put. dsmiddleware target.
+	{ // Put. cache target.
 		key := client.IDKey("DataA", 222, nil)
 		objBefore := &Data{Name: "A"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -611,7 +611,7 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	{ // Put. dsmiddleware ignored.
+	{ // Put. cache ignored.
 		key := client.IDKey("DataB", 111, nil)
 		objBefore := &Data{Name: "B"}
 		_, err := client.Put(ctx, key, objBefore)
@@ -633,7 +633,7 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	{ // Put. dsmiddleware target & ignored.
+	{ // Put. cache target & ignored.
 		keyIgnore := client.IDKey("DataA", 111, nil)
 		keyTarget := client.IDKey("DataB", 222, nil)
 
@@ -788,7 +788,7 @@ func TestLocalCache_FlushLocalCache(t *testing.T) {
 		Name string
 	}
 
-	// Put. add to dsmiddleware.
+	// Put. add to cache.
 	key := client.IDKey("Data", 111, nil)
 	objBefore := &Data{Name: "Data"}
 	_, err := client.Put(ctx, key, objBefore)
@@ -967,7 +967,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 
 	key := client.NameKey("Data", "a", nil)
 
-	// put to dsmiddleware
+	// put to cache
 	_, err := client.Put(ctx, key, &Data{Name: "Before"})
 	if err != nil {
 		t.Fatal(err)
@@ -982,7 +982,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to dsmiddleware before commit
+		// don't put to cache before commit
 		key2 := client.NameKey("Data", "b", nil)
 		_, err = tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -998,7 +998,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't delete from dsmiddleware before commit
+		// don't delete from cache before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
@@ -1023,7 +1023,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to dsmiddleware before commit
+		// don't put to cache before commit
 		key2 := client.IncompleteKey("Data", nil)
 		pKey, err := tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -1039,7 +1039,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't delete from dsmiddleware before commit
+		// don't delete from cache before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
@@ -1058,7 +1058,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if v := key3.Name(); v != key2.Name() {
 			t.Errorf("unexpected: %v", v)
 		}
-		// commited, but don't put to dsmiddleware in tx.
+		// commited, but don't put to cache in tx.
 		if v := ch.Has(key3); v {
 			t.Fatalf("unexpected: %v", v)
 		}
@@ -1173,7 +1173,7 @@ func TestLocalCache_MultiError(t *testing.T) {
 
 	for _, key := range keys {
 		if key.ID()%2 == 0 {
-			// delete dsmiddleware id=2, 4, 6, 8, 10
+			// delete cache id=2, 4, 6, 8, 10
 			ch.DeleteCache(ctx, key)
 		}
 		if key.ID()%3 == 0 {
