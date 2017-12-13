@@ -1,3 +1,16 @@
+<a name="0.11.0"></a>
+# [0.11.0](https://github.com/mercari/datastore/compare/v0.10.1...v0.11.0) (2017-12-13)
+
+
+### Features
+
+* **middleware:** rename CacheStrategy to Middleware & move cache dir to dsmiddleware dir ([ae339b9](https://github.com/mercari/datastore/commit/ae339b9))
+
+### BREAKING CHANGES
+
+refactoring cache layer to middleware layer.
+
+
 <a name="0.10.1"></a>
 ## [0.10.1](https://github.com/mercari/datastore/compare/v0.10.0...v0.10.1) (2017-12-12)
 
