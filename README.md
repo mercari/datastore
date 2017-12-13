@@ -83,6 +83,8 @@ TODO
         * Replace query by KeysOnly query with Get ops
     * `dsmiddleware/localcache`
         * Entity caching with machine local memory
+    * `dsmiddleware/noop`
+        * noop middleware :wink:
     * `dsmiddleware/storagecache`
         * Entity cacheing base code
 * `internal`
