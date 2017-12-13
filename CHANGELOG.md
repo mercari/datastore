@@ -1,3 +1,15 @@
+<a name="0.12.0"></a>
+# [0.12.0](https://github.com/mercari/datastore/compare/v0.11.0...v0.12.0) (2017-12-13)
+
+
+### Features
+
+* **dsmiddleware/chaosrpc:** add dsmiddleware/chaosrpc middleware for testing ([7da792f](https://github.com/mercari/datastore/commit/7da792f))
+* **dsmiddleware/noop:** add dsmiddleware/noop middleware ([5c5af95](https://github.com/mercari/datastore/commit/5c5af95))
+* **dsmiddleware/rpcretry:** add dsmiddleware/rpcretry middleware ([17c5b17](https://github.com/mercari/datastore/commit/17c5b17))
+
+
+
 <a name="0.11.0"></a>
 # [0.11.0](https://github.com/mercari/datastore/compare/v0.10.1...v0.11.0) (2017-12-13)
 
