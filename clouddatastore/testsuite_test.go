@@ -9,6 +9,7 @@ import (
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/dslog"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/fishbone"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/localcache"
+	_ "go.mercari.io/datastore/testsuite/dsmiddleware/rpcretry"
 	_ "go.mercari.io/datastore/testsuite/favcliptools"
 	_ "go.mercari.io/datastore/testsuite/realworld/recursive_batch"
 	_ "go.mercari.io/datastore/testsuite/realworld/tbf"
