@@ -70,6 +70,10 @@ func (l *logger) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore
 	if err != nil {
 		l.Logf(info.Context, l.Prefix+"PutMultiWithTx #%d, err=%s", cnt, err.Error())
 	}
+	if len(keys) != len(pKeys) {
+		l.Logf(info.Context, l.Prefix+"PutMultiWithTx #%d, keys length mismatch len(keys)=%d, len(pKeys)=%d", cnt, len(keys), len(pKeys))
+		return pKeys, err
+	}
 
 	lgTxPutMap, ok := info.Context.Value(contextTx{}).(map[*logger]map[datastore.Transaction][]*txPutEntity)
 	if !ok {
