@@ -2,9 +2,13 @@ package clouddatastore
 
 import (
 	"context"
+	"math/rand"
 	"testing"
+	"time"
 
+	"go.mercari.io/datastore/dsmiddleware/chaosrpc"
 	"go.mercari.io/datastore/dsmiddleware/localcache"
+	"go.mercari.io/datastore/dsmiddleware/rpcretry"
 	"go.mercari.io/datastore/testsuite"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/dslog"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/fishbone"
@@ -93,6 +97,38 @@ func TestCloudDatastoreWithLocalCacheTestSuite(t *testing.T) {
 
 			ch := localcache.New()
 			datastore.AppendMiddleware(ch)
+
+			ctx = testsuite.WrapCloudFlag(ctx)
+			test(t, ctx, datastore)
+		})
+	}
+}
+
+func TestCloudDatastoreWithRPCRetryAndChaosRPCTestSuite(t *testing.T) {
+	ctx := context.Background()
+	for name, test := range testsuite.TestSuite {
+		t.Run(name, func(t *testing.T) {
+			defer cleanUp()
+
+			datastore, err := FromContext(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			rr := rpcretry.New(
+				rpcretry.WithRetryLimit(10),
+				rpcretry.WithMinBackoffDuration(1),
+				rpcretry.WithMaxBackoffDuration(1),
+				rpcretry.WithLogf(func(ctx context.Context, format string, args ...interface{}) {
+					t.Logf(format, args...)
+				}),
+			)
+			datastore.AppendMiddleware(rr)
+
+			seed := time.Now().UnixNano()
+			t.Logf("chaos seed: %d", seed)
+			cr := chaosrpc.New(rand.NewSource(seed))
+			datastore.AppendMiddleware(cr)
 
 			ctx = testsuite.WrapCloudFlag(ctx)
 			test(t, ctx, datastore)
