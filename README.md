@@ -77,6 +77,8 @@ TODO
     * Various processing can be intercepted
     * `dsmiddleware/aememcache`
         * Entity caching with [AE Memcache](https://cloud.google.com/appengine/docs/standard/go/memcache/using)
+    * `dsmiddleware/chaosrpc`
+        * Randomly generate an RPC error!
     * `dsmiddleware/dslog`
         * Datastore operation logging in cache layer
     * `dsmiddleware/fishbone`
@@ -85,6 +87,8 @@ TODO
         * Entity caching with machine local memory
     * `dsmiddleware/noop`
         * noop middleware :wink:
+    * `dsmiddleware/rpcretry`
+        * Retry RPC when an error occurred
     * `dsmiddleware/storagecache`
         * Entity cacheing base code
 * `internal`
