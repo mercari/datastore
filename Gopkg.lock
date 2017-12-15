@@ -63,6 +63,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mjibson/goon"
+  packages = ["."]
+  revision = "0cd9745d6b9c43c1de754769708fb2ac349d84b2"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
   revision = "a8b9294777976932365dabb6640cf1468d95c70f"
@@ -124,6 +130,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "426cf888b16f028a3db798b87981aa2854d212d3823f0d7d890bcb1577dfe4a5"
+  inputs-digest = "bbb9b138043e161e6ed269dfcb5ed5c841b617b22501295cc60bf4fd508233c2"
   solver-name = "gps-cdcl"
   solver-version = 1
