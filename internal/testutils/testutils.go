@@ -13,11 +13,11 @@ import (
 
 var EmitCleanUpLog = false
 
-func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func()) {
+func SetupCloudDatastore(tb testing.TB) (context.Context, datastore.Client, func()) {
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	return ctx, client, func() {
@@ -26,7 +26,7 @@ func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func(
 		q := client.NewQuery("__kind__").KeysOnly()
 		keys, err := client.GetAll(ctx, q, nil)
 		if err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 		if len(keys) == 0 {
 			return
@@ -38,7 +38,7 @@ func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func(
 		}
 
 		if EmitCleanUpLog {
-			t.Logf("remove %s", strings.Join(kinds, ", "))
+			tb.Logf("remove %s", strings.Join(kinds, ", "))
 		}
 
 		for _, kind := range kinds {
@@ -48,18 +48,18 @@ func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func(
 				q := client.NewQuery(kind).Limit(1000).KeysOnly()
 				keys, err := client.GetAll(ctx, q, nil)
 				if err != nil {
-					t.Fatal(err)
+					tb.Fatal(err)
 				}
 				err = client.DeleteMulti(ctx, keys)
 				if err != nil {
-					t.Fatal(err)
+					tb.Fatal(err)
 				}
 
 				cnt += len(keys)
 
 				if len(keys) != 1000 {
 					if EmitCleanUpLog {
-						t.Logf("remove %s entity: %d", kind, cnt)
+						tb.Logf("remove %s entity: %d", kind, cnt)
 					}
 					break
 				}
@@ -68,15 +68,15 @@ func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func(
 	}
 }
 
-func SetupAEDatastore(t *testing.T) (context.Context, datastore.Client, func()) {
+func SetupAEDatastore(tb testing.TB) (context.Context, datastore.Client, func()) {
 	_, ctx, err := testerator.SpinUp()
 	if err != nil {
-		t.Fatal(err.Error())
+		tb.Fatal(err.Error())
 	}
 
 	client, err := aedatastore.FromContext(ctx)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	return ctx, client, func() { testerator.SpinDown() }

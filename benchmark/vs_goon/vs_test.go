@@ -1,24 +1,21 @@
 package vs_goon
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
+
 	"github.com/mjibson/goon"
-	"github.com/favclip/testerator"
-	"go.mercari.io/datastore/aedatastore"
-	"go.mercari.io/datastore/dsmiddleware/aememcache"
 	"go.mercari.io/datastore/boom"
+	"go.mercari.io/datastore/dsmiddleware/aememcache"
 	"go.mercari.io/datastore/dsmiddleware/localcache"
-	"context"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 func BenchmarkGoonFromAEMemcache(b *testing.B) {
-	_, ctx, err := testerator.SpinUp()
-	if err != nil {
-		b.Fatal(err.Error())
-	}
-	defer testerator.SpinDown()
+	ctx, _, cleanUp := testutils.SetupAEDatastore(b)
+	defer cleanUp()
 
 	type Data struct {
 		ID        int64 `datastore:"-" goon:"id"`
@@ -84,16 +81,8 @@ func BenchmarkGoonFromAEMemcache(b *testing.B) {
 }
 
 func BenchmarkBoomFromAEMemcache(b *testing.B) {
-	_, ctx, err := testerator.SpinUp()
-	if err != nil {
-		b.Fatal(err.Error())
-	}
-	defer testerator.SpinDown()
-
-	client, err := aedatastore.FromContext(ctx)
-	if err != nil {
-		b.Fatal(err.Error())
-	}
+	ctx, client, cleanUp := testutils.SetupAEDatastore(b)
+	defer cleanUp()
 
 	lc := localcache.New()
 	lc.Logf = func(ctx context.Context, format string, args ...interface{}) {}
@@ -167,11 +156,8 @@ func BenchmarkBoomFromAEMemcache(b *testing.B) {
 }
 
 func BenchmarkGoonFromLocalCache(b *testing.B) {
-	_, ctx, err := testerator.SpinUp()
-	if err != nil {
-		b.Fatal(err.Error())
-	}
-	defer testerator.SpinDown()
+	ctx, _, cleanUp := testutils.SetupAEDatastore(b)
+	defer cleanUp()
 
 	type Data struct {
 		ID        int64 `datastore:"-" goon:"id"`
@@ -235,16 +221,8 @@ func BenchmarkGoonFromLocalCache(b *testing.B) {
 	}
 }
 func BenchmarkBoomFromLocalCache(b *testing.B) {
-	_, ctx, err := testerator.SpinUp()
-	if err != nil {
-		b.Fatal(err.Error())
-	}
-	defer testerator.SpinDown()
-
-	client, err := aedatastore.FromContext(ctx)
-	if err != nil {
-		b.Fatal(err.Error())
-	}
+	ctx, client, cleanUp := testutils.SetupAEDatastore(b)
+	defer cleanUp()
 
 	lc := localcache.New()
 	lc.Logf = func(ctx context.Context, format string, args ...interface{}) {}
