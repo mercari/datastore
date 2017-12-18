@@ -38,6 +38,12 @@
   revision = "334401dbe72dc66e5a940a8c04ae2ab4a9a5af5c"
 
 [[projects]]
+  name = "github.com/garyburd/redigo"
+  packages = ["internal","redis"]
+  revision = "47dc60e71eed504e3ef8e77ee3c6fe720f3be57f"
+  version = "v1.3.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/golang/lint"
   packages = [".","golint"]
@@ -124,6 +130,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "426cf888b16f028a3db798b87981aa2854d212d3823f0d7d890bcb1577dfe4a5"
+  inputs-digest = "ca79971cd38f8a1f3c560269df6670b270e8211f64091d7ec0c5044127184b44"
   solver-name = "gps-cdcl"
   solver-version = 1
