@@ -74,10 +74,18 @@ func (ch *CacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 		cacheKey := ch.cacheKey(ci.Key)
 		cacheValue := buf.Bytes()
 
-		err = ch.conn.Send("SET", cacheKey, cacheValue, "PX", int64(ch.ExpireDuration/time.Millisecond))
-		if err != nil {
-			ch.Logf(ctx, `dsmiddleware/rediscache.SetMulti: conn.Send("SET", "%s", ..., "PX", %d) err=%s`, cacheKey, ch.ExpireDuration/time.Millisecond, err.Error())
-			return err
+		if ch.ExpireDuration <= 0 {
+			err = ch.conn.Send("SET", cacheKey, cacheValue)
+			if err != nil {
+				ch.Logf(ctx, `dsmiddleware/rediscache.SetMulti: conn.Send("SET", "%s", ...) err=%s`, cacheKey, err.Error())
+				return err
+			}
+		} else {
+			err = ch.conn.Send("SET", cacheKey, cacheValue, "PX", int64(ch.ExpireDuration/time.Millisecond))
+			if err != nil {
+				ch.Logf(ctx, `dsmiddleware/rediscache.SetMulti: conn.Send("SET", "%s", ..., "PX", %d) err=%s`, cacheKey, ch.ExpireDuration/time.Millisecond, err.Error())
+				return err
+			}
 		}
 		cnt++
 	}
