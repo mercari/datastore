@@ -19,6 +19,19 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+func inCache(ctx context.Context, ch *CacheHandler, key datastore.Key) (bool, error) {
+	resp, err := ch.GetMulti(ctx, []datastore.Key{key})
+	if err != nil {
+		return false, err
+	} else if v := len(resp); v != 1 {
+		return false, nil
+	} else if v := resp[0]; v == nil {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func TestRedisCache_Basic(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
@@ -78,16 +91,14 @@ func TestRedisCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resp, err := ch.GetMulti(ctx, []datastore.Key{key})
+	hit, err := inCache(ctx, ch, key)
 	if err != nil {
 		t.Fatal(err)
-	} else if v := len(resp); v != 1 {
-		t.Fatalf("unexpected: %v", v)
-	} else if v := resp[0]; v == nil {
+	} else if v := hit; !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
-	// Get. from dsmiddleware.
+	// Get. from cache.
 	objAfter := &Data{}
 	err = client.Get(ctx, key, objAfter)
 	if err != nil {
@@ -100,12 +111,10 @@ func TestRedisCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resp, err = ch.GetMulti(ctx, []datastore.Key{key})
+	hit, err = inCache(ctx, ch, key)
 	if err != nil {
 		t.Fatal(err)
-	} else if v := len(resp); v != 1 {
-		t.Fatalf("unexpected: %v", v)
-	} else if v := resp[0]; v != nil {
+	} else if v := hit; v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -193,16 +202,14 @@ func TestRedisCache_BasicWithoutExpire(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resp, err := ch.GetMulti(ctx, []datastore.Key{key})
+	hit, err := inCache(ctx, ch, key)
 	if err != nil {
 		t.Fatal(err)
-	} else if v := len(resp); v != 1 {
-		t.Fatalf("unexpected: %v", v)
-	} else if v := resp[0]; v == nil {
+	} else if v := hit; !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
-	// Get. from dsmiddleware.
+	// Get. from cache.
 	objAfter := &Data{}
 	err = client.Get(ctx, key, objAfter)
 	if err != nil {
@@ -215,12 +222,10 @@ func TestRedisCache_BasicWithoutExpire(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resp, err = ch.GetMulti(ctx, []datastore.Key{key})
+	hit, err = inCache(ctx, ch, key)
 	if err != nil {
 		t.Fatal(err)
-	} else if v := len(resp); v != 1 {
-		t.Fatalf("unexpected: %v", v)
-	} else if v := resp[0]; v != nil {
+	} else if v := hit; v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -438,12 +443,10 @@ func TestRedisCache_Transaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := ch.GetMulti(ctx, []datastore.Key{key})
+	hit, err := inCache(ctx, ch, key)
 	if err != nil {
 		t.Fatal(err)
-	} else if v := len(resp); v != 1 {
-		t.Fatalf("unexpected: %v", v)
-	} else if v := resp[0]; v == nil {
+	} else if v := hit; !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -453,18 +456,16 @@ func TestRedisCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to dsmiddleware before commit
+		// don't put to cache before commit
 		key2 := client.NameKey("Data", "b", nil)
 		_, err = tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp, err := ch.GetMulti(ctx, []datastore.Key{key2})
+		hit, err = inCache(ctx, ch, key2)
 		if err != nil {
 			t.Fatal(err)
-		} else if v := len(resp); v != 1 {
-			t.Fatalf("unexpected: %v", v)
-		} else if v := resp[0]; v != nil {
+		} else if v := hit; v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -474,17 +475,15 @@ func TestRedisCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't delete from dsmiddleware before commit
+		// don't delete from cache before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp, err = ch.GetMulti(ctx, []datastore.Key{key})
+		hit, err = inCache(ctx, ch, key)
 		if err != nil {
 			t.Fatal(err)
-		} else if v := len(resp); v != 1 {
-			t.Fatalf("unexpected: %v", v)
-		} else if v := resp[0]; v == nil {
+		} else if v := hit; !v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -501,7 +500,7 @@ func TestRedisCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to dsmiddleware before commit
+		// don't put to cache before commit
 		key2 := client.IncompleteKey("Data", nil)
 		pKey, err := tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -519,12 +518,10 @@ func TestRedisCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp, err := ch.GetMulti(ctx, []datastore.Key{key})
+		hit, err = inCache(ctx, ch, key)
 		if err != nil {
 			t.Fatal(err)
-		} else if v := len(resp); v != 1 {
-			t.Fatalf("unexpected: %v", v)
-		} else if v := resp[0]; v == nil {
+		} else if v := hit; !v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -539,12 +536,10 @@ func TestRedisCache_Transaction(t *testing.T) {
 			t.Errorf("unexpected: %v", v)
 		}
 		// commited, but don't put to cache in tx.
-		resp, err = ch.GetMulti(ctx, []datastore.Key{key3})
+		hit, err = inCache(ctx, ch, key3)
 		if err != nil {
 			t.Fatal(err)
-		} else if v := len(resp); v != 1 {
-			t.Fatalf("unexpected: %v", v)
-		} else if v := resp[0]; v != nil {
+		} else if v := hit; v {
 			t.Fatalf("unexpected: %v", v)
 		}
 	}
@@ -669,14 +664,14 @@ func TestRedisCache_MultiError(t *testing.T) {
 
 	for _, key := range keys {
 		if key.ID()%2 == 0 {
-			// delete dsmiddleware id=2, 4, 6, 8, 10
+			// delete cache id=2, 4, 6, 8, 10
 			err := ch.DeleteMulti(ctx, []datastore.Key{key})
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 		if key.ID()%3 == 0 {
-			// Delete entity where out of aememcache scope
+			// Delete entity where out of redis scope
 			// delete entity id=3, 6, 9
 			client.RemoveMiddleware(ch)
 			err := client.Delete(ctx, key)
