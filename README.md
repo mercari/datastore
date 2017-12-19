@@ -87,6 +87,8 @@ TODO
         * Entity caching with machine local memory
     * `dsmiddleware/noop`
         * noop middleware :wink:
+    * `dsmiddleware/rediscache`
+        * Entity caching with [Redis](https://redis.io/)
     * `dsmiddleware/rpcretry`
         * Retry RPC when an error occurred
     * `dsmiddleware/storagecache`
