@@ -14,17 +14,13 @@ staticcheck $packages
 unused $packages
 go generate $packages
 
-# Testing in local env
-if [ "${CI:=''}" != "true" ]; then
-  $(gcloud beta emulators datastore env-init)
-else
-  export DATASTORE_EMULATOR_HOST=localhost:8081
-fi
+export DATASTORE_EMULATOR_HOST=localhost:8081
+export DATASTORE_PROJECT_ID=datastore-wrapper
+export REDIS_HOST=
+export REDIS_PORT=6379
+
 # use -p 1. Cloud Datastore Emulator can't dedicated by connections. go will running package concurrently.
 goapp test $packages -p 1 $@
-if [ "${CI:=''}" != "true" ]; then
-  $(gcloud beta emulators datastore env-unset)
-fi
 
 # Connect Cloud Datastore (production env)
 # (if you need login) → gcloud auth application-default login
