@@ -40,8 +40,6 @@ func TestMain(m *testing.M) {
 	os.Exit(status)
 }
 
-// NOTE docker run -p 6379:6379 redis
-
 func TestRedisCache_Basic(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
@@ -61,7 +59,7 @@ func TestRedisCache_Basic(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	dial, err := net.Dial("tcp", ":6379")
+	dial, err := net.Dial("tcp", os.Getenv("REDIS_HOST")+":"+os.Getenv("REDIS_PORT"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +173,7 @@ func TestRedisCache_Query(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	dial, err := net.Dial("tcp", ":6379")
+	dial, err := net.Dial("tcp", os.Getenv("REDIS_HOST")+":"+os.Getenv("REDIS_PORT"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +305,7 @@ func TestRedisCache_Transaction(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	dial, err := net.Dial("tcp", ":6379")
+	dial, err := net.Dial("tcp", os.Getenv("REDIS_HOST")+":"+os.Getenv("REDIS_PORT"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -527,7 +525,7 @@ func TestRedisCache_MultiError(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	dial, err := net.Dial("tcp", ":6379")
+	dial, err := net.Dial("tcp", os.Getenv("REDIS_HOST")+":"+os.Getenv("REDIS_PORT"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -133,13 +133,7 @@ $ ./serve.sh # exec in background
 $ ./test.sh
 ```
 
-2. Testing with Docker
-
-```
-$ ./build-in-docker.sh
-```
-
-3. Testing with [Circle CI CLI](https://circleci.com/docs/2.0/local-jobs/)
+2. Testing with [Circle CI CLI](https://circleci.com/docs/2.0/local-jobs/)
 
 ```
 $ circleci build
