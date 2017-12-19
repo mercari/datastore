@@ -127,7 +127,6 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 	}
 
 	itemMap, err := memcache.GetMulti(ctx, cacheKeys)
-	ch.Logf(ctx, "dsmiddleware/aememcache.GetMulti: got len=%d", len(itemMap))
 
 	if err != nil {
 		ch.Logf(ctx, "dsmiddleware/aememcache: error on memcache.GetMulti %s", err.Error())
@@ -146,10 +145,12 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 		return resultList, nil
 	}
 
+	hit, miss := 0, 0
 	for idx, key := range keys {
 		item, ok := itemMap[ch.cacheKey(key)]
 		if !ok {
 			resultList[idx] = nil
+			miss++
 			continue
 		}
 		buf := bytes.NewBuffer(item.Value)
@@ -159,13 +160,18 @@ func (ch *CacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 		if err != nil {
 			resultList[idx] = nil
 			ch.Logf(ctx, "dsmiddleware/aememcache.GetMulti: gob.Decode error key=%s err=%s", key.String(), err.Error())
+			miss++
 			continue
 		}
+
 		resultList[idx] = &storagecache.CacheItem{
 			Key:          key,
 			PropertyList: ps,
 		}
+		hit++
 	}
+
+	ch.Logf(ctx, "dsmiddleware/aememcache.GetMulti: hit=%d miss=%d", hit, miss)
 
 	return resultList, nil
 }

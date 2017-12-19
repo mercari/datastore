@@ -14,14 +14,10 @@ import (
 	_ "github.com/favclip/testerator/memcache"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/golang/protobuf/proto"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/dslog"
-	memcachepb "go.mercari.io/datastore/internal/pb/memcache"
 	"go.mercari.io/datastore/internal/testutils"
-	netcontext "golang.org/x/net/context"
 	"google.golang.org/api/iterator"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/memcache"
 )
 
@@ -41,6 +37,19 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(status)
+}
+
+func inCache(ctx context.Context, ch *CacheHandler, key datastore.Key) (bool, error) {
+	resp, err := ch.GetMulti(ctx, []datastore.Key{key})
+	if err != nil {
+		return false, err
+	} else if v := len(resp); v != 1 {
+		return false, nil
+	} else if v := resp[0]; v == nil {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func TestAEMemcacheCache_Basic(t *testing.T) {
@@ -63,6 +72,7 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 	}()
 
 	ch := New()
+	ch.Logf = logf
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -82,7 +92,7 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		Name string
 	}
 
-	// Put. add to dsmiddleware.
+	// Put. add to cache.
 	key := client.IDKey("Data", 111, nil)
 	objBefore := &Data{Name: "Data"}
 	_, err := client.Put(ctx, key, objBefore)
@@ -90,12 +100,14 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = memcache.Get(ctx, ch.cacheKey(key))
+	hit, err := inCache(ctx, ch, key)
 	if err != nil {
 		t.Fatal(err)
+	} else if v := hit; !v {
+		t.Fatalf("unexpected: %v", v)
 	}
 
-	// Get. from dsmiddleware.
+	// Get. from cache.
 	objAfter := &Data{}
 	err = client.Get(ctx, key, objAfter)
 	if err != nil {
@@ -108,19 +120,30 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = memcache.Get(ctx, ch.cacheKey(key))
-	if err != memcache.ErrCacheMiss {
+	hit, err = inCache(ctx, ch, key)
+	if err != nil {
 		t.Fatal(err)
+	} else if v := hit; v {
+		t.Fatalf("unexpected: %v", v)
 	}
 
 	expected := heredoc.Doc(`
 		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
 		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
 		after: PutMultiWithoutTx #1, keys=[/Data,111]
+		dsmiddleware/aememcache.SetMulti: incoming len=1
+		dsmiddleware/aememcache.SetMulti: len=1
 		before: PutMultiWithoutTx #1, keys=[/Data,111]
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=1 miss=0
 		before: GetMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=1 miss=0
 		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,111]
 		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
+		dsmiddleware/aememcache.DeleteMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=0 miss=1
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {
@@ -148,6 +171,7 @@ func TestAEMemcacheCache_Query(t *testing.T) {
 	}()
 
 	ch := New()
+	ch.Logf = logf
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -217,6 +241,8 @@ func TestAEMemcacheCache_Query(t *testing.T) {
 		before: PutMultiWithoutTx #1, len(keys)=3, keys=[/Data,#1, /Data,#2, /Data,#3]
 		after: PutMultiWithoutTx #1, len(keys)=3, keys=[/Data,#1, /Data,#2, /Data,#3]
 		after: PutMultiWithoutTx #1, keys=[/Data,#1, /Data,#2, /Data,#3]
+		dsmiddleware/aememcache.SetMulti: incoming len=3
+		dsmiddleware/aememcache.SetMulti: len=3
 		before: PutMultiWithoutTx #1, keys=[/Data,#1, /Data,#2, /Data,#3]
 		before: Run #2, q=v1:Data&or=-Name
 		after: Run #2, q=v1:Data&or=-Name
@@ -251,142 +277,6 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupAEDatastore(t)
 	defer cleanUp()
 
-	var rpcLogs []string
-	rpcLogf := func(ctx context.Context, format string, args ...interface{}) {
-		t.Logf(format, args...)
-		rpcLogs = append(rpcLogs, fmt.Sprintf(format, args...))
-	}
-
-	ctx = appengine.WithAPICallFunc(ctx, func(ctx netcontext.Context, service, method string, in, out proto.Message) error {
-		origErr := appengine.APICall(ctx, service, method, in, out)
-
-		switch service {
-		case "memcache":
-			switch method {
-			case "Set":
-				{
-					b, err := proto.Marshal(in)
-					if err != nil {
-						return err
-					}
-					req := &memcachepb.MemcacheSetRequest{}
-					err = proto.Unmarshal(b, req)
-					if err != nil {
-						t.Fatal(err)
-					}
-					rpcLogf(ctx, "memcache.Set: len=%d", len(req.GetItem()))
-					for _, item := range req.GetItem() {
-						keyStr := string(item.GetKey())
-						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
-						key, err := client.DecodeKey(keyStr)
-						if err != nil {
-							t.Fatal(err)
-						}
-						rpcLogf(ctx, "memcache.Set: req=%s", key.String())
-					}
-
-					b, err = proto.Marshal(out)
-					if err != nil {
-						return err
-					}
-					resp := &memcachepb.MemcacheSetResponse{}
-					err = proto.Unmarshal(b, resp)
-					if err != nil {
-						t.Fatal(err)
-					}
-					rpcLogf(ctx, "memcache.Set: resp len=%d", len(resp.GetSetStatus()))
-					for _, status := range resp.GetSetStatus() {
-						rpcLogf(ctx, "memcache.Set: resp=%s", status.String())
-					}
-				}
-
-			case "Get":
-				{
-					b, err := proto.Marshal(in)
-					if err != nil {
-						return err
-					}
-					req := &memcachepb.MemcacheGetRequest{}
-					err = proto.Unmarshal(b, req)
-					if err != nil {
-						t.Fatal(err)
-					}
-					rpcLogf(ctx, "memcache.Get: req len=%d", len(req.GetKey()))
-					for _, key := range req.GetKey() {
-						keyStr := string(key)
-						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
-						key, err := client.DecodeKey(keyStr)
-						if err != nil {
-							t.Fatal(err)
-						}
-						rpcLogf(ctx, "memcache.Get: req=%s", key.String())
-					}
-
-					b, err = proto.Marshal(out)
-					if err != nil {
-						return err
-					}
-					resp := &memcachepb.MemcacheGetResponse{}
-					err = proto.Unmarshal(b, resp)
-					if err != nil {
-						t.Fatal(err)
-					}
-					rpcLogf(ctx, "memcache.Get: resp len=%d", len(resp.GetItem()))
-					for _, item := range resp.GetItem() {
-						keyStr := string(item.Key)
-						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
-						key, err := client.DecodeKey(keyStr)
-						if err != nil {
-							t.Fatal(err)
-						}
-						rpcLogf(ctx, "memcache.Get: resp=%s", key.String())
-					}
-				}
-
-			case "Delete":
-				{
-					b, err := proto.Marshal(in)
-					if err != nil {
-						return err
-					}
-					req := &memcachepb.MemcacheDeleteRequest{}
-					err = proto.Unmarshal(b, req)
-					if err != nil {
-						t.Fatal(err)
-					}
-					rpcLogf(ctx, "memcache.Delete: req len=%d", len(req.GetItem()))
-					for _, item := range req.GetItem() {
-						keyStr := string(item.GetKey())
-						keyStr = strings.TrimPrefix(keyStr, "mercari:aememcache:")
-						key, err := client.DecodeKey(keyStr)
-						if err != nil {
-							t.Fatal(err)
-						}
-						rpcLogf(ctx, "memcache.Delete: req=%s", key.String())
-					}
-
-					b, err = proto.Marshal(out)
-					if err != nil {
-						return err
-					}
-					resp := &memcachepb.MemcacheDeleteResponse{}
-					err = proto.Unmarshal(b, resp)
-					if err != nil {
-						t.Fatal(err)
-					}
-					rpcLogf(ctx, "memcache.Delete: resp len=%d", len(resp.GetDeleteStatus()))
-					for _, status := range resp.GetDeleteStatus() {
-						rpcLogf(ctx, "memcache.Delete: resp=%s", status.String())
-					}
-				}
-
-			}
-		}
-
-		return origErr
-	})
-	client.SwapContext(ctx)
-
 	var logs []string
 	logf := func(ctx context.Context, format string, args ...interface{}) {
 		t.Logf(format, args...)
@@ -403,6 +293,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 
 	ch := New()
 	ch.raiseMemcacheError = true
+	ch.Logf = logf
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -432,14 +323,16 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 
 	key := client.NameKey("Data", "a", nil)
 
-	// put to dsmiddleware
+	// put to cache
 	_, err = client.Put(ctx, key, &Data{Name: "Before"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key.Encode()))
+	hit, err := inCache(ctx, ch, key)
 	if err != nil {
 		t.Fatal(err)
+	} else if v := hit; !v {
+		t.Fatalf("unexpected: %v", v)
 	}
 
 	{ // Rollback
@@ -448,15 +341,17 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to dsmiddleware before commit
+		// don't put to cache before commit
 		key2 := client.NameKey("Data", "b", nil)
 		_, err = tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key2.Encode()))
-		if err != memcache.ErrCacheMiss {
+		hit, err = inCache(ctx, ch, key2)
+		if err != nil {
 			t.Fatal(err)
+		} else if v := hit; v {
+			t.Fatalf("unexpected: %v", v)
 		}
 
 		obj := &Data{}
@@ -465,14 +360,16 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't delete from dsmiddleware before commit
+		// don't delete from cache before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key.Encode()))
+		hit, err = inCache(ctx, ch, key)
 		if err != nil {
 			t.Fatal(err)
+		} else if v := hit; !v {
+			t.Fatalf("unexpected: %v", v)
 		}
 
 		// rollback.
@@ -495,7 +392,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't put to dsmiddleware before commit
+		// don't put to cache before commit
 		key2 := client.IncompleteKey("Data", nil)
 		pKey, err := tx.Put(key2, &Data{Name: "After"})
 		if err != nil {
@@ -515,14 +412,16 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// don't delete from dsmiddleware before commit
+		// don't delete from cache before commit
 		err = tx.Delete(key)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key.Encode()))
+		hit, err = inCache(ctx, ch, key)
 		if err != nil {
 			t.Fatal(err)
+		} else if v := hit; !v {
+			t.Fatalf("unexpected: %v", v)
 		}
 
 		// commit.
@@ -535,10 +434,12 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		if v := key3.Name(); v != key2.Name() {
 			t.Errorf("unexpected: %v", v)
 		}
-		// commited, but don't put to dsmiddleware in tx.
-		_, err = memcache.Get(ctx, fmt.Sprintf("mercari:aememcache:%s", key3.Encode()))
-		if err != memcache.ErrCacheMiss {
+		// commited, but don't put to cache in tx.
+		hit, err = inCache(ctx, ch, key3)
+		if err != nil {
 			t.Fatal(err)
+		} else if v := hit; v {
+			t.Fatalf("unexpected: %v", v)
 		}
 
 		stats, err = memcache.Stats(ctx)
@@ -550,88 +451,52 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		}
 	}
 
-	var expected *regexp.Regexp
-	{
-		expectedPattern := heredoc.Doc(`
-			before: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,a]
-			after: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,a]
-			after: PutMultiWithoutTx #1, keys=[/Data,a]
-			before: PutMultiWithoutTx #1, keys=[/Data,a]
-			before: PutMultiWithTx #2, len(keys)=1, keys=[/Data,b]
-			after: PutMultiWithTx #2, len(keys)=1, keys=[/Data,b]
-			before: GetMultiWithTx #3, len(keys)=1, keys=[/Data,a]
-			after: GetMultiWithTx #3, len(keys)=1, keys=[/Data,a]
-			before: DeleteMultiWithTx #4, len(keys)=1, keys=[/Data,a]
-			after: DeleteMultiWithTx #4, len(keys)=1, keys=[/Data,a]
-			before: PostRollback #5
-			after: PostRollback #5
-			before: PutMultiWithTx #6, len(keys)=1, keys=[/Data,0]
-			after: PutMultiWithTx #6, len(keys)=1, keys=[/Data,0]
-			before: GetMultiWithTx #7, len(keys)=1, keys=[/Data,a]
-			after: GetMultiWithTx #7, len(keys)=1, keys=[/Data,a]
-			before: DeleteMultiWithTx #8, len(keys)=1, keys=[/Data,a]
-			after: DeleteMultiWithTx #8, len(keys)=1, keys=[/Data,a]
-			before: PostCommit #9 Put keys=[/Data,@####@]
-			after: PostCommit #9 Put keys=[/Data,@####@]
-		`)
-		ss := strings.Split(expectedPattern, "@####@")
-		var buf bytes.Buffer
-		for idx, s := range ss {
-			buf.WriteString(regexp.QuoteMeta(s))
-			if idx != (len(ss) - 1) {
-				buf.WriteString("[0-9]+")
-			}
+	expectedPattern := heredoc.Doc(`
+		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,a]
+		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,a]
+		after: PutMultiWithoutTx #1, keys=[/Data,a]
+		dsmiddleware/aememcache.SetMulti: incoming len=1
+		dsmiddleware/aememcache.SetMulti: len=1
+		before: PutMultiWithoutTx #1, keys=[/Data,a]
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=1 miss=0
+		before: PutMultiWithTx #2, len(keys)=1, keys=[/Data,b]
+		after: PutMultiWithTx #2, len(keys)=1, keys=[/Data,b]
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=0 miss=1
+		before: GetMultiWithTx #3, len(keys)=1, keys=[/Data,a]
+		after: GetMultiWithTx #3, len(keys)=1, keys=[/Data,a]
+		before: DeleteMultiWithTx #4, len(keys)=1, keys=[/Data,a]
+		after: DeleteMultiWithTx #4, len(keys)=1, keys=[/Data,a]
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=1 miss=0
+		before: PostRollback #5
+		after: PostRollback #5
+		before: PutMultiWithTx #6, len(keys)=1, keys=[/Data,0]
+		after: PutMultiWithTx #6, len(keys)=1, keys=[/Data,0]
+		before: GetMultiWithTx #7, len(keys)=1, keys=[/Data,a]
+		after: GetMultiWithTx #7, len(keys)=1, keys=[/Data,a]
+		before: DeleteMultiWithTx #8, len(keys)=1, keys=[/Data,a]
+		after: DeleteMultiWithTx #8, len(keys)=1, keys=[/Data,a]
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=1 miss=0
+		before: PostCommit #9 Put keys=[/Data,@####@]
+		dsmiddleware/aememcache.DeleteMulti: incoming len=3
+		dsmiddleware/aememcache: error on memcache.DeleteMulti memcache: cache miss (and 1 other error)
+		after: PostCommit #9 Put keys=[/Data,@####@]
+		dsmiddleware/aememcache.GetMulti: incoming len=1
+		dsmiddleware/aememcache.GetMulti: hit=0 miss=1
+	`)
+	ss := strings.Split(expectedPattern, "@####@")
+	var buf bytes.Buffer
+	for idx, s := range ss {
+		buf.WriteString(regexp.QuoteMeta(s))
+		if idx != (len(ss) - 1) {
+			buf.WriteString("[0-9]+")
 		}
-		expected = regexp.MustCompile(buf.String())
 	}
+	expected := regexp.MustCompile(buf.String())
 	if v := strings.Join(logs, "\n") + "\n"; !expected.MatchString(v) {
-		t.Errorf("unexpected: %v", v)
-	}
-
-	{
-		expectedPattern := heredoc.Doc(`
-			memcache.Set: len=1
-			memcache.Set: req=/Data,a
-			memcache.Set: resp len=1
-			memcache.Set: resp=STORED
-			memcache.Get: req len=1
-			memcache.Get: req=/Data,a
-			memcache.Get: resp len=1
-			memcache.Get: resp=/Data,a
-			memcache.Get: req len=1
-			memcache.Get: req=/Data,b
-			memcache.Get: resp len=0
-			memcache.Get: req len=1
-			memcache.Get: req=/Data,a
-			memcache.Get: resp len=1
-			memcache.Get: resp=/Data,a
-			memcache.Get: req len=1
-			memcache.Get: req=/Data,a
-			memcache.Get: resp len=1
-			memcache.Get: resp=/Data,a
-			memcache.Delete: req len=3
-			memcache.Delete: req=/Data,@####@
-			memcache.Delete: req=/Data,a
-			memcache.Delete: req=/Data,a
-			memcache.Delete: resp len=3
-			memcache.Delete: resp=NOT_FOUND
-			memcache.Delete: resp=DELETED
-			memcache.Delete: resp=NOT_FOUND
-			memcache.Get: req len=1
-			memcache.Get: req=/Data,@####@
-			memcache.Get: resp len=0
-		`)
-		ss := strings.Split(expectedPattern, "@####@")
-		var buf bytes.Buffer
-		for idx, s := range ss {
-			buf.WriteString(regexp.QuoteMeta(s))
-			if idx != (len(ss) - 1) {
-				buf.WriteString("[0-9]+")
-			}
-		}
-		expected = regexp.MustCompile(buf.String())
-	}
-	if v := strings.Join(rpcLogs, "\n") + "\n"; !expected.MatchString(v) {
 		t.Errorf("unexpected: %v", v)
 	}
 }
@@ -693,7 +558,7 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 
 	for _, key := range keys {
 		if key.ID()%2 == 0 {
-			// delete dsmiddleware id=2, 4, 6, 8, 10
+			// delete cache id=2, 4, 6, 8, 10
 			err := memcache.Delete(ctx, ch.cacheKey(key))
 			if err != nil {
 				t.Fatal(err)
@@ -753,7 +618,7 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
 		before: GetMultiWithoutTx #5, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		dsmiddleware/aememcache.GetMulti: incoming len=10
-		dsmiddleware/aememcache.GetMulti: got len=5
+		dsmiddleware/aememcache.GetMulti: hit=5 miss=5
 		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
 		after: GetMultiWithoutTx #5, err=datastore: no such entity
 		dsmiddleware/aememcache.SetMulti: incoming len=4
