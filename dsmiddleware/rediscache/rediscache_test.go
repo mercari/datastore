@@ -11,9 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/favclip/testerator"
-	_ "github.com/favclip/testerator/datastore"
-
 	"github.com/MakeNowJust/heredoc"
 	"github.com/garyburd/redigo/redis"
 	"go.mercari.io/datastore"
@@ -21,24 +18,6 @@ import (
 	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/api/iterator"
 )
-
-func TestMain(m *testing.M) {
-	_, _, err := testerator.SpinUp()
-	if err != nil {
-		fmt.Fprint(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-
-	status := m.Run()
-
-	err = testerator.SpinDown()
-	if err != nil {
-		fmt.Fprint(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-
-	os.Exit(status)
-}
 
 func TestRedisCache_Basic(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
