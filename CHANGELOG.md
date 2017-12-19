@@ -1,3 +1,15 @@
+<a name="0.13.0"></a>
+# [0.13.0](https://github.com/mercari/datastore/compare/v0.12.0...v0.13.0) (2017-12-19)
+
+
+### Features
+
+* **ci:** add redis sidecar container ([bc9908a](https://github.com/mercari/datastore/commit/bc9908a))
+* **dsmiddleware/aememcache:** change to display both hit and miss to logging ([257064b](https://github.com/mercari/datastore/commit/257064b))
+* **dsmiddleware/rediscache:** add dsmiddleware/rediscache package ([04cf0cb](https://github.com/mercari/datastore/commit/04cf0cb))
+
+
+
 <a name="0.12.0"></a>
 # [0.12.0](https://github.com/mercari/datastore/compare/v0.11.0...v0.12.0) (2017-12-13)
 
