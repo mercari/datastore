@@ -37,7 +37,8 @@ type Client interface {
 	Batch() *Batch
 	AppendMiddleware(middleware Middleware) // NOTE First-In First-Apply
 	RemoveMiddleware(middleware Middleware) bool
-	SwapContext(ctx context.Context) context.Context
+	Context() context.Context
+	SetContext(ctx context.Context)
 }
 
 type Key interface {

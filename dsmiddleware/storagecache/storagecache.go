@@ -375,8 +375,7 @@ func (ch *cacheHandler) PostCommit(info *datastore.MiddlewareInfo, tx datastore.
 
 	// don't pass txCtx to appengine.APICall
 	// otherwise, `transaction context has expired` will be occur
-	baseCtx := info.Client.SwapContext(context.Background())
-	info.Client.SwapContext(baseCtx)
+	baseCtx := info.Client.Context()
 	sErr := ch.s.DeleteMulti(baseCtx, filteredKeys)
 	nErr := info.Next.PostCommit(info, tx, commit)
 	if sErr != nil {

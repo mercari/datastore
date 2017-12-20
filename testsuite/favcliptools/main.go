@@ -85,7 +85,7 @@ func FavclipTools(t *testing.T, ctx context.Context, client datastore.Client) {
 
 	// qbg using client.Context internally
 	ctx = context.WithValue(ctx, contextClient{}, client)
-	client.SwapContext(ctx)
+	client.SetContext(ctx)
 
 	bm := boom.FromClient(ctx, client)
 

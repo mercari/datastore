@@ -317,8 +317,13 @@ func (d *datastoreImpl) RemoveMiddleware(md w.Middleware) bool {
 	return found
 }
 
-func (d *datastoreImpl) SwapContext(ctx context.Context) context.Context {
-	origCtx := d.ctx
+func (d *datastoreImpl) Context() context.Context {
+	return d.ctx
+}
+
+func (d *datastoreImpl) SetContext(ctx context.Context) {
+	if ctx == nil {
+		panic("ctx can't be nil")
+	}
 	d.ctx = ctx
-	return origCtx
 }
