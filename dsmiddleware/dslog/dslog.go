@@ -39,6 +39,25 @@ func (l *logger) KeysToString(keys []datastore.Key) string {
 	return strings.Join(keyStrings, ", ")
 }
 
+func (l *logger) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+	l.m.Lock()
+	cnt := l.counter
+	l.counter += 1
+	l.m.Unlock()
+
+	l.Logf(info.Context, l.Prefix+"AllocateIDs #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
+
+	keys, err := info.Next.AllocateIDs(info, keys)
+
+	if err == nil {
+		l.Logf(info.Context, l.Prefix+"AllocateIDs #%d, keys=[%s]", cnt, l.KeysToString(keys))
+	} else {
+		l.Logf(info.Context, l.Prefix+"AllocateIDs #%d, err=%s", cnt, err.Error())
+	}
+
+	return keys, err
+}
+
 func (l *logger) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
@@ -266,4 +285,23 @@ func (l *logger) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *
 	}
 
 	return key, err
+}
+
+func (l *logger) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+	l.m.Lock()
+	cnt := l.counter
+	l.counter += 1
+	l.m.Unlock()
+
+	l.Logf(info.Context, l.Prefix+"Count #%d, q=%s", cnt, qDump.String())
+
+	ret, err := info.Next.Count(info, q, qDump)
+
+	if err == nil {
+		l.Logf(info.Context, l.Prefix+"Count #%d, ret=%d", cnt, ret)
+	} else {
+		l.Logf(info.Context, l.Prefix+"Count #%d, err=%s", cnt, err.Error())
+	}
+
+	return ret, err
 }

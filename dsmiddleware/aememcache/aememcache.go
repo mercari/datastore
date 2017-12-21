@@ -206,6 +206,10 @@ func (ch *CacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) e
 
 // datastore.Middleware implementations
 
+func (ch *CacheHandler) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+	return ch.st.AllocateIDs(info, keys)
+}
+
 func (ch *CacheHandler) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	return ch.st.PutMultiWithoutTx(info, keys, psList)
 }
@@ -248,4 +252,8 @@ func (ch *CacheHandler) GetAll(info *datastore.MiddlewareInfo, q datastore.Query
 
 func (ch *CacheHandler) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	return ch.st.Next(info, q, qDump, iter, ps)
+}
+
+func (ch *CacheHandler) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+	return ch.st.Count(info, q, qDump)
 }

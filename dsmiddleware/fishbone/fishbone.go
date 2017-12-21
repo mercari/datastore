@@ -27,6 +27,10 @@ type contextQuery struct{}
 type modifier struct {
 }
 
+func (m *modifier) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+	return info.Next.AllocateIDs(info, keys)
+}
+
 func (m *modifier) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	return info.Next.PutMultiWithoutTx(info, keys, psList)
 }
@@ -172,4 +176,8 @@ func (m *modifier) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump
 	*ps = altPs
 
 	return key, nil
+}
+
+func (m *modifier) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+	return info.Next.Count(info, q, qDump)
 }

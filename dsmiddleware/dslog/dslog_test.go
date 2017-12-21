@@ -52,15 +52,40 @@ func TestDsLog_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := heredoc.Doc(`
-		log: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
-		log: PutMultiWithoutTx #1, keys=[/Data,111]
-		log: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
-		log: GetMultiWithoutTx #3, len(keys)=1, keys=[/Data,111]
-		log: GetMultiWithoutTx #3, err=datastore: no such entity
-	`)
+	keys, err := client.AllocatedIDs(ctx, []datastore.Key{
+		client.IncompleteKey("TestA", nil),
+		client.IncompleteKey("TestB", client.IDKey("Parent", 123, nil)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := len(keys); v != 2 {
+		t.Errorf("unexpected: %v", v)
+	}
 
-	if v := strings.Join(logs, "\n") + "\n"; v != expected {
+	var expected *regexp.Regexp
+	{
+		expectedPattern := heredoc.Doc(`
+			log: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
+			log: PutMultiWithoutTx #1, keys=[/Data,111]
+			log: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
+			log: GetMultiWithoutTx #3, len(keys)=1, keys=[/Data,111]
+			log: GetMultiWithoutTx #3, err=datastore: no such entity
+			log: AllocateIDs #4, len(keys)=2, keys=[/TestA,0, /Parent,123/TestB,0]
+			log: AllocateIDs #4, keys=[/TestA,@####@, /Parent,123/TestB,@####@]
+		`)
+		ss := strings.Split(expectedPattern, "@####@")
+		var buf bytes.Buffer
+		for idx, s := range ss {
+			buf.WriteString(regexp.QuoteMeta(s))
+			if idx != (len(ss) - 1) {
+				buf.WriteString("[0-9]+")
+			}
+		}
+		expected = regexp.MustCompile(buf.String())
+	}
+
+	if v := strings.Join(logs, "\n") + "\n"; !expected.MatchString(v) {
 		t.Errorf("unexpected: %v", v)
 	}
 }
@@ -132,6 +157,15 @@ func TestDsLog_Query(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Count
+	cnt, err = client.Count(ctx, q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cnt != size {
+		t.Errorf("unexpected: %v", cnt)
+	}
+
 	expected := heredoc.Doc(`
 		log: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,#1, /Data,#2, /Data,#3, /Data,#4, /Data,#5, /Data,#6, /Data,#7, /Data,#8, /Data,#9, /Data,#10]
 		log: PutMultiWithoutTx #1, keys=[/Data,#1, /Data,#2, /Data,#3, /Data,#4, /Data,#5, /Data,#6, /Data,#7, /Data,#8, /Data,#9, /Data,#10]
@@ -160,6 +194,8 @@ func TestDsLog_Query(t *testing.T) {
 		log: Next #13, err=no more items in iterator
 		log: GetAll #14, q=v1:Data&or=-Name
 		log: GetAll #14, len(keys)=10, keys=[/Data,#9, /Data,#8, /Data,#7, /Data,#6, /Data,#5, /Data,#4, /Data,#3, /Data,#2, /Data,#10, /Data,#1]
+		log: Count #15, q=v1:Data&or=-Name
+		log: Count #15, ret=10
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {

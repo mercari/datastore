@@ -17,11 +17,13 @@ type MiddlewareBridge struct {
 }
 
 type OriginalClientBridge interface {
+	AllocateIDs(ctx context.Context, keys []datastore.Key) ([]datastore.Key, error)
 	PutMulti(ctx context.Context, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error)
 	GetMulti(ctx context.Context, keys []datastore.Key, psList []datastore.PropertyList) error
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
 	Run(ctx context.Context, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator
 	GetAll(ctx context.Context, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error)
+	Count(ctx context.Context, q datastore.Query, qDump *datastore.QueryDump) (int, error)
 }
 
 type OriginalTransactionBridge interface {
@@ -44,6 +46,24 @@ func NewCacheBridge(info *datastore.MiddlewareInfo, ocb OriginalClientBridge, ot
 	}
 	cb.Info.Next = cb
 	return cb
+}
+
+func (cb *MiddlewareBridge) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+	if len(cb.mws) == 0 {
+		return cb.ocb.AllocateIDs(info.Context, keys)
+	}
+
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
+		ocb:  cb.ocb,
+		otb:  cb.otb,
+		oib:  cb.oib,
+		mws:  cb.mws[1:],
+		Info: cb.Info,
+	}
+	left.Info.Next = left
+
+	return current.AllocateIDs(left.Info, keys)
 }
 
 func (cb *MiddlewareBridge) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
@@ -242,4 +262,22 @@ func (cb *MiddlewareBridge) Next(info *datastore.MiddlewareInfo, q datastore.Que
 	left.Info.Next = left
 
 	return current.Next(left.Info, q, qDump, iter, ps)
+}
+
+func (cb *MiddlewareBridge) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+	if len(cb.mws) == 0 {
+		return cb.ocb.Count(info.Context, q, qDump)
+	}
+
+	current := cb.mws[0]
+	left := &MiddlewareBridge{
+		ocb:  cb.ocb,
+		otb:  cb.otb,
+		oib:  cb.oib,
+		mws:  cb.mws[1:],
+		Info: cb.Info,
+	}
+	left.Info.Next = left
+
+	return current.Count(left.Info, q, qDump)
 }

@@ -78,6 +78,15 @@ func (rh *retryHandler) try(ctx context.Context, logPrefix string, f func() erro
 	}
 }
 
+func (rh *retryHandler) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) (retKeys []datastore.Key, retErr error) {
+	next := info.Next
+	rh.try(info.Context, "middleware/rpcretry.AllocateIDs", func() error {
+		retKeys, retErr = next.AllocateIDs(info, keys)
+		return retErr
+	})
+	return
+}
+
 func (rh *retryHandler) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) (retKeys []datastore.Key, retErr error) {
 	next := info.Next
 	rh.try(info.Context, "middleware/rpcretry.PutMultiWithoutTx", func() error {
@@ -156,4 +165,13 @@ func (rh *retryHandler) GetAll(info *datastore.MiddlewareInfo, q datastore.Query
 func (rh *retryHandler) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	// Next is not idempotent
 	return info.Next.Next(info, q, qDump, iter, ps)
+}
+
+func (rh *retryHandler) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (retCnt int, retErr error) {
+	next := info.Next
+	rh.try(info.Context, "middleware/rpcretry.Count", func() error {
+		retCnt, retErr = next.Count(info, q, qDump)
+		return retErr
+	})
+	return
 }

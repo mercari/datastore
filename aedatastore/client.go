@@ -2,7 +2,6 @@ package aedatastore
 
 import (
 	"context"
-	"errors"
 
 	w "go.mercari.io/datastore"
 	"go.mercari.io/datastore/internal/shared"
@@ -162,62 +161,26 @@ func (d *datastoreImpl) Run(ctx context.Context, q w.Query) w.Iterator {
 }
 
 func (d *datastoreImpl) AllocatedIDs(ctx context.Context, keys []w.Key) ([]w.Key, error) {
-	// TODO 可能な限りバッチ化する
-	var resultKeys []w.Key
-	for _, key := range keys {
-		pK := toOriginalKey(key.ParentKey())
-		low, _, err := datastore.AllocateIDs(ctx, key.Kind(), pK, 1)
-		if err != nil {
-			return nil, err
-		}
-		origKey := datastore.NewKey(ctx, key.Kind(), "", low, pK)
-		resultKeys = append(resultKeys, toWrapperKey(ctx, origKey))
+	cacheInfo := &w.MiddlewareInfo{
+		Context: ctx,
+		Client:  d,
 	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
-	return resultKeys, nil
+	return cb.AllocateIDs(cb.Info, keys)
 }
 
 func (d *datastoreImpl) Count(ctx context.Context, q w.Query) (int, error) {
-	qImpl, ok := q.(*queryImpl)
-	if !ok {
-		return 0, errors.New("invalid query type")
+	cacheInfo := &w.MiddlewareInfo{
+		Context: ctx,
+		Client:  d,
 	}
-	if qImpl.firstError != nil {
-		return 0, qImpl.firstError
-	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
-	if qImpl.dump.Transaction != nil {
-		// replace ctx to tx ctx
-		txImpl, ok := qImpl.dump.Transaction.(*transactionImpl)
-		if !ok {
-			return 0, errors.New("unexpected context")
-		}
-		ctx = txImpl.client.ctx
-	}
-
-	var err error
-	ctx, err = appengine.Namespace(ctx, qImpl.dump.Namespace)
-	if err != nil {
-		return 0, toWrapperError(err)
-	}
-	count, err := qImpl.q.Count(ctx)
-	if err != nil {
-		return 0, toWrapperError(err)
-	}
-
-	return count, nil
+	return cb.Count(cb.Info, q, q.Dump())
 }
 
 func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) ([]w.Key, error) {
-	qImpl, ok := q.(*queryImpl)
-	if !ok {
-		return nil, errors.New("invalid query type")
-	}
-
-	if qImpl.firstError != nil {
-		return nil, qImpl.firstError
-	}
-
 	qDump := q.Dump()
 	cacheInfo := &w.MiddlewareInfo{
 		Context:     ctx,
