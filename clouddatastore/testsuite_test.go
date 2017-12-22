@@ -108,6 +108,13 @@ func TestCloudDatastoreWithRPCRetryAndChaosRPCTestSuite(t *testing.T) {
 	ctx := context.Background()
 	for name, test := range testsuite.TestSuite {
 		t.Run(name, func(t *testing.T) {
+			// Skip the flaky tests.
+			switch name {
+			case
+				"Filter_PropertyTranslaterMustError":
+				t.SkipNow()
+			}
+
 			defer cleanUp()
 
 			datastore, err := FromContext(ctx)
