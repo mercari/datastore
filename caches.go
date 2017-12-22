@@ -9,6 +9,7 @@ import (
 )
 
 type Middleware interface {
+	AllocateIDs(info *MiddlewareInfo, keys []Key) ([]Key, error)
 	PutMultiWithoutTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) ([]Key, error)
 	PutMultiWithTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) ([]PendingKey, error)
 	GetMultiWithoutTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) error
@@ -20,6 +21,7 @@ type Middleware interface {
 	Run(info *MiddlewareInfo, q Query, qDump *QueryDump) Iterator
 	GetAll(info *MiddlewareInfo, q Query, qDump *QueryDump, psList *[]PropertyList) ([]Key, error)
 	Next(info *MiddlewareInfo, q Query, qDump *QueryDump, iter Iterator, ps *PropertyList) (Key, error)
+	Count(info *MiddlewareInfo, q Query, qDump *QueryDump) (int, error)
 }
 
 type MiddlewareInfo struct {

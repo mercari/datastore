@@ -150,32 +150,23 @@ func (d *datastoreImpl) Run(ctx context.Context, q w.Query) w.Iterator {
 }
 
 func (d *datastoreImpl) AllocatedIDs(ctx context.Context, keys []w.Key) ([]w.Key, error) {
-	origKeys := toOriginalKeys(keys)
-	respKeys, err := d.client.AllocateIDs(ctx, origKeys)
-	if err != nil {
-		return nil, toWrapperError(err)
+	cacheInfo := &w.MiddlewareInfo{
+		Context: ctx,
+		Client:  d,
 	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
-	wKeys := toWrapperKeys(respKeys)
-
-	return wKeys, nil
+	return cb.AllocateIDs(cb.Info, keys)
 }
 
 func (d *datastoreImpl) Count(ctx context.Context, q w.Query) (int, error) {
-	qImpl, ok := q.(*queryImpl)
-	if !ok {
-		return 0, errors.New("invalid query type")
+	cacheInfo := &w.MiddlewareInfo{
+		Context: ctx,
+		Client:  d,
 	}
-	if qImpl.firstError != nil {
-		return 0, qImpl.firstError
-	}
+	cb := shared.NewCacheBridge(cacheInfo, &originalClientBridgeImpl{d}, nil, nil, d.middlewares)
 
-	count, err := d.client.Count(ctx, qImpl.q)
-	if err != nil {
-		return 0, toWrapperError(err)
-	}
-
-	return count, nil
+	return cb.Count(cb.Info, q, q.Dump())
 }
 
 func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) ([]w.Key, error) {

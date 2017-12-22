@@ -30,6 +30,14 @@ func (ch *chaosHandler) raiseError() error {
 	return nil
 }
 
+func (ch *chaosHandler) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+	if err := ch.raiseError(); err != nil {
+		return nil, err
+	}
+
+	return info.Next.AllocateIDs(info, keys)
+}
+
 func (ch *chaosHandler) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	if err := ch.raiseError(); err != nil {
 		return nil, err
@@ -104,4 +112,12 @@ func (ch *chaosHandler) GetAll(info *datastore.MiddlewareInfo, q datastore.Query
 func (ch *chaosHandler) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	// Next is not idempotent, don't retry in dsmiddleware/rpcretry.
 	return info.Next.Next(info, q, qDump, iter, ps)
+}
+
+func (ch *chaosHandler) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+	if err := ch.raiseError(); err != nil {
+		return 0, err
+	}
+
+	return info.Next.Count(info, q, qDump)
 }

@@ -83,6 +83,10 @@ func (ch *cacheHandler) target(key datastore.Key) bool {
 	return true
 }
 
+func (ch *cacheHandler) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+	return info.Next.AllocateIDs(info, keys)
+}
+
 func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	keys, err := info.Next.PutMultiWithoutTx(info, keys, psList)
 	if err != nil {
@@ -409,4 +413,8 @@ func (ch *cacheHandler) GetAll(info *datastore.MiddlewareInfo, q datastore.Query
 
 func (ch *cacheHandler) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	return info.Next.Next(info, q, qDump, iter, ps)
+}
+
+func (ch *cacheHandler) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+	return info.Next.Count(info, q, qDump)
 }

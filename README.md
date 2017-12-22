@@ -105,7 +105,6 @@ TODO
 ## TODO
 
 * Write tests for namespace
-* Retry feature
 * Write more documents
 
 ## Committers

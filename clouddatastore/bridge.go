@@ -76,6 +76,13 @@ type originalClientBridgeImpl struct {
 	d *datastoreImpl
 }
 
+func (ocb *originalClientBridgeImpl) AllocateIDs(ctx context.Context, keys []w.Key) ([]w.Key, error) {
+	origKeys := toOriginalKeys(keys)
+
+	origKeys, err := ocb.d.client.AllocateIDs(ctx, origKeys)
+	return toWrapperKeys(origKeys), toWrapperError(err)
+}
+
 func (ocb *originalClientBridgeImpl) PutMulti(ctx context.Context, keys []w.Key, psList []w.PropertyList) ([]w.Key, error) {
 	origKeys := toOriginalKeys(keys)
 	origPss := toOriginalPropertyListList(psList)
@@ -139,6 +146,23 @@ func (ocb *originalClientBridgeImpl) GetAll(ctx context.Context, q w.Query, qDum
 	}
 
 	return wKeys, nil
+}
+
+func (ocb *originalClientBridgeImpl) Count(ctx context.Context, q w.Query, qDump *w.QueryDump) (int, error) {
+	qImpl, ok := q.(*queryImpl)
+	if !ok {
+		return 0, errors.New("invalid query type")
+	}
+	if qImpl.firstError != nil {
+		return 0, qImpl.firstError
+	}
+
+	count, err := ocb.d.client.Count(ctx, qImpl.q)
+	if err != nil {
+		return 0, toWrapperError(err)
+	}
+
+	return count, nil
 }
 
 type originalTransactionBridgeImpl struct {

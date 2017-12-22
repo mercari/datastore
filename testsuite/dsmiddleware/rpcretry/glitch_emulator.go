@@ -40,6 +40,15 @@ func (gm *glitchEmulator) raiseError(opName string, keys []datastore.Key) error 
 	return nil
 }
 
+func (gm *glitchEmulator) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+
+	if err := gm.raiseError("AllocateIDs", keys); err != nil {
+		return nil, err
+	}
+
+	return info.Next.AllocateIDs(info, keys)
+}
+
 func (gm *glitchEmulator) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 
 	if err := gm.raiseError("PutMultiWithoutTx", keys); err != nil {
@@ -117,4 +126,13 @@ func (gm *glitchEmulator) GetAll(info *datastore.MiddlewareInfo, q datastore.Que
 
 func (gm *glitchEmulator) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	return info.Next.Next(info, q, qDump, iter, ps)
+}
+
+func (gm *glitchEmulator) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+
+	if err := gm.raiseError("Count", nil); err != nil {
+		return 0, err
+	}
+
+	return info.Next.Count(info, q, qDump)
 }

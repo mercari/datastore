@@ -11,6 +11,10 @@ func New() datastore.Middleware {
 type noop struct {
 }
 
+func (_ *noop) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
+	return info.Next.AllocateIDs(info, keys)
+}
+
 func (_ *noop) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	return info.Next.PutMultiWithoutTx(info, keys, psList)
 }
@@ -53,4 +57,8 @@ func (_ *noop) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump *
 
 func (_ *noop) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	return info.Next.Next(info, q, qDump, iter, ps)
+}
+
+func (_ *noop) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
+	return info.Next.Count(info, q, qDump)
 }
