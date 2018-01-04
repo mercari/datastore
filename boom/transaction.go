@@ -19,6 +19,10 @@ type setKeyLater struct {
 	src        interface{}
 }
 
+func (tx *Transaction) Boom() *Boom {
+	return tx.bm
+}
+
 func (tx *Transaction) Kind(src interface{}) string {
 	return tx.bm.Kind(src)
 }

@@ -15,6 +15,14 @@ type TransactionBatch struct {
 	earlyErrors []error
 }
 
+func (b *TransactionBatch) Boom() *Boom {
+	return b.bm
+}
+
+func (b *TransactionBatch) Transaction() *Transaction {
+	return b.tx
+}
+
 func (b *TransactionBatch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {

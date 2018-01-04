@@ -14,6 +14,10 @@ type Batch struct {
 	earlyErrors []error
 }
 
+func (b *Batch) Boom() *Boom {
+	return b.bm
+}
+
 func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
