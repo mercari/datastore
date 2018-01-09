@@ -16,6 +16,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/dslog"
+	"go.mercari.io/datastore/dsmiddleware/storagecache"
 	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/api/iterator"
 	"google.golang.org/appengine/memcache"
@@ -39,7 +40,7 @@ func TestMain(m *testing.M) {
 	os.Exit(status)
 }
 
-func inCache(ctx context.Context, ch *CacheHandler, key datastore.Key) (bool, error) {
+func inCache(ctx context.Context, ch storagecache.Storage, key datastore.Key) (bool, error) {
 	resp, err := ch.GetMulti(ctx, []datastore.Key{key})
 	if err != nil {
 		return false, err
@@ -71,8 +72,9 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New()
-	ch.Logf = logf
+	ch := New(
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -170,8 +172,9 @@ func TestAEMemcacheCache_Query(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New()
-	ch.Logf = logf
+	ch := New(
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -291,9 +294,10 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New()
-	ch.raiseMemcacheError = true
-	ch.Logf = logf
+	ch := New(
+		WithLogger(logf),
+	)
+	ch.(*cacheHandler).raiseMemcacheError = true
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -519,8 +523,14 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New()
-	ch.Logf = logf
+	cacheKey := func(key datastore.Key) string {
+		return "mercari:aememcache:" + key.Encode()
+	}
+
+	ch := New(
+		WithLogger(logf),
+		WithCacheKey(cacheKey),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -559,7 +569,7 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 	for _, key := range keys {
 		if key.ID()%2 == 0 {
 			// delete cache id=2, 4, 6, 8, 10
-			err := memcache.Delete(ctx, ch.cacheKey(key))
+			err := memcache.Delete(ctx, cacheKey(key))
 			if err != nil {
 				t.Fatal(err)
 			}

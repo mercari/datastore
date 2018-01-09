@@ -15,11 +15,12 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/dslog"
+	"go.mercari.io/datastore/dsmiddleware/storagecache"
 	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/api/iterator"
 )
 
-func inCache(ctx context.Context, ch *CacheHandler, key datastore.Key) (bool, error) {
+func inCache(ctx context.Context, ch storagecache.Storage, key datastore.Key) (bool, error) {
 	resp, err := ch.GetMulti(ctx, []datastore.Key{key})
 	if err != nil {
 		return false, err
@@ -58,8 +59,10 @@ func TestRedisCache_Basic(t *testing.T) {
 	defer dial.Close()
 	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
 	defer conn.Close()
-	ch := New(conn)
-	ch.Logf = logf
+	ch := New(
+		conn,
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		_, err := conn.Do("FLUSHALL")
@@ -168,9 +171,11 @@ func TestRedisCache_BasicWithoutExpire(t *testing.T) {
 	defer dial.Close()
 	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
 	defer conn.Close()
-	ch := New(conn)
-	ch.ExpireDuration = 0
-	ch.Logf = logf
+	ch := New(
+		conn,
+		WithExpireDuration(0),
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		_, err := conn.Do("FLUSHALL")
@@ -279,8 +284,10 @@ func TestRedisCache_Query(t *testing.T) {
 	defer dial.Close()
 	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
 	defer conn.Close()
-	ch := New(conn)
-	ch.Logf = logf
+	ch := New(
+		conn,
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		_, err := conn.Do("FLUSHALL")
@@ -411,8 +418,10 @@ func TestRedisCache_Transaction(t *testing.T) {
 	defer dial.Close()
 	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
 	defer conn.Close()
-	ch := New(conn)
-	ch.Logf = logf
+	ch := New(
+		conn,
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		_, err := conn.Do("FLUSHALL")
@@ -621,8 +630,10 @@ func TestRedisCache_MultiError(t *testing.T) {
 	defer dial.Close()
 	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
 	defer conn.Close()
-	ch := New(conn)
-	ch.Logf = logf
+	ch := New(
+		conn,
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		_, err := conn.Do("FLUSHALL")

@@ -9,25 +9,26 @@ import (
 
 var _ datastore.Middleware = &cacheHandler{}
 
-func New(s Storage, opts ...CacheOption) datastore.Middleware {
+func New(s Storage, opts *Options) datastore.Middleware {
 	ch := &cacheHandler{
 		s: s,
 	}
-	logger, ok := s.(Logger)
-	if ok {
-		ch.logf = logger.Printf
-	} else {
-		ch.logf = func(ctx context.Context, format string, args ...interface{}) {}
+	if opts != nil {
+		ch.logf = opts.Logf
+		ch.filters = opts.Filters
 	}
 
-	for _, opt := range opts {
-		opt.Apply(ch)
+	if ch.logf == nil {
+		ch.logf = func(ctx context.Context, format string, args ...interface{}) {}
 	}
 
 	return ch
 }
 
-type contextTx struct{}
+type Options struct {
+	Logf    func(ctx context.Context, format string, args ...interface{})
+	Filters []func(key datastore.Key) bool
+}
 
 type Storage interface {
 	SetMulti(ctx context.Context, is []*CacheItem) error
@@ -37,13 +38,7 @@ type Storage interface {
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
 }
 
-type Logger interface {
-	Printf(ctx context.Context, format string, args ...interface{})
-}
-
-type CacheOption interface {
-	Apply(*cacheHandler)
-}
+type contextTx struct{}
 
 type CacheItem struct {
 	Key          datastore.Key
