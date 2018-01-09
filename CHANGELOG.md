@@ -1,3 +1,15 @@
+<a name="0.15.0"></a>
+# [0.15.0](https://github.com/mercari/datastore/compare/v0.14.0...v0.15.0) (2018-01-09)
+
+
+### Features
+
+* **dsmiddleware/aememcache,dsmiddleware/localcache,dsmiddleware/rediscache,dsmiddleware/storagecache:** change options format ([5af7561](https://github.com/mercari/datastore/commit/5af7561))
+
+### BREAKING CHANGES
+
+Change cache middleware signatures.
+
 <a name="0.14.0"></a>
 # [0.14.0](https://github.com/mercari/datastore/compare/v0.13.0...v0.14.0) (2018-01-09)
 
