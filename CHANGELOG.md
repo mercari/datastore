@@ -1,3 +1,18 @@
+<a name="0.14.0"></a>
+# [0.14.0](https://github.com/mercari/datastore/compare/v0.13.0...v0.14.0) (2018-01-09)
+
+
+### Features
+
+* **boom:** add Boom() and Transaction() method to each boom objects ([3c680d1](https://github.com/mercari/datastore/commit/3c680d1))
+* **core:** add AllocateIDs & Count method to Middleware interface ([f548cca](https://github.com/mercari/datastore/commit/f548cca))
+* **core:** replace SwapContext to Context & SetContext ([4b9ccaa](https://github.com/mercari/datastore/commit/4b9ccaa))
+
+### BREAKING CHANGES
+
+replace datastore.Client#SwapContext to datastore.Client#Context & datastore.Client#SetContext.
+
+
 <a name="0.13.0"></a>
 # [0.13.0](https://github.com/mercari/datastore/compare/v0.12.0...v0.13.0) (2017-12-19)
 
