@@ -34,7 +34,7 @@ func New(conn redis.Conn, opts ...CacheOption) interface {
 	}
 
 	s := storagecache.New(ch, ch.stOpts)
-	ch.st = s
+	ch.Middleware = s
 
 	if ch.logf == nil {
 		ch.logf = func(ctx context.Context, format string, args ...interface{}) {}
@@ -49,9 +49,10 @@ func New(conn redis.Conn, opts ...CacheOption) interface {
 }
 
 type cacheHandler struct {
+	datastore.Middleware
+	stOpts *storagecache.Options
+
 	conn           redis.Conn
-	st             datastore.Middleware
-	stOpts         *storagecache.Options
 	expireDuration time.Duration
 	logf           func(ctx context.Context, format string, args ...interface{})
 	cacheKey       func(key datastore.Key) string
@@ -60,8 +61,6 @@ type cacheHandler struct {
 type CacheOption interface {
 	Apply(*cacheHandler)
 }
-
-// storagecache.Storage implementation
 
 func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheItem) error {
 
@@ -209,58 +208,4 @@ func (ch *cacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) e
 	}
 
 	return nil
-}
-
-// datastore.Middleware implementations
-
-func (ch *cacheHandler) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
-	return ch.st.AllocateIDs(info, keys)
-}
-
-func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
-	return ch.st.PutMultiWithoutTx(info, keys, psList)
-}
-
-func (ch *cacheHandler) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
-	return ch.st.PutMultiWithTx(info, keys, psList)
-}
-
-func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
-	return ch.st.GetMultiWithoutTx(info, keys, psList)
-}
-
-func (ch *cacheHandler) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
-	return ch.st.GetMultiWithTx(info, keys, psList)
-}
-
-func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
-	return ch.st.DeleteMultiWithoutTx(info, keys)
-}
-
-func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
-	return ch.st.DeleteMultiWithTx(info, keys)
-}
-
-func (ch *cacheHandler) PostCommit(info *datastore.MiddlewareInfo, tx datastore.Transaction, commit datastore.Commit) error {
-	return ch.st.PostCommit(info, tx, commit)
-}
-
-func (ch *cacheHandler) PostRollback(info *datastore.MiddlewareInfo, tx datastore.Transaction) error {
-	return ch.st.PostRollback(info, tx)
-}
-
-func (ch *cacheHandler) Run(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
-	return ch.st.Run(info, q, qDump)
-}
-
-func (ch *cacheHandler) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
-	return ch.st.GetAll(info, q, qDump, psList)
-}
-
-func (ch *cacheHandler) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
-	return ch.st.Next(info, q, qDump, iter, ps)
-}
-
-func (ch *cacheHandler) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
-	return ch.st.Count(info, q, qDump)
 }
