@@ -12,7 +12,6 @@ import (
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/dslog"
 	"go.mercari.io/datastore/dsmiddleware/localcache"
-	"go.mercari.io/datastore/dsmiddleware/storagecache"
 	"go.mercari.io/datastore/testsuite"
 	"google.golang.org/api/iterator"
 )
@@ -82,7 +81,7 @@ func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); !v {
+	if v := ch.HasCache(key); !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -99,7 +98,7 @@ func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); v {
+	if v := ch.HasCache(key); v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -141,8 +140,10 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New(storagecache.WithIncludeKinds("DataA"))
-	ch.Logf = logf
+	ch := localcache.New(
+		localcache.WithIncludeKinds("DataA"),
+		localcache.WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -369,8 +370,10 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New(storagecache.WithExcludeKinds("DataA"))
-	ch.Logf = logf
+	ch := localcache.New(
+		localcache.WithExcludeKinds("DataA"),
+		localcache.WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -597,10 +600,12 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := localcache.New(storagecache.WithKeyFilter(func(key datastore.Key) bool {
-		return key.ID() != 111
-	}))
-	ch.Logf = logf
+	ch := localcache.New(
+		localcache.WithKeyFilter(func(key datastore.Key) bool {
+			return key.ID() != 111
+		}),
+		localcache.WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -831,13 +836,13 @@ func LocalCache_FlushLocalCache(t *testing.T, ctx context.Context, client datast
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); !v {
+	if v := ch.HasCache(key); !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
 	ch.FlushLocalCache()
 
-	if v := ch.Has(key); v {
+	if v := ch.HasCache(key); v {
 		t.Fatalf("unexpected: %v", v)
 	}
 }
@@ -1015,7 +1020,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v := ch.Has(key); !v {
+	if v := ch.HasCache(key); !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -1031,7 +1036,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key2); v {
+		if v := ch.HasCache(key2); v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1046,7 +1051,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key); !v {
+		if v := ch.HasCache(key); !v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1055,7 +1060,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Len(); v != 1 {
+		if v := ch.CacheLen(); v != 1 {
 			t.Fatalf("unexpected: %v", v)
 		}
 	}
@@ -1072,7 +1077,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Len(); v != 1 {
+		if v := ch.CacheLen(); v != 1 {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1087,7 +1092,7 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key); !v {
+		if v := ch.HasCache(key); !v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1102,11 +1107,11 @@ func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.
 			t.Errorf("unexpected: %v", v)
 		}
 		// commited, but don't put to dsmiddleware in tx.
-		if v := ch.Has(key3); v {
+		if v := ch.HasCache(key3); v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
-		if v := ch.Len(); v != 0 {
+		if v := ch.CacheLen(); v != 0 {
 			t.Fatalf("unexpected: %v", v)
 		}
 	}

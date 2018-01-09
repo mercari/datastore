@@ -11,7 +11,6 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/dslog"
-	"go.mercari.io/datastore/dsmiddleware/storagecache"
 	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/api/iterator"
 )
@@ -63,7 +62,7 @@ func TestLocalCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); !v {
+	if v := ch.HasCache(key); !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -80,7 +79,7 @@ func TestLocalCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); v {
+	if v := ch.HasCache(key); v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -118,8 +117,10 @@ func TestLocalCache_WithIncludeKinds(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New(storagecache.WithIncludeKinds("DataA"))
-	ch.Logf = logf
+	ch := New(
+		WithLogger(logf),
+		WithIncludeKinds("DataA"),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -342,8 +343,10 @@ func TestLocalCache_WithExcludeKinds(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New(storagecache.WithExcludeKinds("DataA"))
-	ch.Logf = logf
+	ch := New(
+		WithLogger(logf),
+		WithExcludeKinds("DataA"),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -566,10 +569,12 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New(storagecache.WithKeyFilter(func(key datastore.Key) bool {
-		return key.ID() != 111
-	}))
-	ch.Logf = logf
+	ch := New(
+		WithLogger(logf),
+		WithKeyFilter(func(key datastore.Key) bool {
+			return key.ID() != 111
+		}),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
@@ -796,13 +801,13 @@ func TestLocalCache_FlushLocalCache(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if v := ch.Has(key); !v {
+	if v := ch.HasCache(key); !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
 	ch.FlushLocalCache()
 
-	if v := ch.Has(key); v {
+	if v := ch.HasCache(key); v {
 		t.Fatalf("unexpected: %v", v)
 	}
 }
@@ -972,7 +977,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v := ch.Has(key); !v {
+	if v := ch.HasCache(key); !v {
 		t.Fatalf("unexpected: %v", v)
 	}
 
@@ -988,7 +993,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key2); v {
+		if v := ch.HasCache(key2); v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1003,7 +1008,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key); !v {
+		if v := ch.HasCache(key); !v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1012,7 +1017,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Len(); v != 1 {
+		if v := ch.CacheLen(); v != 1 {
 			t.Fatalf("unexpected: %v", v)
 		}
 	}
@@ -1029,7 +1034,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Len(); v != 1 {
+		if v := ch.CacheLen(); v != 1 {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1044,7 +1049,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v := ch.Has(key); !v {
+		if v := ch.HasCache(key); !v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
@@ -1059,12 +1064,12 @@ func TestLocalCache_Transaction(t *testing.T) {
 			t.Errorf("unexpected: %v", v)
 		}
 		// commited, but don't put to cache in tx.
-		if v := ch.Has(key3); v {
+		if v := ch.HasCache(key3); v {
 			t.Fatalf("unexpected: %v", v)
 		}
 
-		if v := ch.Len(); v != 0 {
-			for keyStr := range ch.cache {
+		if v := ch.CacheLen(); v != 0 {
+			for _, keyStr := range ch.CacheKeys() {
 				key, err := client.DecodeKey(keyStr)
 				if err != nil {
 					t.Fatal(err)
@@ -1134,8 +1139,9 @@ func TestLocalCache_MultiError(t *testing.T) {
 		client.RemoveMiddleware(bLog)
 	}()
 
-	ch := New()
-	ch.Logf = logf
+	ch := New(
+		WithLogger(logf),
+	)
 	client.AppendMiddleware(ch)
 	defer func() {
 		// stop logging before cleanUp func called.
