@@ -869,3 +869,65 @@ func TestAEDatastore_GetAllByPropertyListSlice(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAEDatastore_Namespace(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	type Data struct {
+		Name string
+	}
+
+	nsCtx, err := appengine.Namespace(ctx, "no1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	key := datastore.NewKey(nsCtx, "Test", "", 1, nil)
+	if v := key.String(); v != "/Test,1" {
+		t.Fatalf("unexpected: %v", v)
+	}
+	vanillaKey := datastore.NewKey(ctx, "Test", "", 1, nil)
+	if v := vanillaKey.String(); v != "/Test,1" {
+		t.Fatalf("unexpected: %v", v)
+	}
+
+	_, err = datastore.Put(ctx, key, &Data{"Name #1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = datastore.Get(ctx, vanillaKey, &Data{})
+	if err != datastore.ErrNoSuchEntity {
+		t.Fatal(err)
+	}
+
+	err = datastore.Get(ctx, key, &Data{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := datastore.NewQuery("Test")
+	q = q.KeysOnly()
+
+	var keys []*datastore.Key
+
+	keys, err = q.GetAll(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := len(keys); v != 0 {
+		t.Fatalf("unexpected: %v", v)
+	}
+
+	keys, err = q.GetAll(nsCtx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := len(keys); v != 1 {
+		t.Fatalf("unexpected: %v", v)
+	}
+}

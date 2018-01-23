@@ -1084,3 +1084,62 @@ func TestCloudDatastore_PendingKeyWithCompleteKey(t *testing.T) {
 	// panic occurred in this case.
 	commit.Key(pKey)
 }
+
+func TestCloudDatastore_Namespace(t *testing.T) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, internal.GetProjectID())
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	type Data struct {
+		Name string
+	}
+
+	key := datastore.IDKey("Test", 1, nil)
+	key.Namespace = "no1"
+	if v := key.String(); v != "/Test,1" {
+		t.Fatalf("unexpected: %v", v)
+	}
+
+	_, err = client.Put(ctx, key, &Data{"Name #1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	key.Namespace = ""
+	err = client.Get(ctx, key, &Data{})
+	if err != datastore.ErrNoSuchEntity {
+		t.Fatal(err)
+	}
+
+	key.Namespace = "no1"
+	err = client.Get(ctx, key, &Data{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := datastore.NewQuery("Test")
+	q = q.KeysOnly()
+
+	var keys []*datastore.Key
+
+	keys, err = client.GetAll(ctx, q, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := len(keys); v != 0 {
+		t.Fatalf("unexpected: %v", v)
+	}
+
+	q = q.Namespace("no1")
+	keys, err = client.GetAll(ctx, q, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := len(keys); v != 1 {
+		t.Fatalf("unexpected: %v", v)
+	}
+}
