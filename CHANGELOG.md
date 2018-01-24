@@ -1,3 +1,18 @@
+<a name="0.16.0"></a>
+# [0.16.0](https://github.com/mercari/datastore/compare/v0.15.0...v0.16.0) (2018-01-24)
+
+
+### Features
+
+* **core:** add Key#SetNamespace method ([56f6294](https://github.com/mercari/datastore/commit/56f6294))
+* **dsmiddleware/aememcache,dsmiddleware/localcache,dsmiddleware/rediscache,dsmiddleware/storagecache:** add context.Context parameter to Key filter function ([7f8d7f7](https://github.com/mercari/datastore/commit/7f8d7f7))
+
+### BREAKING CHANGES
+
+Change KeyFilter function signature `func(key datastore.Key) bool` to `func(ctx context.Context, key datastore.Key) bool` .
+
+
+
 <a name="0.15.0"></a>
 # [0.15.0](https://github.com/mercari/datastore/compare/v0.14.0...v0.15.0) (2018-01-09)
 
