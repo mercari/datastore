@@ -571,7 +571,7 @@ func TestLocalCache_WithKeyFilter(t *testing.T) {
 
 	ch := New(
 		WithLogger(logf),
-		WithKeyFilter(func(key datastore.Key) bool {
+		WithKeyFilter(func(ctx context.Context, key datastore.Key) bool {
 			return key.ID() != 111
 		}),
 	)

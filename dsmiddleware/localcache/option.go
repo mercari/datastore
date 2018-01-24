@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.mercari.io/datastore"
+	"go.mercari.io/datastore/dsmiddleware/storagecache"
 )
 
 func WithIncludeKinds(kinds ...string) CacheOption {
@@ -14,7 +15,7 @@ func WithIncludeKinds(kinds ...string) CacheOption {
 type withIncludeKinds struct{ kinds []string }
 
 func (w *withIncludeKinds) Apply(o *cacheHandler) {
-	o.stOpts.Filters = append(o.stOpts.Filters, func(key datastore.Key) bool {
+	o.stOpts.Filters = append(o.stOpts.Filters, func(ctx context.Context, key datastore.Key) bool {
 		for _, incKind := range w.kinds {
 			if key.Kind() == incKind {
 				return true
@@ -32,7 +33,7 @@ func WithExcludeKinds(kinds ...string) CacheOption {
 type withExcludeKinds struct{ kinds []string }
 
 func (w *withExcludeKinds) Apply(o *cacheHandler) {
-	o.stOpts.Filters = append(o.stOpts.Filters, func(key datastore.Key) bool {
+	o.stOpts.Filters = append(o.stOpts.Filters, func(ctx context.Context, key datastore.Key) bool {
 		for _, excKind := range w.kinds {
 			if key.Kind() == excKind {
 				return false
@@ -43,15 +44,15 @@ func (w *withExcludeKinds) Apply(o *cacheHandler) {
 	})
 }
 
-func WithKeyFilter(f func(key datastore.Key) bool) CacheOption {
+func WithKeyFilter(f storagecache.KeyFilter) CacheOption {
 	return &withKeyFilter{f}
 }
 
-type withKeyFilter struct{ f func(key datastore.Key) bool }
+type withKeyFilter struct{ f storagecache.KeyFilter }
 
 func (w *withKeyFilter) Apply(o *cacheHandler) {
-	o.stOpts.Filters = append(o.stOpts.Filters, func(key datastore.Key) bool {
-		return w.f(key)
+	o.stOpts.Filters = append(o.stOpts.Filters, func(ctx context.Context, key datastore.Key) bool {
+		return w.f(ctx, key)
 	})
 }
 

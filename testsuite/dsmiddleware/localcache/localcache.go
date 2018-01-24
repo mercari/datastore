@@ -601,7 +601,7 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 	}()
 
 	ch := localcache.New(
-		localcache.WithKeyFilter(func(key datastore.Key) bool {
+		localcache.WithKeyFilter(func(ctx context.Context, key datastore.Key) bool {
 			return key.ID() != 111
 		}),
 		localcache.WithLogger(logf),

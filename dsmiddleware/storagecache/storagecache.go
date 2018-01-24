@@ -27,7 +27,7 @@ func New(s Storage, opts *Options) datastore.Middleware {
 
 type Options struct {
 	Logf    func(ctx context.Context, format string, args ...interface{})
-	Filters []func(key datastore.Key) bool
+	Filters []KeyFilter
 }
 
 type Storage interface {
@@ -37,6 +37,8 @@ type Storage interface {
 	GetMulti(ctx context.Context, keys []datastore.Key) ([]*CacheItem, error)
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
 }
+
+type KeyFilter func(ctx context.Context, key datastore.Key) bool
 
 type contextTx struct{}
 
@@ -64,13 +66,13 @@ type cacheHandler struct {
 	s       Storage
 	m       sync.Mutex
 	logf    func(ctx context.Context, format string, args ...interface{})
-	filters []func(key datastore.Key) bool
+	filters []KeyFilter
 }
 
-func (ch *cacheHandler) target(key datastore.Key) bool {
+func (ch *cacheHandler) target(ctx context.Context, key datastore.Key) bool {
 	for _, f := range ch.filters {
 		// If false comes back even once, it is not cached
-		if !f(key) {
+		if !f(ctx, key) {
 			return false
 		}
 	}
@@ -93,7 +95,7 @@ func (ch *cacheHandler) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys [
 		if key.Incomplete() {
 			// 発生し得ないはずだが他のMiddlewareがやらかすかもしれないので
 			continue
-		} else if !ch.target(key) {
+		} else if !ch.target(info.Context, key) {
 			continue
 		}
 		cis = append(cis, &CacheItem{
@@ -126,7 +128,7 @@ func (ch *cacheHandler) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []da
 
 	logs := txOpMap[info.Transaction]
 	for idx, key := range keys {
-		if !ch.target(key) {
+		if !ch.target(info.Context, key) {
 			continue
 		}
 		log := &TxOpLog{
@@ -164,7 +166,7 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys [
 		filteredIdxList := make([]int, 0, len(keys))
 		filteredKey := make([]datastore.Key, 0, len(keys))
 		for idx, key := range keys {
-			if ch.target(key) {
+			if ch.target(info.Context, key) {
 				filteredIdxList = append(filteredIdxList, idx)
 				filteredKey = append(filteredKey, key)
 			}
@@ -212,7 +214,7 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys [
 						continue
 					}
 					psList[baseIdx] = missingPsList[idx]
-					if ch.target(missingKey[idx]) {
+					if ch.target(info.Context, missingKey[idx]) {
 						cis = append(cis, &CacheItem{
 							Key:          missingKey[idx],
 							PropertyList: missingPsList[idx],
@@ -225,7 +227,7 @@ func (ch *cacheHandler) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys [
 				for idx := range missingKey {
 					baseIdx := missingIdxList[idx]
 					psList[baseIdx] = missingPsList[idx]
-					if ch.target(missingKey[idx]) {
+					if ch.target(info.Context, missingKey[idx]) {
 						cis = append(cis, &CacheItem{
 							Key:          missingKey[idx],
 							PropertyList: missingPsList[idx],
@@ -267,7 +269,7 @@ func (ch *cacheHandler) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []da
 
 	logs := txOpMap[info.Transaction]
 	for _, key := range keys {
-		if !ch.target(key) {
+		if !ch.target(info.Context, key) {
 			continue
 		}
 		log := &TxOpLog{
@@ -286,7 +288,7 @@ func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, key
 
 	filteredKeys := make([]datastore.Key, 0, len(keys))
 	for _, key := range keys {
-		if !ch.target(key) {
+		if !ch.target(info.Context, key) {
 			continue
 		}
 
@@ -318,7 +320,7 @@ func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys [
 
 	logs := txOpMap[info.Transaction]
 	for _, key := range keys {
-		if !ch.target(key) {
+		if !ch.target(info.Context, key) {
 			continue
 		}
 
@@ -362,7 +364,7 @@ func (ch *cacheHandler) PostCommit(info *datastore.MiddlewareInfo, tx datastore.
 
 	filteredKeys := make([]datastore.Key, 0, len(keys))
 	for _, key := range keys {
-		if !ch.target(key) {
+		if !ch.target(info.Context, key) {
 			continue
 		}
 
