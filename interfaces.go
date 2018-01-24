@@ -47,6 +47,7 @@ type Key interface {
 	Name() string
 	ParentKey() Key
 	Namespace() string
+	SetNamespace(namespace string)
 
 	String() string
 	GobEncode() ([]byte, error)

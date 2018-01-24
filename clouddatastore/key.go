@@ -50,6 +50,10 @@ func (k *keyImpl) Namespace() string {
 	return k.namespace
 }
 
+func (k *keyImpl) SetNamespace(namespace string) {
+	k.namespace = namespace
+}
+
 func (k *keyImpl) String() string {
 	// TODO 手で実装しなおしたほうがいいかも 互換性のため
 	return toOriginalKey(k).String()
