@@ -42,13 +42,12 @@ func newTxExtractor(ctx context.Context) (*txExtractor, error) {
 	rollbackErr := errors.New("rollback requested")
 
 	go func() {
-		// TODO Attempts: 1 なのを解消する(ErrConcurrentTransaction発生に伴うリトライ時のchannelの使い方)
+		// NOTE RunInTransactionが自動的にリトライされるのは初心者殺しなのでリトライしたかったらアプリ側でループしてほしいという意思
 		err := datastore.RunInTransaction(ctx, func(ctx netcontext.Context) error {
 			ctxC <- ctx
 
 			result, ok := <-ext.finishC
 			if !ok {
-				// TODO extract to global variable
 				return errors.New("channel closed")
 			}
 

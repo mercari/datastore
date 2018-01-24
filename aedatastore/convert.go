@@ -26,7 +26,7 @@ func toOriginalKey(key w.Key) *datastore.Key {
 	keyImpl := key.(*keyImpl)
 	ctx := keyImpl.ctx
 
-	// TODO appengine.Namespace 呼ぶのは内部でregexpで値チェックしてるので遅い可能性がある…？(のでif文つけてる
+	// NOTE appengine.Namespace 呼ぶのは内部でregexpで値チェックしてるので遅い可能性がある…？(のでif文つけてる
 	if namespaceFromContext(ctx) != key.Namespace() {
 		var err error
 		ctx, err = appengine.Namespace(ctx, key.Namespace())

@@ -192,21 +192,45 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 }
 
 func (d *datastoreImpl) IncompleteKey(kind string, parent w.Key) w.Key {
-	parentKey := toOriginalKey(parent)
-	key := datastore.IncompleteKey(kind, parentKey)
-	return toWrapperKey(key)
+	key := &keyImpl{
+		kind: kind,
+		id:   0,
+		name: "",
+	}
+	if parent != nil {
+		parentImpl := parent.(*keyImpl)
+		key.parent = parentImpl
+	}
+
+	return key
 }
 
 func (d *datastoreImpl) NameKey(kind, name string, parent w.Key) w.Key {
-	parentKey := toOriginalKey(parent)
-	key := datastore.NameKey(kind, name, parentKey)
-	return toWrapperKey(key)
+	key := &keyImpl{
+		kind: kind,
+		id:   0,
+		name: name,
+	}
+	if parent != nil {
+		parentImpl := parent.(*keyImpl)
+		key.parent = parentImpl
+	}
+
+	return key
 }
 
 func (d *datastoreImpl) IDKey(kind string, id int64, parent w.Key) w.Key {
-	parentKey := toOriginalKey(parent)
-	key := datastore.IDKey(kind, id, parentKey)
-	return toWrapperKey(key)
+	key := &keyImpl{
+		kind: kind,
+		id:   id,
+		name: "",
+	}
+	if parent != nil {
+		parentImpl := parent.(*keyImpl)
+		key.parent = parentImpl
+	}
+
+	return key
 }
 
 func (d *datastoreImpl) NewQuery(kind string) w.Query {

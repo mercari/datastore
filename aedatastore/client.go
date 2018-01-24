@@ -5,7 +5,6 @@ import (
 
 	w "go.mercari.io/datastore"
 	"go.mercari.io/datastore/internal/shared"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -119,8 +118,6 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 		return nil, err
 	}
 
-	// TODO この辺テストガッツリ
-
 	txCtx := context.WithValue(ext.txCtx, contextTransaction{}, ext)
 	txImpl := &transactionImpl{
 		client: &datastoreImpl{
@@ -194,39 +191,48 @@ func (d *datastoreImpl) GetAll(ctx context.Context, q w.Query, dst interface{}) 
 }
 
 func (d *datastoreImpl) IncompleteKey(kind string, parent w.Key) w.Key {
-	parentKey := toOriginalKey(parent)
-
-	// TODO 名前空間の整合性がCloud Datastore側と取れてなさそう
-	ctx, err := appengine.Namespace(d.ctx, "")
-	if err != nil {
-		panic(err)
+	key := &keyImpl{
+		ctx:  d.ctx,
+		kind: kind,
+		id:   0,
+		name: "",
 	}
-	key := datastore.NewIncompleteKey(ctx, kind, parentKey)
-	return toWrapperKey(d.ctx, key)
+	if parent != nil {
+		parentImpl := parent.(*keyImpl)
+		key.parent = parentImpl
+	}
+
+	return key
 }
 
 func (d *datastoreImpl) NameKey(kind, name string, parent w.Key) w.Key {
-	parentKey := toOriginalKey(parent)
-
-	// TODO 名前空間の整合性がCloud Datastore側と取れてなさそう
-	ctx, err := appengine.Namespace(d.ctx, "")
-	if err != nil {
-		panic(err)
+	key := &keyImpl{
+		ctx:  d.ctx,
+		kind: kind,
+		id:   0,
+		name: name,
 	}
-	key := datastore.NewKey(ctx, kind, name, 0, parentKey)
-	return toWrapperKey(ctx, key)
+	if parent != nil {
+		parentImpl := parent.(*keyImpl)
+		key.parent = parentImpl
+	}
+
+	return key
 }
 
 func (d *datastoreImpl) IDKey(kind string, id int64, parent w.Key) w.Key {
-	parentKey := toOriginalKey(parent)
-
-	// TODO 名前空間の整合性がCloud Datastore側と取れてなさそう
-	ctx, err := appengine.Namespace(d.ctx, "")
-	if err != nil {
-		panic(err)
+	key := &keyImpl{
+		ctx:  d.ctx,
+		kind: kind,
+		id:   id,
+		name: "",
 	}
-	key := datastore.NewKey(ctx, kind, "", id, parentKey)
-	return toWrapperKey(d.ctx, key)
+	if parent != nil {
+		parentImpl := parent.(*keyImpl)
+		key.parent = parentImpl
+	}
+
+	return key
 }
 
 func (d *datastoreImpl) NewQuery(kind string) w.Query {
