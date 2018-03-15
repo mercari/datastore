@@ -5,6 +5,9 @@ import (
 	"sync"
 )
 
+// Batch can queue operations on Datastore and process them in batch.
+// Batch does nothing until you call Exec().
+// This helps to reduce the number of RPCs.
 type Batch struct {
 	Client Client
 
@@ -13,7 +16,10 @@ type Batch struct {
 	delete batchDelete
 }
 
+// BatchPutHandler represents Entity's individual callback when batching Put processing.
 type BatchPutHandler func(key Key, err error) error
+
+// BatchErrHandler represents Entity's individual callback when batching non-Put processing.
 type BatchErrHandler func(err error) error
 
 type batchPut struct {
@@ -36,18 +42,26 @@ type batchDelete struct {
 	hs   []BatchErrHandler
 }
 
+// Put puts Entity into the queue of Put.
+// This operation doesn't Put to Datastore immediatly.
+// If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
 func (b *Batch) Put(key Key, src interface{}, h BatchPutHandler) {
 	b.put.Put(key, src, h)
 }
 
+// Get puts Entity fetch processing into the queue of Get.
 func (b *Batch) Get(key Key, dst interface{}, h BatchErrHandler) {
 	b.get.Get(key, dst, h)
 }
 
+// Delete puts Entity delete processing into the queue of Delete.
 func (b *Batch) Delete(key Key, h BatchErrHandler) {
 	b.delete.Delete(key, h)
 }
 
+// Exec will perform all the processing that was queued.
+// This process is done recursively until the queue is empty.
+// The return value may be MultiError, but the order of contents is not guaranteed.
 func (b *Batch) Exec(ctx context.Context) error {
 	var wg sync.WaitGroup
 	var errors []error

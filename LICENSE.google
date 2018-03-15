@@ -1,6 +1,7 @@
 ========================================================================
 For cloud.google.com/go (/datastore, /internal/atomiccache, /internal/fields)
     errors.go
+    interfaces.go
     prop.go
     load.go
     save.go

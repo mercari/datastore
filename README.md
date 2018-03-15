@@ -105,6 +105,7 @@ TODO
 ## TODO
 
 * Write more documents
+* Check new Cloud Datastore APIs
 
 ## Committers
 
