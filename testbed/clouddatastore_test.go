@@ -725,8 +725,7 @@ func TestCloudDatastore_PutInterface(t *testing.T) {
 	defer client.Close()
 	defer cleanUp()
 
-	var e EntityInterface
-	e = &PutInterfaceTest{}
+	var e EntityInterface = &PutInterfaceTest{}
 
 	key := datastore.IncompleteKey("Test", nil)
 	_, err = client.Put(ctx, key, e)
@@ -1034,7 +1033,6 @@ func TestCloudDatastore_GetAllByPropertyListSlice(t *testing.T) {
 	var psList []datastore.PropertyList
 
 	// passed []datastore.PropertyList, would be error.
-	psList = nil
 	_, err = client.GetAll(ctx, q, psList)
 	if err == nil {
 		t.Fatal(err)

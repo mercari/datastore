@@ -561,8 +561,7 @@ func TestAEDatastore_PutInterface(t *testing.T) {
 	}
 	defer close()
 
-	var e EntityInterface
-	e = &PutInterfaceTest{}
+	var e EntityInterface = &PutInterfaceTest{}
 
 	key := datastore.NewIncompleteKey(ctx, "Test", nil)
 	_, err = datastore.Put(ctx, key, e)
@@ -856,7 +855,6 @@ func TestAEDatastore_GetAllByPropertyListSlice(t *testing.T) {
 	var psList []datastore.PropertyList
 
 	// passed []datastore.PropertyList, would be error.
-	psList = nil
 	_, err = q.GetAll(ctx, psList)
 	if err == nil {
 		t.Fatal(err)

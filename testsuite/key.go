@@ -80,13 +80,13 @@ func Key_Equal(t *testing.T, ctx context.Context, client datastore.Client) {
 }
 
 func Key_Incomplete(t *testing.T, ctx context.Context, client datastore.Client) {
-	if v := client.IncompleteKey("A", nil).Incomplete(); v != true {
+	if v := client.IncompleteKey("A", nil).Incomplete(); !v {
 		t.Errorf("unexpected: %v", v)
 	}
-	if v := client.NameKey("A", "a", nil).Incomplete(); v != false {
+	if v := client.NameKey("A", "a", nil).Incomplete(); v {
 		t.Errorf("unexpected: %v", v)
 	}
-	if v := client.IDKey("A", 1, nil).Incomplete(); v != false {
+	if v := client.IDKey("A", 1, nil).Incomplete(); v {
 		t.Errorf("unexpected: %v", v)
 	}
 }

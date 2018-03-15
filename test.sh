@@ -1,7 +1,7 @@
 #!/bin/sh -eux
 
 targets=`find . -type f \( -name '*.go' -and -not -iwholename '*vendor*' -and -not -iwholename '*testdata*' \)`
-packages=`go list ./...`
+packages=`go list ./... | grep -v internal/c | grep -v internal/pb`
 
 # Apply tools
 export PATH=$(pwd)/build-cmd:$PATH
@@ -10,7 +10,7 @@ goimports -w $targets
 go tool vet $targets
 # golint $packages
 staticcheck $packages
-# gosimple $packages
+gosimple $packages
 unused $packages
 go generate $packages
 

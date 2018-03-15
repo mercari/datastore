@@ -247,7 +247,6 @@ func Query_GetAllByPropertyListSlice(t *testing.T, ctx context.Context, client d
 	var psList []datastore.PropertyList
 
 	// passed []datastore.PropertyList, would be error.
-	psList = nil
 	_, err = client.GetAll(ctx, q, psList)
 	if err == nil {
 		t.Fatal(err)

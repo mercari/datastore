@@ -115,12 +115,7 @@ func PutMultiOps(ctx context.Context, keys []datastore.Key, src interface{}, ops
 }
 
 func DeleteMultiOps(ctx context.Context, keys []datastore.Key, ops deleteOps) error {
-	err := ops(keys)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ops(keys)
 }
 
 func NextOps(ctx context.Context, qDump *datastore.QueryDump, dst interface{}, ops nextOps) (datastore.Key, error) {

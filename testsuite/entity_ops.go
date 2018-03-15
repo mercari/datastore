@@ -367,8 +367,7 @@ func PutInterface(t *testing.T, ctx context.Context, client datastore.Client) {
 		}
 	}()
 
-	var e EntityInterface
-	e = &PutInterfaceTest{}
+	var e EntityInterface = &PutInterfaceTest{}
 
 	key := client.IncompleteKey("Test", nil)
 	_, err := client.Put(ctx, key, e)
