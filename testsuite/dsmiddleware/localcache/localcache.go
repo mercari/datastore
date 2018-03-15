@@ -16,6 +16,7 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]testsuite.Test{
 	"LocalCache_Basic":            basic,
 	"LocalCache_WithIncludeKinds": withIncludeKinds,

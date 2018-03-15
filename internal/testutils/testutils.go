@@ -11,8 +11,10 @@ import (
 	"go.mercari.io/datastore/clouddatastore"
 )
 
+// EmitCleanUpLog is flag for emit Datastore clean up log.
 var EmitCleanUpLog = false
 
+// SetupCloudDatastore returns CloudDatastore clients and function for cleaning.
 func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func()) {
 	ctx := context.Background()
 	client, err := clouddatastore.FromContext(ctx)
@@ -68,6 +70,7 @@ func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func(
 	}
 }
 
+// SetupAEDatastore returns AEDatastore clients and function for cleaning.
 func SetupAEDatastore(t *testing.T) (context.Context, datastore.Client, func()) {
 	_, ctx, err := testerator.SpinUp()
 	if err != nil {

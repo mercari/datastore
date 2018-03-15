@@ -386,15 +386,15 @@ func filterPropertyTranslater(ctx context.Context, t *testing.T, client datastor
 	}()
 
 	type Data struct {
-		UserID   UserID
-		UnixTime UnixTime
+		UserID   userID
+		UnixTime unixTime
 	}
 
 	now := time.Now()
 
 	obj1 := &Data{
-		UserID:   UserID(1),
-		UnixTime: UnixTime(now),
+		UserID:   userID(1),
+		UnixTime: unixTime(now),
 	}
 	key1, err := client.Put(ctx, client.IncompleteKey("Data", nil), obj1)
 	if err != nil {
@@ -402,8 +402,8 @@ func filterPropertyTranslater(ctx context.Context, t *testing.T, client datastor
 	}
 
 	obj2 := &Data{
-		UserID:   UserID(2),
-		UnixTime: UnixTime(now.Add(1 * time.Hour)),
+		UserID:   userID(2),
+		UnixTime: unixTime(now.Add(1 * time.Hour)),
 	}
 	key2, err := client.Put(ctx, client.IncompleteKey("Data", nil), obj2)
 	if err != nil {
@@ -416,8 +416,8 @@ func filterPropertyTranslater(ctx context.Context, t *testing.T, client datastor
 		Name  string
 		Value interface{}
 	}{
-		{"UserID", UserID(1)},
-		{"UnixTime", UnixTime(now)},
+		{"UserID", userID(1)},
+		{"UnixTime", unixTime(now)},
 	}
 
 	for _, expect := range expects {
@@ -483,15 +483,15 @@ func filterPropertyTranslaterWithOriginalTypes(ctx context.Context, t *testing.T
 	}()
 
 	type Data struct {
-		UserID   UserID
-		UnixTime UnixTime
+		UserID   userID
+		UnixTime unixTime
 	}
 
 	now := time.Now()
 
 	obj1 := &Data{
-		UserID:   UserID(1),
-		UnixTime: UnixTime(now),
+		UserID:   userID(1),
+		UnixTime: unixTime(now),
 	}
 	key1, err := client.Put(ctx, client.IncompleteKey("Data", nil), obj1)
 	if err != nil {
@@ -499,8 +499,8 @@ func filterPropertyTranslaterWithOriginalTypes(ctx context.Context, t *testing.T
 	}
 
 	obj2 := &Data{
-		UserID:   UserID(2),
-		UnixTime: UnixTime(now.Add(1 * time.Hour)),
+		UserID:   userID(2),
+		UnixTime: unixTime(now.Add(1 * time.Hour)),
 	}
 	key2, err := client.Put(ctx, client.IncompleteKey("Data", nil), obj2)
 	if err != nil {
@@ -571,15 +571,15 @@ func filterPropertyTranslaterWithOriginalTypes(ctx context.Context, t *testing.T
 	}
 }
 
-var _ datastore.PropertyTranslator = (*MustReturnsError)(nil)
+var _ datastore.PropertyTranslator = (*mustReturnsError)(nil)
 
-type MustReturnsError int
+type mustReturnsError int
 
-func (MustReturnsError) ToPropertyValue(ctx context.Context) (interface{}, error) {
+func (mustReturnsError) ToPropertyValue(ctx context.Context) (interface{}, error) {
 	return nil, errors.New("error from MustReturnsError")
 }
 
-func (MustReturnsError) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+func (mustReturnsError) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
 	return nil, errors.New("error from MustReturnsError")
 }
 
@@ -596,14 +596,14 @@ func filterPropertyTranslaterMustError(ctx context.Context, t *testing.T, client
 	}
 
 	{ // Count
-		q := client.NewQuery("Data").Filter("TMP =", MustReturnsError(1))
+		q := client.NewQuery("Data").Filter("TMP =", mustReturnsError(1))
 		_, err := client.Count(ctx, q)
 		if err == nil || err.Error() != "error from MustReturnsError" {
 			t.Fatal(err)
 		}
 	}
 	{ // GetAll
-		q := client.NewQuery("Data").Filter("TMP =", MustReturnsError(1))
+		q := client.NewQuery("Data").Filter("TMP =", mustReturnsError(1))
 		var list []*Data
 		_, err := client.GetAll(ctx, q, &list)
 		if err == nil || err.Error() != "error from MustReturnsError" {
@@ -611,7 +611,7 @@ func filterPropertyTranslaterMustError(ctx context.Context, t *testing.T, client
 		}
 	}
 	{ // Run
-		q := client.NewQuery("Data").Filter("TMP =", MustReturnsError(1))
+		q := client.NewQuery("Data").Filter("TMP =", mustReturnsError(1))
 		iter := client.Run(ctx, q)
 		obj := &Data{}
 		_, err := iter.Next(obj)

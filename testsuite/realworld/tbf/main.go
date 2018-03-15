@@ -17,6 +17,7 @@ import (
 	"google.golang.org/appengine"
 )
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]testsuite.Test{
 	"RealWorld_TBF": tbf,
 }
@@ -85,7 +86,7 @@ func tbf(ctx context.Context, t *testing.T, client datastore.Client) {
 		}
 		for j := 0; j < imageLimit; j++ {
 			// NOTE Don't use client.AllocateIDs for JSON format consistency
-			imageID := ImageID(circleKey.ID() + 1000 + int64(10*j))
+			imageID := imageID(circleKey.ID() + 1000 + int64(10*j))
 			imageKey := imageID.ToKey(client)
 
 			image := &Image{

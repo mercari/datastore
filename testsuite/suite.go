@@ -7,8 +7,10 @@ import (
 	"go.mercari.io/datastore"
 )
 
+// Test represents a test function for Datastore testing.
 type Test func(ctx context.Context, t *testing.T, client datastore.Client)
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]Test{
 	"Batch_Put":                                   batchPut,
 	"Batch_PutWithCustomErrHandler":               batchPutWithCustomErrHandler,
@@ -63,6 +65,7 @@ var TestSuite = map[string]Test{
 	"TransactionBatch_DeleteWithCustomErrHandler": transactionBatchDeleteWithCustomErrHandler,
 }
 
+// MergeTestSuite into this package's TestSuite.
 func MergeTestSuite(suite map[string]Test) {
 	for key, spec := range suite {
 		_, ok := TestSuite[key]
@@ -75,20 +78,24 @@ func MergeTestSuite(suite map[string]Test) {
 
 type contextAE struct{}
 
+// WrapAEFlag add AEDatastore marker into context. use with IsAEDatastoreClient function.
 func WrapAEFlag(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextAE{}, true)
 }
 
+// IsAEDatastoreClient returns whether the context is used for AEDatastore.
 func IsAEDatastoreClient(ctx context.Context) bool {
 	return ctx.Value(contextAE{}) != nil
 }
 
 type contextCloud struct{}
 
+// WrapCloudFlag add CloudDatastore marker into context. use with IsCloudDatastoreClient function.
 func WrapCloudFlag(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextCloud{}, true)
 }
 
+// IsCloudDatastoreClient returns whether the context is used for CloudDatastore.
 func IsCloudDatastoreClient(ctx context.Context) bool {
 	return ctx.Value(contextCloud{}) != nil
 }

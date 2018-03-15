@@ -16,6 +16,7 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]testsuite.Test{
 	"RPCRetry_Basic":       basic,
 	"RPCRetry_Transaction": transaction,

@@ -342,20 +342,20 @@ func putAndGetNilKeySlice(ctx context.Context, t *testing.T, client datastore.Cl
 	}
 }
 
-type EntityInterface interface {
+type entityInterface interface {
 	Kind() string
 	ID() string
 }
 
-type PutInterfaceTest struct {
+type putInterfaceTest struct {
 	kind string
 	id   string
 }
 
-func (e *PutInterfaceTest) Kind() string {
+func (e *putInterfaceTest) Kind() string {
 	return e.kind
 }
-func (e *PutInterfaceTest) ID() string {
+func (e *putInterfaceTest) ID() string {
 	return e.id
 }
 
@@ -367,7 +367,7 @@ func putInterface(ctx context.Context, t *testing.T, client datastore.Client) {
 		}
 	}()
 
-	var e EntityInterface = &PutInterfaceTest{}
+	var e entityInterface = &putInterfaceTest{}
 
 	key := client.IncompleteKey("Test", nil)
 	_, err := client.Put(ctx, key, e)
