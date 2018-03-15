@@ -9,7 +9,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -41,7 +41,7 @@ func PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func PutAndGet_TimeTime(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetTimeTime(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -81,7 +81,7 @@ func PutAndGet_TimeTime(t *testing.T, ctx context.Context, client datastore.Clie
 	}
 }
 
-func PutAndDelete(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndDelete(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -114,7 +114,7 @@ func PutAndDelete(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func PutAndGet_ObjectHasObjectSlice(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetObjectHasObjectSlice(ctx context.Context, t *testing.T, client datastore.Client) {
 	if IsAEDatastoreClient(ctx) {
 		// flatten options must required in ae.
 		t.SkipNow()
@@ -168,7 +168,7 @@ func PutAndGet_ObjectHasObjectSlice(t *testing.T, ctx context.Context, client da
 	}
 }
 
-func PutAndGet_ObjectHasObjectSliceWithFlatten(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetObjectHasObjectSliceWithFlatten(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -217,7 +217,7 @@ func PutAndGet_ObjectHasObjectSliceWithFlatten(t *testing.T, ctx context.Context
 	}
 }
 
-func PutEntityType(t *testing.T, ctx context.Context, client datastore.Client) {
+func putEntityType(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -266,7 +266,7 @@ func PutEntityType(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func PutAndGetNilKey(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetNilKey(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -302,7 +302,7 @@ func PutAndGetNilKey(t *testing.T, ctx context.Context, client datastore.Client)
 	}
 }
 
-func PutAndGetNilKeySlice(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetNilKeySlice(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -359,7 +359,7 @@ func (e *PutInterfaceTest) ID() string {
 	return e.id
 }
 
-func PutInterface(t *testing.T, ctx context.Context, client datastore.Client) {
+func putInterface(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -376,7 +376,7 @@ func PutInterface(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func PutAndGetPropertyList(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetPropertyList(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -428,7 +428,7 @@ func PutAndGetPropertyList(t *testing.T, ctx context.Context, client datastore.C
 	}
 }
 
-func PutAndGetMultiPropertyListSlice(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetMultiPropertyListSlice(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -495,7 +495,7 @@ func PutAndGetMultiPropertyListSlice(t *testing.T, ctx context.Context, client d
 	}
 }
 
-func PutAndGetBareStruct(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetBareStruct(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -534,7 +534,7 @@ func PutAndGetBareStruct(t *testing.T, ctx context.Context, client datastore.Cli
 	}
 }
 
-func PutAndGetMultiBareStruct(t *testing.T, ctx context.Context, client datastore.Client) {
+func putAndGetMultiBareStruct(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

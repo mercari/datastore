@@ -1,4 +1,4 @@
-package recursive_batch
+package recursivebatch
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 )
 
 var TestSuite = map[string]testsuite.Test{
-	"RealWorld_RecursiveBatch": RealWorld_RecursiveBatch,
+	"RealWorld_RecursiveBatch": recursiveBatch,
 }
 
 func init() {
@@ -102,7 +102,7 @@ func extractBoomBatch(ctx context.Context) *boom.Batch {
 	return ctx.Value(contextBoomBatch{}).(*boom.Batch)
 }
 
-func RealWorld_RecursiveBatch(t *testing.T, ctx context.Context, client datastore.Client) {
+func recursiveBatch(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

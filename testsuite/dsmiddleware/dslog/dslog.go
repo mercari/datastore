@@ -16,16 +16,16 @@ import (
 )
 
 var TestSuite = map[string]testsuite.Test{
-	"DsLog_Basic":       DsLog_Basic,
-	"DsLog_Query":       DsLog_Query,
-	"DsLog_Transaction": DsLog_Transaction,
+	"DsLog_Basic":       basic,
+	"DsLog_Query":       query,
+	"DsLog_Transaction": transaction,
 }
 
 func init() {
 	testsuite.MergeTestSuite(TestSuite)
 }
 
-func DsLog_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
+func basic(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -105,7 +105,7 @@ func DsLog_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func DsLog_Query(t *testing.T, ctx context.Context, client datastore.Client) {
+func query(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -222,7 +222,7 @@ func DsLog_Query(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func DsLog_Transaction(t *testing.T, ctx context.Context, client datastore.Client) {
+func transaction(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

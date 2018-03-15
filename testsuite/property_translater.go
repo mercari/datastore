@@ -74,7 +74,7 @@ func (t *UnixTime) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func PropertyTranslater_PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
+func propertyTranslaterPutAndGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

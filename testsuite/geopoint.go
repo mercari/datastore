@@ -7,7 +7,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func GeoPoint_PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
+func geoPointPutAndGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

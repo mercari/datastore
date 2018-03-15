@@ -17,20 +17,20 @@ import (
 )
 
 var TestSuite = map[string]testsuite.Test{
-	"LocalCache_Basic":            LocalCache_Basic,
-	"LocalCache_WithIncludeKinds": LocalCache_WithIncludeKinds,
-	"LocalCache_WithExcludeKinds": LocalCache_WithExcludeKinds,
-	"LocalCache_WithKeyFilter":    LocalCache_WithKeyFilter,
-	"LocalCache_FlushLocalCache":  LocalCache_FlushLocalCache,
-	"LocalCache_Query":            LocalCache_Query,
-	"LocalCache_Transaction":      LocalCache_Transaction,
+	"LocalCache_Basic":            basic,
+	"LocalCache_WithIncludeKinds": withIncludeKinds,
+	"LocalCache_WithExcludeKinds": withExcludeKinds,
+	"LocalCache_WithKeyFilter":    withKeyFilter,
+	"LocalCache_FlushLocalCache":  flushLocalCache,
+	"LocalCache_Query":            query,
+	"LocalCache_Transaction":      transaction,
 }
 
 func init() {
 	testsuite.MergeTestSuite(TestSuite)
 }
 
-func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
+func basic(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -117,7 +117,7 @@ func LocalCache_Basic(t *testing.T, ctx context.Context, client datastore.Client
 	}
 }
 
-func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datastore.Client) {
+func withIncludeKinds(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -347,7 +347,7 @@ func LocalCache_WithIncludeKinds(t *testing.T, ctx context.Context, client datas
 	}
 }
 
-func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datastore.Client) {
+func withExcludeKinds(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -577,7 +577,7 @@ func LocalCache_WithExcludeKinds(t *testing.T, ctx context.Context, client datas
 	}
 }
 
-func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastore.Client) {
+func withKeyFilter(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -809,7 +809,7 @@ func LocalCache_WithKeyFilter(t *testing.T, ctx context.Context, client datastor
 	}
 }
 
-func LocalCache_FlushLocalCache(t *testing.T, ctx context.Context, client datastore.Client) {
+func flushLocalCache(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -847,7 +847,7 @@ func LocalCache_FlushLocalCache(t *testing.T, ctx context.Context, client datast
 	}
 }
 
-func LocalCache_Query(t *testing.T, ctx context.Context, client datastore.Client) {
+func query(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -970,7 +970,7 @@ func LocalCache_Query(t *testing.T, ctx context.Context, client datastore.Client
 	}
 }
 
-func LocalCache_Transaction(t *testing.T, ctx context.Context, client datastore.Client) {
+func transaction(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

@@ -68,14 +68,14 @@ func (id *UserID) UnmarshalJSON(b []byte) error {
 }
 
 var TestSuite = map[string]testsuite.Test{
-	"FavclipTools": FavclipTools,
+	"FavclipTools": favclipTools,
 }
 
 func init() {
 	testsuite.MergeTestSuite(TestSuite)
 }
 
-func FavclipTools(t *testing.T, ctx context.Context, client datastore.Client) {
+func favclipTools(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

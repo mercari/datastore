@@ -7,7 +7,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func Key_Equal(t *testing.T, ctx context.Context, client datastore.Client) {
+func keyEqual(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -79,7 +79,7 @@ func Key_Equal(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func Key_Incomplete(t *testing.T, ctx context.Context, client datastore.Client) {
+func keyIncomplete(ctx context.Context, t *testing.T, client datastore.Client) {
 	if v := client.IncompleteKey("A", nil).Incomplete(); !v {
 		t.Errorf("unexpected: %v", v)
 	}
@@ -91,7 +91,7 @@ func Key_Incomplete(t *testing.T, ctx context.Context, client datastore.Client) 
 	}
 }
 
-func Key_PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
+func keyPutAndGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

@@ -13,7 +13,7 @@ import (
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/localcache"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/rpcretry"
 	_ "go.mercari.io/datastore/testsuite/favcliptools"
-	_ "go.mercari.io/datastore/testsuite/realworld/recursive_batch"
+	_ "go.mercari.io/datastore/testsuite/realworld/recursivebatch"
 	_ "go.mercari.io/datastore/testsuite/realworld/tbf"
 
 	"go.mercari.io/datastore/dsmiddleware/aememcache"
@@ -36,7 +36,7 @@ func TestAEDatastoreTestSuite(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			test(t, ctx, datastore)
+			test(ctx, t, datastore)
 		})
 	}
 }
@@ -72,7 +72,7 @@ func TestAEDatastoreWithAEMemcacheTestSuite(t *testing.T) {
 			ch := aememcache.New()
 			datastore.AppendMiddleware(ch)
 
-			test(t, ctx, datastore)
+			test(ctx, t, datastore)
 		})
 	}
 }
@@ -99,7 +99,7 @@ func TestAEDatastoreTestSuiteWithNamespace(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			test(t, ctx, datastore)
+			test(ctx, t, datastore)
 		})
 	}
 }

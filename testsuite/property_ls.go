@@ -36,7 +36,7 @@ func (d *DataPLS) Save(ctx context.Context) ([]datastore.Property, error) {
 	return datastore.SaveStruct(ctx, d)
 }
 
-func PLS_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
+func plsBasic(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -90,7 +90,7 @@ func (d *DataKL) Save(ctx context.Context) ([]datastore.Property, error) {
 	return datastore.SaveStruct(ctx, d)
 }
 
-func KL_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
+func klBasic(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

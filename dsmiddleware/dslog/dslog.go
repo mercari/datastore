@@ -42,7 +42,7 @@ func (l *logger) KeysToString(keys []datastore.Key) string {
 func (l *logger) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Key) ([]datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"AllocateIDs #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
@@ -61,7 +61,7 @@ func (l *logger) AllocateIDs(info *datastore.MiddlewareInfo, keys []datastore.Ke
 func (l *logger) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"PutMultiWithoutTx #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
@@ -80,7 +80,7 @@ func (l *logger) PutMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datast
 func (l *logger) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) ([]datastore.PendingKey, error) {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"PutMultiWithTx #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
@@ -120,7 +120,7 @@ func (l *logger) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore
 func (l *logger) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"GetMultiWithoutTx #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
@@ -137,7 +137,7 @@ func (l *logger) GetMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datast
 func (l *logger) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key, psList []datastore.PropertyList) error {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"GetMultiWithTx #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
@@ -154,7 +154,7 @@ func (l *logger) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore
 func (l *logger) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"DeleteMultiWithoutTx #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
@@ -171,7 +171,7 @@ func (l *logger) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, keys []dat
 func (l *logger) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys []datastore.Key) error {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"DeleteMultiWithTx #%d, len(keys)=%d, keys=[%s]", cnt, len(keys), l.KeysToString(keys))
@@ -188,7 +188,7 @@ func (l *logger) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys []datast
 func (l *logger) PostCommit(info *datastore.MiddlewareInfo, tx datastore.Transaction, commit datastore.Commit) error {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	lgTxPutMap, ok := info.Context.Value(contextTx{}).(map[*logger]map[datastore.Transaction][]*txPutEntity)
@@ -230,7 +230,7 @@ func (l *logger) PostCommit(info *datastore.MiddlewareInfo, tx datastore.Transac
 func (l *logger) PostRollback(info *datastore.MiddlewareInfo, tx datastore.Transaction) error {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"PostRollback #%d", cnt)
@@ -241,7 +241,7 @@ func (l *logger) PostRollback(info *datastore.MiddlewareInfo, tx datastore.Trans
 func (l *logger) Run(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) datastore.Iterator {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"Run #%d, q=%s", cnt, qDump.String())
@@ -252,7 +252,7 @@ func (l *logger) Run(info *datastore.MiddlewareInfo, q datastore.Query, qDump *d
 func (l *logger) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, psList *[]datastore.PropertyList) ([]datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"GetAll #%d, q=%s", cnt, qDump.String())
@@ -271,7 +271,7 @@ func (l *logger) GetAll(info *datastore.MiddlewareInfo, q datastore.Query, qDump
 func (l *logger) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump, iter datastore.Iterator, ps *datastore.PropertyList) (datastore.Key, error) {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"Next #%d, q=%s", cnt, qDump.String())
@@ -290,7 +290,7 @@ func (l *logger) Next(info *datastore.MiddlewareInfo, q datastore.Query, qDump *
 func (l *logger) Count(info *datastore.MiddlewareInfo, q datastore.Query, qDump *datastore.QueryDump) (int, error) {
 	l.m.Lock()
 	cnt := l.counter
-	l.counter += 1
+	l.counter++
 	l.m.Unlock()
 
 	l.Logf(info.Context, l.Prefix+"Count #%d, q=%s", cnt, qDump.String())
