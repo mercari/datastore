@@ -3,12 +3,12 @@ jobs:
   build:
     working_directory: /go/src/go.mercari.io/datastore
     docker:
-      - image: google/cloud-sdk:178.0.0
+      - image: google/cloud-sdk:193.0.0
         environment:
           GOPATH: /go
-          GOLANG_VERSION: 1.9.2
+          GOLANG_VERSION: 1.10
           PROJECT_ID: datastore-wrapper
-      - image: google/cloud-sdk:178.0.0
+      - image: google/cloud-sdk:193.0.0
         command: ['gcloud', '--project=datastore-wrapper', 'beta', 'emulators', 'datastore', 'start', '--host-port=localhost:8081', '--no-store-on-disk', '--consistency=1.0']
       - image: redis:alpine
     steps:
