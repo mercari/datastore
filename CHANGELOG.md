@@ -1,3 +1,22 @@
+<a name="0.17.0"></a>
+# [0.17.0](https://github.com/mercari/datastore/compare/v0.16.0...v0.17.0) (2018-03-27)
+
+
+### Bug Fixes
+
+* **all:** fix method name AllocatedIDs to AllocateID 🙇 ([68408f8](https://github.com/mercari/datastore/commit/68408f8))
+
+
+### Features
+
+* **ci:** update CI and local testing environment ([35c8f7a](https://github.com/mercari/datastore/commit/35c8f7a))
+
+
+### BREAKING CHANGES
+
+Replace AllocatedIDs to AllocateID. align to original libraries 🙇
+
+
 <a name="0.16.0"></a>
 # [0.16.0](https://github.com/mercari/datastore/compare/v0.15.0...v0.16.0) (2018-01-24)
 
