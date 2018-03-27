@@ -15,7 +15,7 @@ There are incompatible behaviors in the following points.
 
 * `*boom.Transaction#Put` will not set ID immediate.
     * It will be set after `boom.Transaction#Commit`.
-    * If you want to get ID/Name asap, You should use `datastore.Client#AllocatedIDs`.
+    * If you want to get ID/Name asap, You should use `datastore.Client#AllocateIDs`.
 
 ## TODO
 

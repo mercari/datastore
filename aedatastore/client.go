@@ -157,7 +157,7 @@ func (d *datastoreImpl) Run(ctx context.Context, q w.Query) w.Iterator {
 	return cb.Run(cb.Info, q, q.Dump())
 }
 
-func (d *datastoreImpl) AllocatedIDs(ctx context.Context, keys []w.Key) ([]w.Key, error) {
+func (d *datastoreImpl) AllocateIDs(ctx context.Context, keys []w.Key) ([]w.Key, error) {
 	cacheInfo := &w.MiddlewareInfo{
 		Context: ctx,
 		Client:  d,

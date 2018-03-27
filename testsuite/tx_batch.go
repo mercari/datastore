@@ -160,7 +160,7 @@ func TransactionBatch_PutAndAllocateIDs(t *testing.T, ctx context.Context, clien
 
 	b := tx.Batch()
 	{ // 1st entity
-		keys, err := client.AllocatedIDs(ctx, []datastore.Key{client.IncompleteKey("Data", nil)})
+		keys, err := client.AllocateIDs(ctx, []datastore.Key{client.IncompleteKey("Data", nil)})
 		if err != nil {
 			t.Fatal(err.Error())
 		}
@@ -174,7 +174,7 @@ func TransactionBatch_PutAndAllocateIDs(t *testing.T, ctx context.Context, clien
 		})
 	}
 	{ // 2nd entity
-		keys, err := client.AllocatedIDs(ctx, []datastore.Key{client.IncompleteKey("Data", nil)})
+		keys, err := client.AllocateIDs(ctx, []datastore.Key{client.IncompleteKey("Data", nil)})
 		if err != nil {
 			t.Fatal(err.Error())
 		}

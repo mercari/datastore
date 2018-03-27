@@ -19,7 +19,7 @@ type Client interface {
 	NewTransaction(ctx context.Context) (Transaction, error)
 	RunInTransaction(ctx context.Context, f func(tx Transaction) error) (Commit, error)
 	Run(ctx context.Context, q Query) Iterator
-	AllocatedIDs(ctx context.Context, keys []Key) ([]Key, error)
+	AllocateIDs(ctx context.Context, keys []Key) ([]Key, error)
 	Count(ctx context.Context, q Query) (int, error)
 	GetAll(ctx context.Context, q Query, dst interface{}) ([]Key, error)
 

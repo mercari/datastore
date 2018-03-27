@@ -52,7 +52,7 @@ func TestDsLog_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	keys, err := client.AllocatedIDs(ctx, []datastore.Key{
+	keys, err := client.AllocateIDs(ctx, []datastore.Key{
 		client.IncompleteKey("TestA", nil),
 		client.IncompleteKey("TestB", client.IDKey("Parent", 123, nil)),
 	})

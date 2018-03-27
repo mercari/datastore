@@ -402,7 +402,7 @@ func RPCRetry_AllocateIDs(t *testing.T, ctx context.Context, client datastore.Cl
 
 	// exec.
 
-	keys, err := client.AllocatedIDs(ctx, []datastore.Key{client.IncompleteKey("Data", nil)})
+	keys, err := client.AllocateIDs(ctx, []datastore.Key{client.IncompleteKey("Data", nil)})
 	if err != nil {
 		t.Fatal(err)
 	}

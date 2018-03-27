@@ -334,7 +334,7 @@ func (bm *Boom) AllocateIDs(src interface{}) ([]datastore.Key, error) {
 		structIndex = append(structIndex, i)
 	}
 
-	keys, err := bm.Client.AllocatedIDs(bm.Context, keys)
+	keys, err := bm.Client.AllocateIDs(bm.Context, keys)
 	if err != nil {
 		return nil, err
 	}
