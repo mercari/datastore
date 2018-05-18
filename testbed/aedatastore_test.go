@@ -397,7 +397,7 @@ func TestAEDatastore_ErrConcurrentTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// ErrConcurrent will be occur
+	// ErrConcurrentTransaction will be occur
 	err = datastore.RunInTransaction(ctx, func(txCtx1 netcontext.Context) error {
 		err := datastore.Get(txCtx1, key, &Data{})
 		if err != nil {
