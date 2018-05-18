@@ -125,13 +125,20 @@ type Client interface {
 	// Decode decodes a cursor from its base-64 string representation.
 	DecodeCursor(s string) (Cursor, error)
 
+	// Batch creates batch mode objects.
 	Batch() *Batch
-	AppendMiddleware(middleware Middleware) // NOTE First-In First-Apply
+	// AppendMiddleware to client.
+	// Middleware will apply First-In First-Apply
+	AppendMiddleware(middleware Middleware)
+	// RemoveMiddleware from client.
 	RemoveMiddleware(middleware Middleware) bool
+	// Context returns this client's context.
 	Context() context.Context
+	// SetContext to this client.
 	SetContext(ctx context.Context)
 }
 
+// Key represents the datastore key for a stored entity.
 type Key interface {
 	Kind() string
 	ID() int64
@@ -150,10 +157,21 @@ type Key interface {
 	Incomplete() bool
 }
 
+// PendingKey represents the key for newly-inserted entity. It can be
+// resolved into a Key by calling the Key method of Commit.
 type PendingKey interface {
 	StoredContext() context.Context
 }
 
+// Transaction represents a set of datastore operations to be committed atomically.
+//
+// Operations are enqueued by calling the Put and Delete methods on Transaction
+// (or their Multi-equivalents).  These operations are only committed when the
+// Commit method is invoked. To ensure consistency, reads must be performed by
+// using Transaction's Get method or by using the Transaction method when
+// building a query.
+//
+// A Transaction must be committed or rolled back exactly once.
 type Transaction interface {
 	Get(key Key, dst interface{}) error
 	GetMulti(keys []Key, dst interface{}) error
@@ -168,14 +186,17 @@ type Transaction interface {
 	Batch() *TransactionBatch
 }
 
+// Commit represents the result of a committed transaction.
 type Commit interface {
 	Key(p PendingKey) Key
 }
 
+// GeoPoint represents a location as latitude/longitude in degrees.
 type GeoPoint struct {
 	Lat, Lng float64
 }
 
+// Query represents a datastore query.
 type Query interface {
 	Ancestor(ancestor Key) Query
 	EventualConsistency() Query
@@ -195,15 +216,23 @@ type Query interface {
 	Dump() *QueryDump
 }
 
+// Iterator is the result of running a query.
 type Iterator interface {
 	Next(dst interface{}) (Key, error)
 	Cursor() (Cursor, error)
 }
 
+// Cursor is an iterator's position. It can be converted to and from an opaque
+// string. A cursor can be used from different HTTP requests, but only with a
+// query with the same kind, ancestor, filter and order constraints.
+//
+// The zero Cursor can be used to indicate that there is no start and/or end
+// constraint for a query.
 type Cursor interface {
 	String() string
 }
 
+// PropertyTranslator is for converting the value of Property when saving and loading.
 type PropertyTranslator interface {
 	ToPropertyValue(ctx context.Context) (interface{}, error)
 	FromPropertyValue(ctx context.Context, p Property) (dst interface{}, err error)

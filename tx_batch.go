@@ -4,6 +4,9 @@ import (
 	"sync"
 )
 
+// TransactionBatch provides Batch operation under Transaction.
+// TransactionBatch does nothing until you call Exec().
+// This helps to reduce the number of RPCs.
 type TransactionBatch struct {
 	Transaction Transaction
 
@@ -12,6 +15,7 @@ type TransactionBatch struct {
 	delete txBatchDelete
 }
 
+// TxBatchPutHandler represents Entity's individual callback when batching Put with transaction processing.
 type TxBatchPutHandler func(pKey PendingKey, err error) error
 
 type txBatchPut struct {
@@ -34,18 +38,27 @@ type txBatchDelete struct {
 	hs   []BatchErrHandler
 }
 
+// Put puts Entity into the queue of Put.
+// This operation doesn't Put to Datastore immediatly.
+// If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
 func (b *TransactionBatch) Put(key Key, src interface{}, h TxBatchPutHandler) {
 	b.put.Put(key, src, h)
 }
 
+// Get puts Entity fetch processing into the queue of Get.
 func (b *TransactionBatch) Get(key Key, dst interface{}, h BatchErrHandler) {
 	b.get.Get(key, dst, h)
 }
 
+// Delete puts Entity delete processing into the queue of Delete.
 func (b *TransactionBatch) Delete(key Key, h BatchErrHandler) {
 	b.delete.Delete(key, h)
 }
 
+// Exec will perform all the processing that was queued.
+// This process is done recursively until the queue is empty.
+// The return value may be MultiError, but the order of contents is not guaranteed.
+// Exec() doesn't call Commit() or Rollback(), You should call that manually.
 func (b *TransactionBatch) Exec() error {
 	var wg sync.WaitGroup
 	var errors []error
