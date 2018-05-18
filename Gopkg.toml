@@ -11,6 +11,9 @@ required = [
   "github.com/favclip/qbg"
 ]
 
+[prune]
+  go-tests = true
+
 [[constraint]]
   name = "cloud.google.com/go"
   version = "^0.16.0"
