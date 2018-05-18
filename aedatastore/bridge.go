@@ -17,6 +17,7 @@ func init() {
 	gob.Register(&keyImpl{})
 }
 
+// FromContext make new Client by specified context.
 func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) {
 	if ctx == nil {
 		panic("unexpected")
@@ -24,6 +25,7 @@ func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) 
 	return &datastoreImpl{ctx: ctx}, nil
 }
 
+// IsAEDatastoreClient returns check result that client is this package's client or not.
 func IsAEDatastoreClient(client w.Client) bool {
 	_, ok := client.(*datastoreImpl)
 	return ok
