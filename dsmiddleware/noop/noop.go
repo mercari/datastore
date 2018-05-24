@@ -4,6 +4,7 @@ import "go.mercari.io/datastore"
 
 var _ datastore.Middleware = &noop{}
 
+// New no-op middleware creates and returns.
 func New() datastore.Middleware {
 	return &noop{}
 }

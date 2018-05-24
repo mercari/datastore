@@ -17,6 +17,7 @@ var _ datastore.Middleware = &cacheHandler{}
 
 const defaultExpiration = 15 * time.Minute
 
+// New Redis cache middleware creates & returns.
 func New(conn redis.Conn, opts ...CacheOption) interface {
 	datastore.Middleware
 	storagecache.Storage
@@ -58,6 +59,7 @@ type cacheHandler struct {
 	cacheKey       func(key datastore.Key) string
 }
 
+// A CacheOption is an cache option for a Redis cache middleware.
 type CacheOption interface {
 	Apply(*cacheHandler)
 }

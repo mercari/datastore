@@ -10,6 +10,7 @@ import (
 
 var _ datastore.Middleware = &retryHandler{}
 
+// New automatically RPC retry middleware creates & returns.
 func New(opts ...RetryOption) datastore.Middleware {
 	rh := &retryHandler{
 		retryLimit:         3,
@@ -32,6 +33,7 @@ type retryHandler struct {
 	logf               func(ctx context.Context, format string, args ...interface{})
 }
 
+// A RetryOption is an retry option for a retry middleware.
 type RetryOption interface {
 	Apply(*retryHandler)
 }

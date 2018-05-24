@@ -8,6 +8,7 @@ import (
 	"go.mercari.io/datastore/dsmiddleware/storagecache"
 )
 
+// WithIncludeKinds creates a ClientOption that selects the Kind specified as the cache target.
 func WithIncludeKinds(kinds ...string) CacheOption {
 	return &withIncludeKinds{kinds}
 }
@@ -26,6 +27,7 @@ func (w *withIncludeKinds) Apply(o *cacheHandler) {
 	})
 }
 
+// WithExcludeKinds creates a ClientOption that selects the Kind unspecified as the cache target.
 func WithExcludeKinds(kinds ...string) CacheOption {
 	return &withExcludeKinds{kinds}
 }
@@ -44,6 +46,7 @@ func (w *withExcludeKinds) Apply(o *cacheHandler) {
 	})
 }
 
+// WithKeyFilter creates a ClientOption that selects the Keys specified as the cache target.
 func WithKeyFilter(f storagecache.KeyFilter) CacheOption {
 	return &withKeyFilter{f}
 }
@@ -56,6 +59,7 @@ func (w *withKeyFilter) Apply(o *cacheHandler) {
 	})
 }
 
+// WithLogger creates a ClientOption that uses the specified logger.
 func WithLogger(logf func(ctx context.Context, format string, args ...interface{})) CacheOption {
 	return &withLogger{logf}
 }
@@ -68,6 +72,7 @@ func (w *withLogger) Apply(o *cacheHandler) {
 	o.logf = w.logf
 }
 
+// WithExpireDuration creates a ClientOption to expire at a specified time.
 func WithExpireDuration(d time.Duration) CacheOption {
 	return &withExpireDuration{d}
 }

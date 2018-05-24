@@ -14,6 +14,7 @@ var _ datastore.Middleware = &cacheHandler{}
 
 const defaultExpiration = 3 * time.Minute
 
+// New in-memory localcache middleware creates and returns.
 func New(opts ...CacheOption) CacheHandler {
 	ch := &cacheHandler{
 		cache:  make(map[string]cacheItem),
@@ -37,6 +38,7 @@ func New(opts ...CacheOption) CacheHandler {
 	return ch
 }
 
+// CacheHandler abstracts cache operations to Storage.
 type CacheHandler interface {
 	datastore.Middleware
 	storagecache.Storage
@@ -58,6 +60,7 @@ type cacheHandler struct {
 	logf           func(ctx context.Context, format string, args ...interface{})
 }
 
+// A CacheOption is an option for cache.
 type CacheOption interface {
 	Apply(*cacheHandler)
 }

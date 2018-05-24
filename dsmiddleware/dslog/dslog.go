@@ -10,6 +10,7 @@ import (
 
 var _ datastore.Middleware = &logger{}
 
+// NewLogger returns with specified logger function.
 func NewLogger(prefix string, logf func(ctx context.Context, format string, args ...interface{})) datastore.Middleware {
 	return &logger{Prefix: prefix, Logf: logf, counter: 1}
 }

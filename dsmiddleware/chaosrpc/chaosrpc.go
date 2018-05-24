@@ -11,6 +11,7 @@ import (
 
 var _ datastore.Middleware = &chaosHandler{}
 
+// New ChaosRPC middleware returns.
 func New(s rand.Source) datastore.Middleware {
 	return &chaosHandler{
 		r: rand.New(s),
