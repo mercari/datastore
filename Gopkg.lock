@@ -46,7 +46,7 @@
     "datastore",
     "memcache"
   ]
-  revision = "334401dbe72dc66e5a940a8c04ae2ab4a9a5af5c"
+  revision = "01295efde1160a219223641db4f81bbd76888a62"
 
 [[projects]]
   name = "github.com/garyburd/redigo"
@@ -76,7 +76,7 @@
     "ptypes/timestamp",
     "ptypes/wrappers"
   ]
-  revision = "668a607657a5d387d6333648a2d9c749761fdc69"
+  revision = "3a3da3a4e26776cc22a79ef46d5d58477532dede"
 
 [[projects]]
   name = "github.com/googleapis/gax-go"
@@ -107,8 +107,8 @@
     "trace/internal",
     "trace/propagation"
   ]
-  revision = "10cec2c05ea2cfb8b0d856711daedc49d8a45c56"
-  version = "v0.9.0"
+  revision = "f7730ab009c252771b19074bd05217d054c0c93f"
+  version = "v0.10.0"
 
 [[projects]]
   branch = "master"
@@ -129,7 +129,7 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "2491c5de3490fced2f6cff376127c667efeed857"
+  revision = "9ef9f5bb98a1fdc41f8cf6c250a4404b4085e389"
 
 [[projects]]
   branch = "master"
@@ -141,7 +141,7 @@
     "jws",
     "jwt"
   ]
-  revision = "cdc340f7c179dbbfa4afd43b7614e8fcadde4269"
+  revision = "770e5ebd4ab27c4d70b0983674d138217f5e2c72"
 
 [[projects]]
   branch = "master"
@@ -184,7 +184,7 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "28aef64757f4d432485ab970b094e1af8b301e84"
+  revision = "1937f90a1bb43667aff4059b1bab13eb15121e8e"
 
 [[projects]]
   branch = "master"
@@ -195,7 +195,7 @@
     "option",
     "transport/grpc"
   ]
-  revision = "aedc137bffcaca05f836e35c6d182fcb7a68b1c0"
+  revision = "348810ff778af56686d572415ce79e6c9fad9613"
 
 [[projects]]
   branch = "master"
@@ -221,7 +221,7 @@
     "urlfetch",
     "user"
   ]
-  revision = "9d8544a6b2c7df9cff240fcf92d7b2f59bc13416"
+  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
 
 [[projects]]
   branch = "master"
@@ -232,7 +232,7 @@
     "googleapis/rpc/status",
     "googleapis/type/latlng"
   ]
-  revision = "7bb2a897381c9c5ab2aeb8614f758d7766af68ff"
+  revision = "694d95ba50e67b2e363f3483057db5d4910c18f9"
 
 [[projects]]
   name = "google.golang.org/grpc"
