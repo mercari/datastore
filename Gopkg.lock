@@ -59,12 +59,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/golang/lint"
-  packages = ["golint"]
-  revision = "470b6b0bb3005eda157f0275e2e4895055396a81"
-
-[[projects]]
-  branch = "master"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -113,7 +107,10 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/lint"
-  packages = ["."]
+  packages = [
+    ".",
+    "golint"
+  ]
   revision = "470b6b0bb3005eda157f0275e2e4895055396a81"
 
 [[projects]]
@@ -293,6 +290,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ca79971cd38f8a1f3c560269df6670b270e8211f64091d7ec0c5044127184b44"
+  inputs-digest = "2b575cc5ac1665e6f2c72b10a28f9e25a73ed59b44c5c1bce4597b1b311551d5"
   solver-name = "gps-cdcl"
   solver-version = 1

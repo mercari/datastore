@@ -12,7 +12,7 @@ for package in $packages
 do
     go vet $package
 done
-golint -set_exit_status $packages_wo_internal
+golint -set_exit_status -min_confidence 0.6 $packages_wo_internal
 staticcheck $packages
 gosimple $packages
 unused $packages

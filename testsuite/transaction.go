@@ -267,7 +267,7 @@ func runInTransactionRollback(ctx context.Context, t *testing.T, client datastor
 			t.Fatal(err)
 		}
 
-		return errors.New("This tx should failure")
+		return errors.New("this tx should failure")
 	})
 	if err == nil {
 		t.Fatal(err)

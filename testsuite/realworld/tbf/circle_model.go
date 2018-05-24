@@ -67,7 +67,7 @@ func (circle *Circle) Load(ctx context.Context, ps []datastore.Property) error {
 
 	batch, ok := ctx.Value(contextBatch{}).(*datastore.Batch)
 	if !ok || batch == nil {
-		return errors.New("Can't pickup batch client")
+		return errors.New("can't pickup batch client")
 	}
 
 	client := ctx.Value(contextClient{}).(datastore.Client)
