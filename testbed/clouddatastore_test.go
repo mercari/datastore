@@ -502,9 +502,9 @@ func TestCloudDatastore_ObjectHasObjectSlice(t *testing.T) {
 
 	ps, err := datastore.SaveStruct(&Data{
 		Slice: []Inner{
-			Inner{A: "A1", B: "B1"},
-			Inner{A: "A2", B: "B2"},
-			Inner{A: "A3", B: "B3"},
+			{A: "A1", B: "B1"},
+			{A: "A2", B: "B2"},
+			{A: "A3", B: "B3"},
 		},
 	})
 	if err != nil {
@@ -564,9 +564,9 @@ func TestCloudDatastore_ObjectHasObjectSliceFlatten(t *testing.T) {
 
 	ps, err := datastore.SaveStruct(&Data{
 		Slice: []Inner{
-			Inner{A: "A1", B: "B1"},
-			Inner{A: "A2", B: "B2"},
-			Inner{A: "A3", B: "B3"},
+			{A: "A1", B: "B1"},
+			{A: "A2", B: "B2"},
+			{A: "A3", B: "B3"},
 		},
 	})
 	if err != nil {
@@ -616,9 +616,9 @@ func TestCloudDatastore_NestedEntityWithKey(t *testing.T) {
 
 	_, err = client.Put(ctx, datastore.IncompleteKey("Test", nil), &Data{
 		Slice: []Inner{
-			Inner{K: datastore.IDKey("TestInner", 1, nil), A: "A1", B: "B1"},
-			Inner{K: datastore.IDKey("TestInner", 2, nil), A: "A2", B: "B2"},
-			Inner{K: datastore.IDKey("TestInner", 3, nil), A: "A3", B: "B3"},
+			{K: datastore.IDKey("TestInner", 1, nil), A: "A1", B: "B1"},
+			{K: datastore.IDKey("TestInner", 2, nil), A: "A2", B: "B2"},
+			{K: datastore.IDKey("TestInner", 3, nil), A: "A3", B: "B3"},
 		},
 	})
 	if err != nil {
@@ -646,15 +646,15 @@ func TestCloudDatastore_GeoPoint(t *testing.T) {
 	// but it is not means that is can handling *datastore.GeoPoint.
 	// *datastore.GeoPoint will convert to *datastore.Entity.
 	obj := &Data{
-		A: datastore.GeoPoint{1.1, 2.2},
-		B: &datastore.GeoPoint{3.3, 4.4},
+		A: datastore.GeoPoint{Lat: 1.1, Lng: 2.2},
+		B: &datastore.GeoPoint{Lat: 3.3, Lng: 4.4},
 		C: []datastore.GeoPoint{
-			{5.5, 6.6},
-			{7.7, 8.8},
+			{Lat: 5.5, Lng: 6.6},
+			{Lat: 7.7, Lng: 8.8},
 		},
 		D: []*datastore.GeoPoint{
-			{9.9, 10.10},
-			{11.11, 12.12},
+			{Lat: 9.9, Lng: 10.10},
+			{Lat: 11.11, Lng: 12.12},
 		},
 	}
 

@@ -23,10 +23,10 @@ func geoPointPutAndGet(ctx context.Context, t *testing.T, client datastore.Clien
 	}
 
 	obj := &Data{
-		A: datastore.GeoPoint{1.1, 2.2},
+		A: datastore.GeoPoint{Lat: 1.1, Lng: 2.2},
 		B: []datastore.GeoPoint{
-			{5.5, 6.6},
-			{7.7, 8.8},
+			{Lat: 5.5, Lng: 6.6},
+			{Lat: 7.7, Lng: 8.8},
 		},
 	}
 

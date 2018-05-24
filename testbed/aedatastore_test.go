@@ -505,11 +505,11 @@ func TestAEDatastore_GeoPoint(t *testing.T) {
 	}
 
 	obj := &Data{
-		A: appengine.GeoPoint{1.1, 2.2},
+		A: appengine.GeoPoint{Lat: 1.1, Lng: 2.2},
 		// B: &appengine.GeoPoint{3.3, 4.4},
 		C: []appengine.GeoPoint{
-			{5.5, 6.6},
-			{7.7, 8.8},
+			{Lat: 5.5, Lng: 6.6},
+			{Lat: 7.7, Lng: 8.8},
 		},
 		/*
 			D: []*appengine.GeoPoint{
