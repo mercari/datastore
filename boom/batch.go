@@ -6,6 +6,9 @@ import (
 	"go.mercari.io/datastore"
 )
 
+// Batch can queue operations on Datastore and process them in batch.
+// Batch does nothing until you call Exec().
+// This helps to reduce the number of RPCs.
 type Batch struct {
 	m  sync.Mutex
 	bm *Boom
@@ -14,10 +17,12 @@ type Batch struct {
 	earlyErrors []error
 }
 
+// Boom object that is the source of the Batch object is returned.
 func (b *Batch) Boom() *Boom {
 	return b.bm
 }
 
+// Get puts Entity fetch processing into the queue of Get.
 func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
@@ -35,6 +40,10 @@ func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	b.b.Get(keys[0], dst, h)
 }
 
+// Put puts Entity into the queue of Put.
+// This operation doesn't Put to Datastore immediatly.
+// If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
+// TODO move this method before Get method
 func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{src})
 	if err != nil {
@@ -78,6 +87,7 @@ func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
 	})
 }
 
+// Delete puts Entity delete processing into the queue of Delete.
 func (b *Batch) Delete(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
@@ -95,6 +105,9 @@ func (b *Batch) Delete(dst interface{}, h datastore.BatchErrHandler) {
 	b.b.Delete(keys[0], h)
 }
 
+// Exec will perform all the processing that was queued.
+// This process is done recursively until the queue is empty.
+// The return value may be MultiError, but the order of contents is not guaranteed.
 func (b *Batch) Exec() error {
 	err := b.b.Exec(b.bm.Context)
 

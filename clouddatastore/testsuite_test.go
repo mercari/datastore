@@ -14,7 +14,7 @@ import (
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/localcache"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/rpcretry"
 	_ "go.mercari.io/datastore/testsuite/favcliptools"
-	_ "go.mercari.io/datastore/testsuite/realworld/recursive_batch"
+	_ "go.mercari.io/datastore/testsuite/realworld/recursivebatch"
 	_ "go.mercari.io/datastore/testsuite/realworld/tbf"
 
 	"github.com/garyburd/redigo/redis"
@@ -73,7 +73,7 @@ func TestCloudDatastoreTestSuite(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx = testsuite.WrapCloudFlag(ctx)
-			test(t, ctx, datastore)
+			test(ctx, t, datastore)
 		})
 	}
 }
@@ -104,7 +104,7 @@ func TestCloudDatastoreWithLocalCacheTestSuite(t *testing.T) {
 			datastore.AppendMiddleware(ch)
 
 			ctx = testsuite.WrapCloudFlag(ctx)
-			test(t, ctx, datastore)
+			test(ctx, t, datastore)
 		})
 	}
 }
@@ -143,7 +143,7 @@ func TestCloudDatastoreWithRedisCacheTestSuite(t *testing.T) {
 			datastore.AppendMiddleware(rc)
 
 			ctx = testsuite.WrapCloudFlag(ctx)
-			test(t, ctx, datastore)
+			test(ctx, t, datastore)
 		})
 	}
 }
@@ -182,7 +182,7 @@ func TestCloudDatastoreWithRPCRetryAndChaosRPCTestSuite(t *testing.T) {
 			datastore.AppendMiddleware(cr)
 
 			ctx = testsuite.WrapCloudFlag(ctx)
-			test(t, ctx, datastore)
+			test(ctx, t, datastore)
 		})
 	}
 }

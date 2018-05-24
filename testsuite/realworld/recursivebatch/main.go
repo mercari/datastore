@@ -1,4 +1,4 @@
-package recursive_batch
+package recursivebatch
 
 import (
 	"context"
@@ -10,35 +10,36 @@ import (
 	"go.mercari.io/datastore/testsuite"
 )
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]testsuite.Test{
-	"RealWorld_RecursiveBatch": RealWorld_RecursiveBatch,
+	"RealWorld_RecursiveBatch": recursiveBatch,
 }
 
 func init() {
 	testsuite.MergeTestSuite(TestSuite)
 }
 
-var _ datastore.PropertyLoadSaver = &Depth1{}
-var _ datastore.PropertyLoadSaver = &Depth2{}
+var _ datastore.PropertyLoadSaver = &depth1{}
+var _ datastore.PropertyLoadSaver = &depth2{}
 
-type Depth1 struct {
+type depth1 struct {
 	ID         int64     `boom:"id"`
 	Depth2IDs  []int64   `json:"-"`
-	Depth2List []*Depth2 `datastore:"-"`
+	Depth2List []*depth2 `datastore:"-"`
 }
 
-type Depth2 struct {
+type depth2 struct {
 	ID         int64     `boom:"id"`
 	Depth3IDs  []int64   `json:"-"`
-	Depth3List []*Depth3 `datastore:"-"`
+	Depth3List []*depth3 `datastore:"-"`
 }
 
-type Depth3 struct {
+type depth3 struct {
 	ID   int64  `boom:"id"`
 	Name string ``
 }
 
-func (d *Depth1) Load(ctx context.Context, ps []datastore.Property) error {
+func (d *depth1) Load(ctx context.Context, ps []datastore.Property) error {
 	err := datastore.LoadStruct(ctx, d, ps)
 	if err != nil {
 		return err
@@ -46,9 +47,9 @@ func (d *Depth1) Load(ctx context.Context, ps []datastore.Property) error {
 
 	bt := extractBoomBatch(ctx)
 
-	d.Depth2List = make([]*Depth2, 0, len(d.Depth2IDs))
+	d.Depth2List = make([]*depth2, 0, len(d.Depth2IDs))
 	for _, depth2ID := range d.Depth2IDs {
-		d2 := &Depth2{
+		d2 := &depth2{
 			ID: depth2ID,
 		}
 		bt.Get(d2, nil)
@@ -58,7 +59,7 @@ func (d *Depth1) Load(ctx context.Context, ps []datastore.Property) error {
 	return nil
 }
 
-func (d *Depth1) Save(ctx context.Context) ([]datastore.Property, error) {
+func (d *depth1) Save(ctx context.Context) ([]datastore.Property, error) {
 	d.Depth2IDs = make([]int64, 0, len(d.Depth2List))
 	for _, d2 := range d.Depth2List {
 		d.Depth2IDs = append(d.Depth2IDs, d2.ID)
@@ -67,7 +68,7 @@ func (d *Depth1) Save(ctx context.Context) ([]datastore.Property, error) {
 	return datastore.SaveStruct(ctx, d)
 }
 
-func (d *Depth2) Load(ctx context.Context, ps []datastore.Property) error {
+func (d *depth2) Load(ctx context.Context, ps []datastore.Property) error {
 	err := datastore.LoadStruct(ctx, d, ps)
 	if err != nil {
 		return err
@@ -75,9 +76,9 @@ func (d *Depth2) Load(ctx context.Context, ps []datastore.Property) error {
 
 	bt := extractBoomBatch(ctx)
 
-	d.Depth3List = make([]*Depth3, 0, len(d.Depth3IDs))
+	d.Depth3List = make([]*depth3, 0, len(d.Depth3IDs))
 	for _, depth3ID := range d.Depth3IDs {
-		d3 := &Depth3{
+		d3 := &depth3{
 			ID: depth3ID,
 		}
 		bt.Get(d3, nil)
@@ -87,7 +88,7 @@ func (d *Depth2) Load(ctx context.Context, ps []datastore.Property) error {
 	return nil
 }
 
-func (d *Depth2) Save(ctx context.Context) ([]datastore.Property, error) {
+func (d *depth2) Save(ctx context.Context) ([]datastore.Property, error) {
 	d.Depth3IDs = make([]int64, 0, len(d.Depth3List))
 	for _, d3 := range d.Depth3List {
 		d.Depth3IDs = append(d.Depth3IDs, d3.ID)
@@ -102,7 +103,7 @@ func extractBoomBatch(ctx context.Context) *boom.Batch {
 	return ctx.Value(contextBoomBatch{}).(*boom.Batch)
 }
 
-func RealWorld_RecursiveBatch(t *testing.T, ctx context.Context, client datastore.Client) {
+func recursiveBatch(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -119,15 +120,15 @@ func RealWorld_RecursiveBatch(t *testing.T, ctx context.Context, client datastor
 
 	// make test data
 	for i := 1; i <= size; i++ {
-		d1 := &Depth1{
+		d1 := &depth1{
 			ID: int64(i),
 		}
 		for j := 1; j <= size; j++ {
-			d2 := &Depth2{
+			d2 := &depth2{
 				ID: int64(i*1000 + j),
 			}
 			for k := 1; k <= size; k++ {
-				d3 := &Depth3{
+				d3 := &depth3{
 					ID:   int64(i*1000000 + j*1000 + k),
 					Name: fmt.Sprintf("#%d", i*1000000+j*1000+k),
 				}
@@ -145,9 +146,9 @@ func RealWorld_RecursiveBatch(t *testing.T, ctx context.Context, client datastor
 	}
 
 	// get test data
-	list := make([]*Depth1, 0, size)
+	list := make([]*depth1, 0, size)
 	for i := 1; i <= size; i++ {
-		d1 := &Depth1{
+		d1 := &depth1{
 			ID: int64(i),
 		}
 		bt.Get(d1, nil)

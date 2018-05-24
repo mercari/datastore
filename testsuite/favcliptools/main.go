@@ -14,45 +14,45 @@ import (
 	"go.mercari.io/datastore/testsuite"
 )
 
-var _ datastore.PropertyTranslator = UserID(0)
-var _ json.Marshaler = UserID(1)
-var _ json.Unmarshaler = (*UserID)(nil)
+var _ datastore.PropertyTranslator = userID(0)
+var _ json.Marshaler = userID(1)
+var _ json.Unmarshaler = (*userID)(nil)
 
 type contextClient struct{}
 
 const kindUser = "User"
 
-type UserID int64
+type userID int64
 
 // User kind
 // +jwg
 // +qbg
 type User struct {
-	ID       UserID `datastore:"-" boom:"id" json:"id"`
+	ID       userID `datastore:"-" boom:"id" json:"id"`
 	Name     string `json:"name"`
-	MentorID UserID `json:"mentorID"`
+	MentorID userID `json:"mentorID"`
 }
 
-func (id UserID) ToPropertyValue(ctx context.Context) (interface{}, error) {
+func (id userID) ToPropertyValue(ctx context.Context) (interface{}, error) {
 	client := ctx.Value(contextClient{}).(datastore.Client)
 	key := client.IDKey(kindUser, int64(id), nil)
 	return key, nil
 }
 
-func (id UserID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+func (id userID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
 	key, ok := p.Value.(datastore.Key)
 	if !ok {
 		return nil, datastore.ErrInvalidEntityType
 	}
-	return UserID(key.ID()), nil
+	return userID(key.ID()), nil
 }
 
-func (id UserID) MarshalJSON() ([]byte, error) {
+func (id userID) MarshalJSON() ([]byte, error) {
 	jsonNumber := json.Number(fmt.Sprintf("%d", int64(id)))
 	return json.Marshal(jsonNumber)
 }
 
-func (id *UserID) UnmarshalJSON(b []byte) error {
+func (id *userID) UnmarshalJSON(b []byte) error {
 	var jsonNumber json.Number
 	err := json.Unmarshal(b, &jsonNumber)
 	if err != nil {
@@ -63,19 +63,20 @@ func (id *UserID) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	*id = UserID(v)
+	*id = userID(v)
 	return nil
 }
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]testsuite.Test{
-	"FavclipTools": FavclipTools,
+	"FavclipTools": favclipTools,
 }
 
 func init() {
 	testsuite.MergeTestSuite(TestSuite)
 }
 
-func FavclipTools(t *testing.T, ctx context.Context, client datastore.Client) {
+func favclipTools(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -90,9 +91,9 @@ func FavclipTools(t *testing.T, ctx context.Context, client datastore.Client) {
 	bm := boom.FromClient(ctx, client)
 
 	user := &User{
-		ID:       UserID(100),
+		ID:       userID(100),
 		Name:     "foobar",
-		MentorID: UserID(200),
+		MentorID: userID(200),
 	}
 
 	_, err := bm.Put(user)
@@ -148,7 +149,7 @@ func FavclipTools(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 	{ // for qbg
 		b := NewUserQueryBuilder(client)
-		b.MentorID.Equal(UserID(200))
+		b.MentorID.Equal(userID(200))
 		var list []*User
 		_, err = bm.GetAll(b.Query(), &list)
 		if err != nil {

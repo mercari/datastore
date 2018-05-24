@@ -8,7 +8,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func Batch_Put(t *testing.T, ctx context.Context, client datastore.Client) {
+func batchPut(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -55,7 +55,7 @@ func Batch_Put(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func Batch_PutWithCustomErrHandler(t *testing.T, ctx context.Context, client datastore.Client) {
+func batchPutWithCustomErrHandler(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -97,7 +97,7 @@ func Batch_PutWithCustomErrHandler(t *testing.T, ctx context.Context, client dat
 	}
 }
 
-func Batch_Get(t *testing.T, ctx context.Context, client datastore.Client) {
+func batchGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -159,7 +159,7 @@ func Batch_Get(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func Batch_GetWithCustomErrHandler(t *testing.T, ctx context.Context, client datastore.Client) {
+func batchGetWithCustomErrHandler(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -210,7 +210,7 @@ func Batch_GetWithCustomErrHandler(t *testing.T, ctx context.Context, client dat
 	}
 }
 
-func Batch_Delete(t *testing.T, ctx context.Context, client datastore.Client) {
+func batchDelete(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -272,7 +272,7 @@ func Batch_Delete(t *testing.T, ctx context.Context, client datastore.Client) {
 	}
 }
 
-func Batch_DeleteWithCustomErrHandler(t *testing.T, ctx context.Context, client datastore.Client) {
+func batchDeleteWithCustomErrHandler(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

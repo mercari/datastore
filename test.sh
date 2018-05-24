@@ -2,13 +2,17 @@
 
 targets=`find . -type f \( -name '*.go' -and -not -iwholename '*vendor*' -and -not -iwholename '*testdata*' \)`
 packages=`go list ./... | grep -v internal/c | grep -v internal/pb`
+packages_wo_internal=`go list ./... | grep -v internal`
 
 # Apply tools
 export PATH=$(pwd)/build-cmd:$PATH
 which goimports golint staticcheck gosimple unused jwg qbg
 goimports -w $targets
-go tool vet $targets
-# golint $packages
+for package in $packages
+do
+    go vet $package
+done
+golint -set_exit_status $packages_wo_internal
 staticcheck $packages
 gosimple $packages
 unused $packages

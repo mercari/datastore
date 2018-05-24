@@ -24,31 +24,41 @@ import (
 	"go.mercari.io/datastore/internal/c/fields"
 )
 
+// SuppressErrFieldMismatch when this flag is true.
+// If you want to align (AE|Cloud) Datastore's default behavior, set false.
 var SuppressErrFieldMismatch = true
 
 var _ PropertyLoadSaver = (*PropertyList)(nil)
 
+// Property is a name/value pair plus some metadata. A datastore entity's
+// contents are loaded and saved as a sequence of Properties. Each property
+// name must be unique within an entity.
 type Property struct {
 	Name    string
 	Value   interface{}
 	NoIndex bool
 }
 
+// An Entity is the value type for a nested struct.
+// This type is only used for a Property's Value.
 type Entity struct {
 	Key        Key
 	Properties []Property
 }
 
+// PropertyLoadSaver can be converted from and to a slice of Properties.
 type PropertyLoadSaver interface {
 	Load(ctx context.Context, ps []Property) error
 	Save(ctx context.Context) ([]Property, error)
 }
 
+// KeyLoader can store a Key.
 type KeyLoader interface {
 	PropertyLoadSaver
 	LoadKey(ctx context.Context, k Key) error
 }
 
+// PropertyList converts a []Property to implement PropertyLoadSaver.
 type PropertyList []Property
 
 // Load loads all of the provided properties into l.
@@ -284,7 +294,7 @@ func plsForSave(v reflect.Value) (PropertyLoadSaver, error) {
 func pls(v reflect.Value) (PropertyLoadSaver, error) {
 	if v.Kind() != reflect.Ptr {
 		if _, ok := v.Interface().(PropertyLoadSaver); ok {
-			return nil, fmt.Errorf("datastore: PropertyLoadSaver methods must be implemented on a pointer to %T.", v.Interface())
+			return nil, fmt.Errorf("datastore: PropertyLoadSaver methods must be implemented on a pointer to %T", v.Interface())
 		}
 
 		v = v.Addr()

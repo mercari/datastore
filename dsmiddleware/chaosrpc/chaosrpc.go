@@ -11,6 +11,7 @@ import (
 
 var _ datastore.Middleware = &chaosHandler{}
 
+// New ChaosRPC middleware returns.
 func New(s rand.Source) datastore.Middleware {
 	return &chaosHandler{
 		r: rand.New(s),
@@ -24,7 +25,7 @@ type chaosHandler struct {
 func (ch *chaosHandler) raiseError() error {
 	// Make an error with a 20% rate
 	if ch.r.Intn(5) == 0 {
-		return errors.New("error from chaosrpc!!")
+		return errors.New("error from chaosrpc")
 	}
 
 	return nil

@@ -7,7 +7,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func Namespace_PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
+func namespacePutAndGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -47,7 +47,7 @@ func Namespace_PutAndGet(t *testing.T, ctx context.Context, client datastore.Cli
 	}
 }
 
-func Namespace_PutAndGetWithTx(t *testing.T, ctx context.Context, client datastore.Client) {
+func namespacePutAndGetWithTx(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -97,7 +97,7 @@ func Namespace_PutAndGetWithTx(t *testing.T, ctx context.Context, client datasto
 	}
 }
 
-func Namespace_Query(t *testing.T, ctx context.Context, client datastore.Client) {
+func namespaceQuery(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

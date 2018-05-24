@@ -7,7 +7,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func GeoPoint_PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
+func geoPointPutAndGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -23,10 +23,10 @@ func GeoPoint_PutAndGet(t *testing.T, ctx context.Context, client datastore.Clie
 	}
 
 	obj := &Data{
-		A: datastore.GeoPoint{1.1, 2.2},
+		A: datastore.GeoPoint{Lat: 1.1, Lng: 2.2},
 		B: []datastore.GeoPoint{
-			{5.5, 6.6},
-			{7.7, 8.8},
+			{Lat: 5.5, Lng: 6.6},
+			{Lat: 7.7, Lng: 8.8},
 		},
 	}
 

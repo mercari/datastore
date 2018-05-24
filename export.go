@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
+// LoadEntity to dst struct.
 var LoadEntity = loadEntity
+
+// SaveEntity convert key & struct to *Entity.
 var SaveEntity = saveEntity
 
 func init() {

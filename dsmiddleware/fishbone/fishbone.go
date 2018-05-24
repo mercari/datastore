@@ -18,6 +18,7 @@ import (
 
 var _ datastore.Middleware = &modifier{}
 
+// New fishbone middleware creates and returns.
 func New() datastore.Middleware {
 	return &modifier{}
 }

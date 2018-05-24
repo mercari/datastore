@@ -8,7 +8,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func Transaction_Commit(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionCommit(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -83,7 +83,7 @@ func Transaction_Commit(t *testing.T, ctx context.Context, client datastore.Clie
 	}
 }
 
-func Transaction_Rollback(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionRollback(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -146,7 +146,7 @@ func Transaction_Rollback(t *testing.T, ctx context.Context, client datastore.Cl
 	}
 }
 
-func Transaction_JoinAncesterQuery(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionJoinAncesterQuery(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -215,7 +215,7 @@ func Transaction_JoinAncesterQuery(t *testing.T, ctx context.Context, client dat
 	}
 }
 
-func RunInTransaction_Commit(t *testing.T, ctx context.Context, client datastore.Client) {
+func runInTransactionCommit(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -248,7 +248,7 @@ func RunInTransaction_Commit(t *testing.T, ctx context.Context, client datastore
 	}
 }
 
-func RunInTransaction_Rollback(t *testing.T, ctx context.Context, client datastore.Client) {
+func runInTransactionRollback(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

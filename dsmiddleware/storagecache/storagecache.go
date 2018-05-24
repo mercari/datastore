@@ -9,6 +9,7 @@ import (
 
 var _ datastore.Middleware = &cacheHandler{}
 
+// New storage cache (interface) middleware creates & returns.
 func New(s Storage, opts *Options) datastore.Middleware {
 	ch := &cacheHandler{
 		s: s,
@@ -25,11 +26,13 @@ func New(s Storage, opts *Options) datastore.Middleware {
 	return ch
 }
 
+// Options provides common option values for storage.
 type Options struct {
 	Logf    func(ctx context.Context, format string, args ...interface{})
 	Filters []KeyFilter
 }
 
+// Storage is the abstraction of storage that holds the cache data.
 type Storage interface {
 	SetMulti(ctx context.Context, is []*CacheItem) error
 	// GetMulti returns slice of CacheItem of the same length as Keys of the argument.
@@ -38,23 +41,35 @@ type Storage interface {
 	DeleteMulti(ctx context.Context, keys []datastore.Key) error
 }
 
+// KeyFilter represents a function that determines if the specified Key should be cached.
 type KeyFilter func(ctx context.Context, key datastore.Key) bool
 
 type contextTx struct{}
 
+// CacheItem is serialized by Storage.
 type CacheItem struct {
 	Key          datastore.Key
 	PropertyList datastore.PropertyList
 }
 
+// TxOps represents the type of operation in the transaction.
+// TODO rename to txOps
 type TxOps int
 
 const (
+	// TxPutOp represents the put operation in the transaction.
+	// TODO rename to txPutOp
 	TxPutOp TxOps = iota
+	// TxGetOp represents the get operation in the transaction.
+	// TODO rename to txGetOp
 	TxGetOp
+	// TxDeleteOp represents the delete operation in the transaction.
+	// TODO rename to txDeleteOp
 	TxDeleteOp
 )
 
+// TxOpLog is a log of operations within a transaction.
+// TODO rename to txOpLog
 type TxOpLog struct {
 	Ops          TxOps
 	Key          datastore.Key

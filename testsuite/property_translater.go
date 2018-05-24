@@ -10,15 +10,15 @@ import (
 	"go.mercari.io/datastore"
 )
 
-var _ datastore.PropertyTranslator = (*UserID)(nil)
-var _ datastore.PropertyTranslator = UnixTime(time.Time{})
-var _ json.Marshaler = UnixTime(time.Time{})
-var _ json.Unmarshaler = (*UnixTime)(&time.Time{})
+var _ datastore.PropertyTranslator = (*userID)(nil)
+var _ datastore.PropertyTranslator = unixTime(time.Time{})
+var _ json.Marshaler = unixTime(time.Time{})
+var _ json.Unmarshaler = (*unixTime)(&time.Time{})
 
-type UserID int64
-type UnixTime time.Time
+type userID int64
+type unixTime time.Time
 
-func (id UserID) ToPropertyValue(ctx context.Context) (interface{}, error) {
+func (id userID) ToPropertyValue(ctx context.Context) (interface{}, error) {
 	client, err := datastore.FromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -27,33 +27,33 @@ func (id UserID) ToPropertyValue(ctx context.Context) (interface{}, error) {
 	return key, nil
 }
 
-func (id UserID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+func (id userID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
 	key, ok := p.Value.(datastore.Key)
 	if !ok {
 		return nil, datastore.ErrInvalidEntityType
 	}
-	return UserID(key.ID()), nil
+	return userID(key.ID()), nil
 }
 
-func (t UnixTime) ToPropertyValue(ctx context.Context) (interface{}, error) {
+func (t unixTime) ToPropertyValue(ctx context.Context) (interface{}, error) {
 	return time.Time(t), nil
 }
 
-func (t UnixTime) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+func (t unixTime) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
 	origT, ok := p.Value.(time.Time)
 	if !ok {
 		return nil, datastore.ErrInvalidEntityType
 	}
-	return UnixTime(origT), nil
+	return unixTime(origT), nil
 }
 
-func (t UnixTime) MarshalJSON() ([]byte, error) {
+func (t unixTime) MarshalJSON() ([]byte, error) {
 	unix := time.Time(t).UnixNano()
 	jsonNumber := json.Number(fmt.Sprintf("%d", unix))
 	return json.Marshal(jsonNumber)
 }
 
-func (t *UnixTime) UnmarshalJSON(b []byte) error {
+func (t *unixTime) UnmarshalJSON(b []byte) error {
 	var jsonNumber json.Number
 	err := json.Unmarshal(b, &jsonNumber)
 	if err != nil {
@@ -70,11 +70,11 @@ func (t *UnixTime) UnmarshalJSON(b []byte) error {
 	}
 
 	v := time.Unix(0, unix).In(l)
-	*t = UnixTime(v)
+	*t = unixTime(v)
 	return nil
 }
 
-func PropertyTranslater_PutAndGet(t *testing.T, ctx context.Context, client datastore.Client) {
+func propertyTranslaterPutAndGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -88,8 +88,8 @@ func PropertyTranslater_PutAndGet(t *testing.T, ctx context.Context, client data
 	}
 
 	type Data struct {
-		UserID    UserID
-		CreatedAt UnixTime
+		UserID    userID
+		CreatedAt unixTime
 	}
 
 	userKey, err := client.Put(ctx, client.IncompleteKey("User", nil), &User{Name: "vvakame"})
@@ -101,10 +101,10 @@ func PropertyTranslater_PutAndGet(t *testing.T, ctx context.Context, client data
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := UnixTime(time.Date(2017, 11, 2, 10, 11, 22, 33, l))
+	now := unixTime(time.Date(2017, 11, 2, 10, 11, 22, 33, l))
 
 	key, err := client.Put(ctx, client.IncompleteKey("Data", nil), &Data{
-		UserID:    UserID(userKey.ID()),
+		UserID:    userID(userKey.ID()),
 		CreatedAt: now,
 	})
 	if err != nil {

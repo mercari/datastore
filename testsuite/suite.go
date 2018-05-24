@@ -7,61 +7,65 @@ import (
 	"go.mercari.io/datastore"
 )
 
-type Test func(t *testing.T, ctx context.Context, client datastore.Client)
+// Test represents a test function for Datastore testing.
+type Test func(ctx context.Context, t *testing.T, client datastore.Client)
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]Test{
-	"Batch_Put":                                   Batch_Put,
-	"Batch_PutWithCustomErrHandler":               Batch_PutWithCustomErrHandler,
-	"Batch_Get":                                   Batch_Get,
-	"Batch_GetWithCustomErrHandler":               Batch_GetWithCustomErrHandler,
-	"Batch_Delete":                                Batch_Delete,
-	"Batch_DeleteWithCustomErrHandler":            Batch_DeleteWithCustomErrHandler,
-	"PutAndGet":                                   PutAndGet,
-	"PutAndGet_TimeTime":                          PutAndGet_TimeTime,
-	"PutAndDelete":                                PutAndDelete,
-	"PutAndGet_ObjectHasObjectSlice":              PutAndGet_ObjectHasObjectSlice,
-	"PutAndGet_ObjectHasObjectSliceWithFlatten":   PutAndGet_ObjectHasObjectSliceWithFlatten,
-	"PutEntityType":                               PutEntityType,
-	"PutAndGetNilKey":                             PutAndGetNilKey,
-	"PutAndGetNilKeySlice":                        PutAndGetNilKeySlice,
-	"PutInterface":                                PutInterface,
-	"PutAndGetPropertyList":                       PutAndGetPropertyList,
-	"PutAndGetMultiPropertyListSlice":             PutAndGetMultiPropertyListSlice,
-	"PutAndGetBareStruct":                         PutAndGetBareStruct,
-	"PutAndGetMultiBareStruct":                    PutAndGetMultiBareStruct,
-	"GeoPoint_PutAndGet":                          GeoPoint_PutAndGet,
-	"GobDecode":                                   GobDecode,
-	"Key_Equal":                                   Key_Equal,
-	"Key_Incomplete":                              Key_Incomplete,
-	"Key_PutAndGet":                               Key_PutAndGet,
-	"Namespace_PutAndGet":                         Namespace_PutAndGet,
-	"Namespace_PutAndGetWithTx":                   Namespace_PutAndGetWithTx,
-	"Namespace_Query":                             Namespace_Query,
-	"PLS_Basic":                                   PLS_Basic,
-	"KL_Basic":                                    KL_Basic,
-	"PropertyTranslater_PutAndGet":                PropertyTranslater_PutAndGet,
-	"Filter_PropertyTranslaterMustError":          Filter_PropertyTranslaterMustError,
-	"Query_Count":                                 Query_Count,
-	"Query_GetAll":                                Query_GetAll,
-	"Query_Cursor":                                Query_Cursor,
-	"Query_NextByPropertyList":                    Query_NextByPropertyList,
-	"Query_GetAllByPropertyListSlice":             Query_GetAllByPropertyListSlice,
-	"Filter_Basic":                                Filter_Basic,
-	"Filter_PropertyTranslater":                   Filter_PropertyTranslater,
-	"Transaction_Commit":                          Transaction_Commit,
-	"Transaction_Rollback":                        Transaction_Rollback,
-	"Transaction_JoinAncesterQuery":               Transaction_JoinAncesterQuery,
-	"RunInTransaction_Commit":                     RunInTransaction_Commit,
-	"RunInTransaction_Rollback":                   RunInTransaction_Rollback,
-	"TransactionBatch_Put":                        TransactionBatch_Put,
-	"TransactionBatch_PutWithCustomErrHandler":    TransactionBatch_PutWithCustomErrHandler,
-	"TransactionBatch_PutAndAllocateIDs":          TransactionBatch_PutAndAllocateIDs,
-	"TransactionBatch_Get":                        TransactionBatch_Get,
-	"TransactionBatch_GetWithCustomErrHandler":    TransactionBatch_GetWithCustomErrHandler,
-	"TransactionBatch_Delete":                     TransactionBatch_Delete,
-	"TransactionBatch_DeleteWithCustomErrHandler": TransactionBatch_DeleteWithCustomErrHandler,
+	"Batch_Put":                                   batchPut,
+	"Batch_PutWithCustomErrHandler":               batchPutWithCustomErrHandler,
+	"Batch_Get":                                   batchGet,
+	"Batch_GetWithCustomErrHandler":               batchGetWithCustomErrHandler,
+	"Batch_Delete":                                batchDelete,
+	"Batch_DeleteWithCustomErrHandler":            batchDeleteWithCustomErrHandler,
+	"PutAndGet":                                   putAndGet,
+	"PutAndGet_TimeTime":                          putAndGetTimeTime,
+	"PutAndDelete":                                putAndDelete,
+	"PutAndGet_ObjectHasObjectSlice":              putAndGetObjectHasObjectSlice,
+	"PutAndGet_ObjectHasObjectSliceWithFlatten":   putAndGetObjectHasObjectSliceWithFlatten,
+	"PutEntityType":                               putEntityType,
+	"PutAndGet_NilKey":                            putAndGetNilKey,
+	"PutAndGet_NilKeySlice":                       putAndGetNilKeySlice,
+	"PutInterface":                                putInterface,
+	"PutAndGet_PropertyList":                      putAndGetPropertyList,
+	"PutAndGet_MultiPropertyListSlice":            putAndGetMultiPropertyListSlice,
+	"PutAndGet_BareStruct":                        putAndGetBareStruct,
+	"PutAndGet_MultiBareStruct":                   putAndGetMultiBareStruct,
+	"GeoPoint_PutAndGet":                          geoPointPutAndGet,
+	"GobDecode":                                   gobDecode,
+	"Key_Equal":                                   keyEqual,
+	"Key_Incomplete":                              keyIncomplete,
+	"Key_PutAndGet":                               keyPutAndGet,
+	"Namespace_PutAndGet":                         namespacePutAndGet,
+	"Namespace_PutAndGetWithTx":                   namespacePutAndGetWithTx,
+	"Namespace_Query":                             namespaceQuery,
+	"PLS_Basic":                                   plsBasic,
+	"KL_Basic":                                    klBasic,
+	"PropertyTranslater_PutAndGet":                propertyTranslaterPutAndGet,
+	"Filter_PropertyTranslaterMustError":          filterPropertyTranslaterMustError,
+	"Query_Count":                                 queryCount,
+	"Query_GetAll":                                queryGetAll,
+	"Query_Cursor":                                queryCursor,
+	"Query_NextByPropertyList":                    queryNextByPropertyList,
+	"Query_GetAllByPropertyListSlice":             queryGetAllByPropertyListSlice,
+	"Filter_Basic":                                filterBasic,
+	"Filter_PropertyTranslater":                   filterPropertyTranslater,
+	"Filter_PropertyTranslaterWithOriginalTypes":  filterPropertyTranslaterWithOriginalTypes,
+	"Transaction_Commit":                          transactionCommit,
+	"Transaction_Rollback":                        transactionRollback,
+	"Transaction_JoinAncesterQuery":               transactionJoinAncesterQuery,
+	"RunInTransaction_Commit":                     runInTransactionCommit,
+	"RunInTransaction_Rollback":                   runInTransactionRollback,
+	"TransactionBatch_Put":                        transactionBatchPut,
+	"TransactionBatch_PutWithCustomErrHandler":    transactionBatchPutWithCustomErrHandler,
+	"TransactionBatch_PutAndAllocateIDs":          transactionBatchPutAndAllocateIDs,
+	"TransactionBatch_Get":                        transactionBatchGet,
+	"TransactionBatch_GetWithCustomErrHandler":    transactionBatchGetWithCustomErrHandler,
+	"TransactionBatch_Delete":                     transactionBatchDelete,
+	"TransactionBatch_DeleteWithCustomErrHandler": transactionBatchDeleteWithCustomErrHandler,
 }
 
+// MergeTestSuite into this package's TestSuite.
 func MergeTestSuite(suite map[string]Test) {
 	for key, spec := range suite {
 		_, ok := TestSuite[key]
@@ -74,20 +78,24 @@ func MergeTestSuite(suite map[string]Test) {
 
 type contextAE struct{}
 
+// WrapAEFlag add AEDatastore marker into context. use with IsAEDatastoreClient function.
 func WrapAEFlag(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextAE{}, true)
 }
 
+// IsAEDatastoreClient returns whether the context is used for AEDatastore.
 func IsAEDatastoreClient(ctx context.Context) bool {
 	return ctx.Value(contextAE{}) != nil
 }
 
 type contextCloud struct{}
 
+// WrapCloudFlag add CloudDatastore marker into context. use with IsCloudDatastoreClient function.
 func WrapCloudFlag(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextCloud{}, true)
 }
 
+// IsCloudDatastoreClient returns whether the context is used for CloudDatastore.
 func IsCloudDatastoreClient(ctx context.Context) bool {
 	return ctx.Value(contextCloud{}) != nil
 }

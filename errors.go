@@ -23,9 +23,13 @@ import (
 )
 
 var (
+	// ErrInvalidEntityType is returned when functions like Get or Next are
+	// passed a dst or src argument of invalid type.
 	ErrInvalidEntityType = errors.New("datastore: invalid entity type")
-	ErrInvalidKey        = errors.New("datastore: invalid key")
-	ErrNoSuchEntity      = errors.New("datastore: no such entity")
+	// ErrInvalidKey is returned when an invalid key is presented.
+	ErrInvalidKey = errors.New("datastore: invalid key")
+	// ErrNoSuchEntity is returned when no entity was found for a given key.
+	ErrNoSuchEntity = errors.New("datastore: no such entity")
 )
 
 // ErrFieldMismatch is returned when a field is to be loaded into a different
@@ -44,6 +48,8 @@ func (e *ErrFieldMismatch) Error() string {
 		e.FieldName, e.StructType, e.Reason)
 }
 
+// ErrConcurrentTransaction is returned when a transaction is rolled back due
+// to a conflict with a concurrent transaction.
 var ErrConcurrentTransaction = errors.New("datastore: concurrent transaction")
 
 // MultiError is returned by batch operations when there are errors with

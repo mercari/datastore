@@ -9,31 +9,31 @@ import (
 	"go.mercari.io/datastore"
 )
 
-var _ datastore.PropertyTranslator = UnixTime(time.Time{})
-var _ json.Marshaler = UnixTime(time.Time{})
-var _ json.Unmarshaler = (*UnixTime)(&time.Time{})
+var _ datastore.PropertyTranslator = unixTime(time.Time{})
+var _ json.Marshaler = unixTime(time.Time{})
+var _ json.Unmarshaler = (*unixTime)(&time.Time{})
 
-type UnixTime time.Time
+type unixTime time.Time
 
-func (t UnixTime) ToPropertyValue(ctx context.Context) (interface{}, error) {
+func (t unixTime) ToPropertyValue(ctx context.Context) (interface{}, error) {
 	return time.Time(t), nil
 }
 
-func (t UnixTime) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+func (t unixTime) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
 	origT, ok := p.Value.(time.Time)
 	if !ok {
 		return nil, datastore.ErrInvalidEntityType
 	}
-	return UnixTime(origT), nil
+	return unixTime(origT), nil
 }
 
-func (t UnixTime) MarshalJSON() ([]byte, error) {
+func (t unixTime) MarshalJSON() ([]byte, error) {
 	unix := time.Time(t).UnixNano() / 1000000 // to JavaScript unix epoch
 	jsonNumber := json.Number(fmt.Sprintf("%d", unix))
 	return json.Marshal(jsonNumber)
 }
 
-func (t *UnixTime) UnmarshalJSON(b []byte) error {
+func (t *unixTime) UnmarshalJSON(b []byte) error {
 	var jsonNumber json.Number
 	err := json.Unmarshal(b, &jsonNumber)
 	if err != nil {
@@ -50,6 +50,6 @@ func (t *UnixTime) UnmarshalJSON(b []byte) error {
 	}
 
 	v := time.Unix(unix*1000000, 0).In(l)
-	*t = UnixTime(v)
+	*t = unixTime(v)
 	return nil
 }

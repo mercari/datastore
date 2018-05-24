@@ -8,9 +8,9 @@ import (
 
 // UserJSON is jsonized struct for User.
 type UserJSON struct {
-	ID       UserID `json:"id,omitempty"`
+	ID       userID `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`
-	MentorID UserID `json:"mentorID,omitempty"`
+	MentorID userID `json:"mentorID,omitempty"`
 }
 
 // UserJSONList is synonym about []*UserJSON.

@@ -15,6 +15,7 @@ import (
 var _ storagecache.Storage = &cacheHandler{}
 var _ datastore.Middleware = &cacheHandler{}
 
+// New AE Memcache middleware creates & returns.
 func New(opts ...CacheOption) interface {
 	datastore.Middleware
 	storagecache.Storage
@@ -52,6 +53,7 @@ type cacheHandler struct {
 	cacheKey           func(key datastore.Key) string
 }
 
+// A CacheOption is an cache option for a AE Memcache middleware.
 type CacheOption interface {
 	Apply(*cacheHandler)
 }

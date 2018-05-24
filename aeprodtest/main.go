@@ -8,6 +8,7 @@ import (
 	"google.golang.org/appengine/log"
 
 	"go.mercari.io/datastore"
+	// setup aedatastore to default
 	_ "go.mercari.io/datastore/aedatastore"
 )
 

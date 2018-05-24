@@ -16,15 +16,16 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]testsuite.Test{
-	"RPCRetry_Basic":       RPCRetry_Basic,
-	"RPCRetry_Transaction": RPCRetry_Transaction,
-	"RPCRetry_AllocateIDs": RPCRetry_AllocateIDs,
-	"RPCRetry_GetAll":      RPCRetry_GetAll,
-	"RPCRetry_Count":       RPCRetry_Count,
+	"RPCRetry_Basic":       basic,
+	"RPCRetry_Transaction": transaction,
+	"RPCRetry_AllocateIDs": allocateIDs,
+	"RPCRetry_GetAll":      getAll,
+	"RPCRetry_Count":       count,
 }
 
-func RPCRetry_Basic(t *testing.T, ctx context.Context, client datastore.Client) {
+func basic(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -145,7 +146,7 @@ func RPCRetry_Basic(t *testing.T, ctx context.Context, client datastore.Client) 
 	}
 }
 
-func RPCRetry_Transaction(t *testing.T, ctx context.Context, client datastore.Client) {
+func transaction(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -352,7 +353,7 @@ func RPCRetry_Transaction(t *testing.T, ctx context.Context, client datastore.Cl
 	}
 }
 
-func RPCRetry_AllocateIDs(t *testing.T, ctx context.Context, client datastore.Client) {
+func allocateIDs(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -443,7 +444,7 @@ func RPCRetry_AllocateIDs(t *testing.T, ctx context.Context, client datastore.Cl
 	}
 }
 
-func RPCRetry_GetAll(t *testing.T, ctx context.Context, client datastore.Client) {
+func getAll(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -588,7 +589,7 @@ func RPCRetry_GetAll(t *testing.T, ctx context.Context, client datastore.Client)
 	}
 }
 
-func RPCRetry_Count(t *testing.T, ctx context.Context, client datastore.Client) {
+func count(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

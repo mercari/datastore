@@ -14,16 +14,17 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+// TestSuite contains all the test cases that this package provides.
 var TestSuite = map[string]testsuite.Test{
-	"FishBone_QueryWithoutTx": FishBone_QueryWithoutTx,
-	"FishBone_QueryWithTx":    FishBone_QueryWithTx,
+	"FishBone_QueryWithoutTx": queryWithoutTx,
+	"FishBone_QueryWithTx":    queryWithTx,
 }
 
 func init() {
 	testsuite.MergeTestSuite(TestSuite)
 }
 
-func FishBone_QueryWithoutTx(t *testing.T, ctx context.Context, client datastore.Client) {
+func queryWithoutTx(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -163,7 +164,7 @@ func FishBone_QueryWithoutTx(t *testing.T, ctx context.Context, client datastore
 	}
 }
 
-func FishBone_QueryWithTx(t *testing.T, ctx context.Context, client datastore.Client) {
+func queryWithTx(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

@@ -23,10 +23,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// A ClientOption is an option for a Datastore client.
 type ClientOption interface {
 	Apply(*internal.ClientSettings)
 }
 
+// WithProjectID returns a ClientOption that specifies ProjectID to be used in client.
 func WithProjectID(projectID string) ClientOption {
 	return withProjectID{projectID}
 }

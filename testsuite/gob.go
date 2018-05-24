@@ -10,7 +10,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func GobDecode(t *testing.T, ctx context.Context, client datastore.Client) {
+func gobDecode(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {

@@ -26,6 +26,7 @@ type txResult struct {
 	rollback bool
 }
 
+// TransactionContext returns context that is under the AppEngine Datastore's transaction.
 func TransactionContext(tx w.Transaction) context.Context {
 	txImpl := tx.(*transactionImpl)
 	return txImpl.client.ctx

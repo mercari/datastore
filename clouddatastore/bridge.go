@@ -39,6 +39,7 @@ func newClientSettings(opts ...w.ClientOption) *internal.ClientSettings {
 	return settings
 }
 
+// FromContext make new Client by specified context.
 func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) {
 	settings := newClientSettings(opts...)
 	origOpts := make([]option.ClientOption, 0, len(opts))
@@ -63,6 +64,7 @@ func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) 
 	return &datastoreImpl{ctx: ctx, client: client}, nil
 }
 
+// IsCloudDatastoreClient returns check result that client is this package's client or not.
 func IsCloudDatastoreClient(client w.Client) bool {
 	_, ok := client.(*datastoreImpl)
 	return ok

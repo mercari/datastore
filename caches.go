@@ -8,22 +8,38 @@ import (
 	"strings"
 )
 
+// Middleware hooks to the Datastore's RPC and It can modify arguments and return values.
+// see https://godoc.org/go.mercari.io/datastore/dsmiddleware
 type Middleware interface {
+	// AllocateIDs intercepts AllocateIDs operation.
 	AllocateIDs(info *MiddlewareInfo, keys []Key) ([]Key, error)
+	// PutMultiWithoutTx intercepts PutMulti without Transaction operation.
 	PutMultiWithoutTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) ([]Key, error)
+	// PutMultiWithTx intercepts PutMulti with Transaction operation.
 	PutMultiWithTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) ([]PendingKey, error)
+	// GetMultiWithoutTx intercepts GetMulti without Transaction operation.
 	GetMultiWithoutTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) error
+	// GetMultiWithTx intercepts GetMulti with Transaction operation.
 	GetMultiWithTx(info *MiddlewareInfo, keys []Key, psList []PropertyList) error
+	// DeleteMultiWithoutTx intercepts DeleteMulti without Transaction operation.
 	DeleteMultiWithoutTx(info *MiddlewareInfo, keys []Key) error
+	// DeleteMultiWithTx intercepts DeleteMulti with Transaction operation.
 	DeleteMultiWithTx(info *MiddlewareInfo, keys []Key) error
+	// PostCommit will kicked after Transaction commit.
 	PostCommit(info *MiddlewareInfo, tx Transaction, commit Commit) error
+	// PostRollback will kicked after Transaction rollback.
 	PostRollback(info *MiddlewareInfo, tx Transaction) error
+	// Run intercepts Run query operation.
 	Run(info *MiddlewareInfo, q Query, qDump *QueryDump) Iterator
+	// GetAll intercepts GetAll operation.
 	GetAll(info *MiddlewareInfo, q Query, qDump *QueryDump, psList *[]PropertyList) ([]Key, error)
+	// Next intercepts Next operation.
 	Next(info *MiddlewareInfo, q Query, qDump *QueryDump, iter Iterator, ps *PropertyList) (Key, error)
+	// Count intercepts Count operation.
 	Count(info *MiddlewareInfo, q Query, qDump *QueryDump) (int, error)
 }
 
+// MiddlewareInfo provides RPC's processing state.
 type MiddlewareInfo struct {
 	Context     context.Context
 	Client      Client
@@ -31,6 +47,7 @@ type MiddlewareInfo struct {
 	Next        Middleware
 }
 
+// QueryDump provides information of executed query.
 type QueryDump struct {
 	Kind                string
 	Ancestor            Key
@@ -117,6 +134,7 @@ func (dump *QueryDump) String() string {
 	return b.String()
 }
 
+// QueryFilterCondition provides information of filter of query.
 type QueryFilterCondition struct {
 	Filter string
 	Value  interface{}

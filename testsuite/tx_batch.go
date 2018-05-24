@@ -9,7 +9,7 @@ import (
 	"go.mercari.io/datastore"
 )
 
-func TransactionBatch_Put(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionBatchPut(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -85,7 +85,7 @@ func TransactionBatch_Put(t *testing.T, ctx context.Context, client datastore.Cl
 	wg.Wait()
 }
 
-func TransactionBatch_PutWithCustomErrHandler(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionBatchPutWithCustomErrHandler(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -141,7 +141,7 @@ func TransactionBatch_PutWithCustomErrHandler(t *testing.T, ctx context.Context,
 	}
 }
 
-func TransactionBatch_PutAndAllocateIDs(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionBatchPutAndAllocateIDs(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -199,7 +199,7 @@ func TransactionBatch_PutAndAllocateIDs(t *testing.T, ctx context.Context, clien
 	}
 }
 
-func TransactionBatch_Get(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionBatchGet(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -264,7 +264,7 @@ func TransactionBatch_Get(t *testing.T, ctx context.Context, client datastore.Cl
 	}
 }
 
-func TransactionBatch_GetWithCustomErrHandler(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionBatchGetWithCustomErrHandler(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -325,7 +325,7 @@ func TransactionBatch_GetWithCustomErrHandler(t *testing.T, ctx context.Context,
 	}
 }
 
-func TransactionBatch_Delete(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionBatchDelete(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -388,7 +388,7 @@ func TransactionBatch_Delete(t *testing.T, ctx context.Context, client datastore
 	}
 }
 
-func TransactionBatch_DeleteWithCustomErrHandler(t *testing.T, ctx context.Context, client datastore.Client) {
+func transactionBatchDeleteWithCustomErrHandler(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()
 		if err != nil {
