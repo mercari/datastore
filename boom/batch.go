@@ -22,28 +22,9 @@ func (b *Batch) Boom() *Boom {
 	return b.bm
 }
 
-// Get puts Entity fetch processing into the queue of Get.
-func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
-	keys, err := b.bm.extractKeys([]interface{}{dst})
-	if err != nil {
-		if h != nil {
-			err = h(err)
-		}
-		if err != nil {
-			b.m.Lock()
-			b.earlyErrors = append(b.earlyErrors, err)
-			b.m.Unlock()
-		}
-		return
-	}
-
-	b.b.Get(keys[0], dst, h)
-}
-
 // Put puts Entity into the queue of Put.
 // This operation doesn't Put to Datastore immediatly.
 // If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
-// TODO move this method before Get method
 func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{src})
 	if err != nil {
@@ -85,6 +66,24 @@ func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
 
 		return nil
 	})
+}
+
+// Get puts Entity fetch processing into the queue of Get.
+func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
+	keys, err := b.bm.extractKeys([]interface{}{dst})
+	if err != nil {
+		if h != nil {
+			err = h(err)
+		}
+		if err != nil {
+			b.m.Lock()
+			b.earlyErrors = append(b.earlyErrors, err)
+			b.m.Unlock()
+		}
+		return
+	}
+
+	b.b.Get(keys[0], dst, h)
 }
 
 // Delete puts Entity delete processing into the queue of Delete.
