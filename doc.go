@@ -1,110 +1,122 @@
 /*
-Package datastore は、(AppEngine|Cloud) Datastoreの抽象表現を持ちます。
-https://cloud.google.com/datastore/docs/ もしくは https://cloud.google.com/appengine/docs/standard/go/datastore/ をよく読みましょう。
-また、オリジナルのライブラリとして https://godoc.org/cloud.google.com/go/datastore もしくは https://godoc.org/google.golang.org/appengine/datastore も確認すると良いでしょう。
+Package datastore has an abstract representation of (AppEngine | Cloud) Datastore.
+Let's read https://cloud.google.com/datastore/docs/ or https://cloud.google.com/appengine/docs/standard/go/datastore/ .
+You should also check https://godoc.org/cloud.google.com/go/datastore or https://godoc.org/google.golang.org/appengine/datastore as datastore original library.
+
+Japanese version https://github.com/mercari/datastore/blob/master/doc_ja.go
 
 
-基本的な使い方
+Basic usage
 
-https://godoc.org/go.mercari.io/datastore/clouddatastore か https://godoc.org/go.mercari.io/datastore/aedatastore を見てください。
-各パッケージのFromContextを使って Client を作成します。
+Please see https://godoc.org/go.mercari.io/datastore/clouddatastore or https://godoc.org/go.mercari.io/datastore/aedatastore .
+Create a Client using the FromContext function of each package.
 
-このドキュメントの後半に、各パッケージから移行する際の注意点をまとめてあります。
-そちらも御覧ください。
+Later in this document, notes on migration from each package are summarized.
+Please see also there.
 
-このライブラリはより設計が新しいCloud DatastoreのAPIをベースにしています。
-Cloud Datastoreにしかない flatten タグも導入しているので、AE Datastoreから移行する際は注意が必要です。
-詳細は後述します。
-困ったら https://godoc.org/go.mercari.io/datastore/clouddatastore を見ると解決の糸口があるかもしれません。
-
-
-本パッケージの目的は3つあります。
-	1. ミドルウェア層を提供し、アプリケーションの価値とは直接関係がない処理を書く必要を減らす
-	2. AppEngine, Cloud、両方のDatastoreに対して同一のインタフェースを提供する。
-	3. Single Get, Signle Putなどをバッチ処理化する。
+This package is based on the newly designed Cloud Datastore API.
+We are introducing flatten tags that only exist in Cloud Datastore, we need to be careful when migrating from AE Datastore.
+Details will be described later.
+If you are worried, you may have a clue to the solution at https://godoc.org/go.mercari.io/datastore/clouddatastore .
 
 
-ミドルウェア層
+The purpose of this package
 
-アプリケーションの価値とは直接関係のない、速度や安定性、運用のための機能が必要になる場合があります。
-そういった機能はミドルウェアとして抽象化し、利用することができます。
+This package has three main objectives.
 
-例えばこんなケースはどうでしょうか。
-DatastoreにEntityをPutしたら、MemcacheやRedisにSetしておく。
-次にDatastoreからGetするときはまずMemcacheなどからGetし、無ければDatastoreから改めてGetする。
-これらをすべてのKind、すべてのEntityの操作で行うのは、ひどく面倒です。
-しかし、全てのDatastoreとのRPCに介入し、統一的に処理を差し込めるミドルウェアであれば、アプリケーションから見えないところでこの処理を行うことができます。
-
-別のケースとして、RPCにありがちなこととして処理が稀に失敗することがあります。
-失敗したら単にリトライするだけで処理が成功する場合も多いです。
-これも、全ての処理で簡単に行うには、ミドルウェアでリトライ処理をかけるのが適しています。
-
-既に用意されているミドルウェアが知りたい場合は https://godoc.org/go.mercari.io/datastore/dsmiddleware を参照してください。
+	1. Provide a middleware layer, and reduce the code that are not directly related to application value.
+	2. AppEngine, Cloud, to provide the same interface for both Datastore.
+	3. Enable batch processing for Single Get, Signle Put, etc.
 
 
-AppEngineとCloudで同一のインタフェースを提供する
+Middleware layer
 
-AppEngine DatastoreとCloud Datastoreに対して、同一のインタフェースが提供されています。
-この2つは互換性があり、Clientを作った後は全く同様のコードで動かすことができます。
+We are forced to make functions that are not directly related to the value of the application for speed, stability and operation.
+Such functions can be abstracted and used as middleware.
 
-例えば本番環境ではAE Datastoreを使って、UnitTestではCloud Datastore Emulatorを使うということもできます。
-goappを避けることができれば、テストが高速になったりIDEからデバッグの支援が受けやすくなったりするかもしれません。
-また、AE Datastoreで運用しているシステムについて、ローカル環境からCloud Datastoreを介してデータを読み込むこともできるでしょう。
+Let's think about this case.
+Put Entity to Datastore and set it to Memcache or Redis.
+Next, when getting from Datastore, Get from Memcache first, Get it again from Datastore if it fails.
+It is very troublesome to provide these operations for all Kind and all Entity operations.
+However, if the middleware intervenes with all Datastore RPCs, you can transparently process without affecting the application code.
 
-注意点として、AE DatastoreとCloud DatastoreのRPCの向こうのストレース本体は共有されていますが、APIレベルでの表現力には差があります。
-うかつにAE Datastoreで書いたデータをCloud Datastoreで読んで、変更して、更新しないようにしてください。
-AE Datastore側のAPIから読み取れなくなる可能性があります。
-これについて、我々は厳密にはテストを行っていません。
+As another case, RPC sometimes fails.
+If it fails, the process often succeeds simply by retrying.
+For easy RET retry with all RPCs, it is better to implement it as middleware.
 
-
-Signle Get, Signle Putのバッチ処理化
-
-Datastoreの操作にはRPCのためのネットワークに関するレイテンシがほんの少しあります。
-10個のEntityを取得するとき、ループして10回Getするよりも1回のGetMultiのほうがより良いということです。
-ところが、我々は複数の処理を1回にまとめるのが苦手です。
-例えば、Post KindにQueryを投げて、得られたPostが持っているComment IDのリストを使ってCommentのリストをGetしたいとします。
-これは、ちゃんとしたコードを書けば1回のQuery+1回のGetMultiで十分ですが、Commentのリストを適切なPostと紐付ける作業が待っています。
-一方、1回のQuery+Postの数だけCommentをGetMultiするコードは簡単に書けるでしょう。
-ここで、PutやGetをキューに入れておいて、あとでまとめて実行してくれる仕組みがあると都合がよさそうです。
-
-これを実現したのが Batch() です。
-https://godoc.org/go.mercari.io/datastore/example に例があります。
+Please refer to https://godoc.org/go.mercari.io/datastore/dsmiddleware if you want to know the middleware already provided.
 
 
-goonを置き換えるboom
+Provide the same interface between AppEngine and Cloud Datastore
 
-私はgoonが好きです。
-ですので、本ライブラリと組み合わせて使える https://godoc.org/go.mercari.io/datastore/boom を作りました。
+The same interface is provided for AppEngine Datastore and Cloud Datastore.
+These two are compatible, you can run it with exactly the same code after creating the Client.
+
+For example, you can use AE Datastore in a production environment and Cloud Datastore Emulator in UnitTest.
+If you can avoid goapp, tests may be faster and IDE may be more vulnerable to debugging.
+You can also read data from the local environment via Cloud Datastore for systems running on AE Datastore.
+
+Caution.
+Although the storage bodies of RPCs of AE Datastore and Cloud Datastore are shared, there is a difference in expressiveness at the API level.
+Please carefully read the data written in AE Datastore carelessly on Cloud Datastore and do not update it.
+It may become impossible to read from the API of AE Datastore side.
+About this, we have not strictly tested.
 
 
-本ライブラリへの移行方法（AE, Cloud共通）
+Batch processing
 
-	*datastore.Key を datastore.Key に置き換える。
-	*datastore.Query を datastore.Query に置き換える。
-	*datastore.Iterator を datastore.Iterator に置き換える。
+The operation of Datastore has very little latency with respect to RPC's network.
+When acquiring 10 entities it means that GetMulti one time is better than getting 10 times using loops.
+However, we are not good at putting together multiple processes at once.
+Suppose, for example, you want to query on Post Kind, use the list of Comment IDs of the resulting Post, and get a list of Comments.
+For example, you can query Post Kind and get a list of Post.
+In addition, consider using CommentIDs of Post and getting a list of Comment.
+This is enough Query + 1 GetMulti is enough if you write very clever code.
+However, after acquiring the data, it is necessary to link the Comment list with the appropriate Post.
+On the other hand, you can easily write a code that throws a query once and then GetMulti the Comment as many as Post.
+In summary, it is convenient to have Put or Get queued, and there is a mechanism to execute it collectively later.
 
-AE Datastoreからの移行
+Batch() is it!
+You can find the example at https://godoc.org/go.mercari.io/datastore/#pkg-examples .
 
-	go.mercari.io/datastore と go.mercari.io/datastore/aedatastore をimportする。
-	datastoreパッケージの関数を使っているものをFromContextとClientのメソッド呼び出しに書き換える。
-	err.(appengine.MultiError) を err.(datastore.MultiError) に置き換える。
-	appengine.BlobKey を使うのをやめ、stringに置き換える。
-	google.golang.org/appengine/datastore.Done を google.golang.org/api/iterator.Done に置き換える。
-	key.IntID() を key.ID() に置き換える。
-	key.StringID() を key.Name() に置き換える。
-	datastore.TransactionOptions はサポートされないので削除する。
-	google.golang.org/appengine/datastore をimportしている箇所がないかチェックし、あれば go.mercari.io/datastore に置き換える。
 
-Cloud Datastoreからの移行
+Boom replacing goon
 
-	go.mercari.io/datastore と go.mercari.io/datastore/clouddatastore をimportする。
-	datastoreパッケージの関数を使っているものをFromContextとClientのメソッド呼び出しに書き換える。
-	*datastore.Commit を datastore.Commit に置き換える。
-	cloud.google.com/go/datastore をimportしている箇所がないかチェックし、あれば go.mercari.io/datastore に置き換える。
+I love goon.
+So I made https://godoc.org/go.mercari.io/datastore/boom which can be used in conjunction with this package.
 
-goonからboomへの移行
 
-	*goon.Goon を *boom.Boom に置き換える。
-	goon.FromContext(ctx) を ds, _ := aedatastore.FromContext(ctx); boom.FromClient(ctx, ds) に置き換える。
+How to migrate to this library
+
+Here's an overview of what you need to do to migrate your existing code.
+
+	replace *datastore.Key to datastore.Key.
+	replace *datastore.Query to datastore.Query.
+	replace *datastore.Iterator to datastore.Iterator.
+
+from AE Datastore
+
+	import go.mercari.io/datastore and go.mercari.io/datastore/aedatastore both.
+	rewrite those using functions of datastore package to FromContext function and Client method calls.
+	replace err.(appengine.MultiError) to err.(datastore.MultiError) .
+	Stop using appengine.BlobKey and replace with string.
+	replace google.golang.org/appengine/datastore.Done to google.golang.org/api/iterator.Done .
+	replace key.IntID() to key.ID() .
+	replace key.StringID() to key.Name() .
+	When nesting a struct, apply `datastore:", flatten "` to the corresponding field.
+	Delete datastore.TransactionOptions, it is not supported.
+	If using google.golang.org/appengine/datastore , replace to go.mercari.io/datastore .
+
+from Cloud Datastore
+
+	import go.mercari.io/datastore and go.mercari.io/datastore/clouddatastore .
+	rewrite those using functions of datastore package to FromContext function and Client method calls.
+	replace *datastore.Commit to datastore.Commit .
+	If using cloud.google.com/go/datastore , replace to go.mercari.io/datastore .
+
+from goon to boom
+
+	replace *goon.Goon to *boom.Boom .
+	replace goon.FromContext(ctx) to ds, _ := aedatastore.FromContext(ctx); boom.FromClient(ctx, ds) .
 */
 package datastore // import "go.mercari.io/datastore"
