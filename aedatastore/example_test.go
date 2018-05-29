@@ -1,10 +1,11 @@
-package aedatastore
+package aedatastore_test
 
 import (
 	"context"
 	"fmt"
 	"net/url"
 
+	"go.mercari.io/datastore/aedatastore"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
 	"google.golang.org/appengine/taskqueue"
@@ -37,7 +38,7 @@ func ExampleFromContext() {
 	}
 	ctx := appengine.NewContext(r)
 
-	client, err := FromContext(
+	client, err := aedatastore.FromContext(
 		ctx,
 	)
 	if err != nil {
@@ -70,7 +71,7 @@ func ExampleTransactionContext() {
 	ctx, cancelFn := appengineContext()
 	go cancelFn()
 
-	client, err := FromContext(ctx)
+	client, err := aedatastore.FromContext(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +83,7 @@ func ExampleTransactionContext() {
 	}
 	go tx.Commit()
 
-	txCtx := TransactionContext(tx)
+	txCtx := aedatastore.TransactionContext(tx)
 
 	// join task to Transaction!
 	task := taskqueue.NewPOSTTask("/foobar", url.Values{})

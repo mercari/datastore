@@ -1,17 +1,18 @@
-package clouddatastore
+package clouddatastore_test
 
 import (
 	"context"
 	"fmt"
 
 	"go.mercari.io/datastore"
+	"go.mercari.io/datastore/clouddatastore"
 )
 
 const ProjectID = "datastore-wrapper"
 
 func ExampleFromContext() {
 	ctx := context.Background()
-	client, err := FromContext(
+	client, err := clouddatastore.FromContext(
 		ctx,
 		datastore.WithProjectID(ProjectID),
 	)
