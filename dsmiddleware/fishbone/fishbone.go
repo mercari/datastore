@@ -7,15 +7,6 @@ import (
 	"go.mercari.io/datastore"
 )
 
-// fishbone?
-// https://www.google.co.jp/search?q=%E9%AD%9A%E3%81%AE%E9%A3%9F%E3%81%B9%E6%96%B9+%E8%83%8C%E9%AA%A8&tbm=isch
-//
-// Recommend: don't use this strategy in production.
-// You should implement KeysOnly + GetMulti strategy in YOUR application.
-// Because, SingleGet is executed every time when Iterator#Next called. It's too slow even memcache access.
-
-// TODO アプリケーション側で実装する場合のベストプラクティス的コードをどこかに作成してリンクを置く
-
 var _ datastore.Middleware = &modifier{}
 
 // New fishbone middleware creates and returns.
