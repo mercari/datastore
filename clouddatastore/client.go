@@ -131,7 +131,7 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 			Transaction: txImpl,
 		}
 		return f(txImpl)
-	})
+	}, datastore.MaxAttempts(1))
 	if err != nil {
 		return nil, toWrapperError(err)
 	}
