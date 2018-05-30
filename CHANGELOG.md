@@ -1,3 +1,19 @@
+<a name="0.19.0"></a>
+# [0.19.0](https://github.com/mercari/datastore/compare/v0.18.0...v0.19.0) (2018-05-30)
+
+
+### Bug Fixes
+
+* **ci:** fix ci failed ([ffeefe6](https://github.com/mercari/datastore/commit/ffeefe6))
+
+
+### Features
+
+* **core:** deprecate datastore.FromContext and related API ([7e6fd79](https://github.com/mercari/datastore/commit/7e6fd79))
+* **dsmiddleware/rpcretry:** rename WithLogf function to WithLogger function ([2453e9b](https://github.com/mercari/datastore/commit/2453e9b))
+
+
+
 <a name="0.18.0"></a>
 # [0.18.0](https://github.com/mercari/datastore/compare/v0.17.0...v0.18.0) (2018-05-30)
 
