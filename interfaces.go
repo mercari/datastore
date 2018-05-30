@@ -261,4 +261,6 @@ type PropertyTranslator interface {
 	FromPropertyValue(ctx context.Context, p Property) (dst interface{}, err error)
 }
 
+// TODO write example
+
 // TODO ComplexPropertyTranslator e.g. ToProperties(ctx context.Context) ([]Property, error)
