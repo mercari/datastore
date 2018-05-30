@@ -152,7 +152,6 @@ func (ocb *originalClientBridgeImpl) GetAll(ctx context.Context, q w.Query, qDum
 	wKeys := toWrapperKeys(ctx, origKeys)
 
 	if !qDump.KeysOnly {
-		// TODO should be copy? not replace?
 		*psList = toWrapperPropertyListList(ctx, origPss)
 	}
 

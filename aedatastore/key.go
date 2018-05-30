@@ -57,18 +57,14 @@ func (k *keyImpl) SetNamespace(namespace string) {
 }
 
 func (k *keyImpl) String() string {
-	// TODO 手で実装しなおしたほうがいいかも 互換性のため
 	return toOriginalKey(k).String()
 }
 
 func (k *keyImpl) GobEncode() ([]byte, error) {
-	// TODO 手で実装しなおしたほうがいいかも 互換性のため
 	return toOriginalKey(k).GobEncode()
 }
 
 func (k *keyImpl) GobDecode(buf []byte) error {
-	// TODO 手で実装しなおしたほうがいいかも 互換性のため
-
 	origKey := &datastore.Key{}
 	err := origKey.GobDecode(buf)
 	if err != nil {
@@ -85,14 +81,10 @@ func (k *keyImpl) GobDecode(buf []byte) error {
 }
 
 func (k *keyImpl) MarshalJSON() ([]byte, error) {
-	// TODO 手で実装しなおしたほうがいいかも 互換性のため
-
 	return toOriginalKey(k).MarshalJSON()
 }
 
 func (k *keyImpl) UnmarshalJSON(buf []byte) error {
-	// TODO 手で実装しなおしたほうがいいかも 互換性のため
-
 	origKey := &datastore.Key{}
 	err := origKey.UnmarshalJSON(buf)
 	if err != nil {
