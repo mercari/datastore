@@ -6,11 +6,13 @@ import (
 
 // FromContext provides default ClientGenerator.
 // this variable will be injected by go.mercari.io/datastore/aedatastore or go.mercari.io/datastore/clouddatastore package's init function.
-// We strongly recommend not to use this function.
-// use aedatastore.FromContext or clouddatastore.FromContext directly.
+//
+// Deprecated: use aedatastore.FromContext or clouddatastore.FromContext instead.
 var FromContext ClientGenerator
 
 // ClientGenerator represents the type of function for generating Client.
+//
+// Deprecated:
 type ClientGenerator func(ctx context.Context, opts ...ClientOption) (Client, error)
 
 // Client is a client for reading and writing data in a datastore dataset.

@@ -7,6 +7,8 @@ import (
 )
 
 // FromContext make new Boom object with specified context.
+//
+// Deprecated: use FromClient instead.
 func FromContext(ctx context.Context) (*Boom, error) {
 	client, err := datastore.FromContext(ctx)
 	if err != nil {

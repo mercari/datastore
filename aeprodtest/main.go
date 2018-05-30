@@ -4,16 +4,14 @@ import (
 	"net/http"
 
 	"google.golang.org/appengine"
-	aedatastore "google.golang.org/appengine/datastore"
+	originaldatastore "google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 
-	"go.mercari.io/datastore"
-	// setup aedatastore to default
-	_ "go.mercari.io/datastore/aedatastore"
+	"go.mercari.io/datastore/aedatastore"
 )
 
 func init() {
-	// Put Entity via aedatastore
+	// Put Entity via original AppEngine Datastore
 	http.HandleFunc("/api/test1", func(w http.ResponseWriter, r *http.Request) {
 		ctx := appengine.NewContext(r)
 
@@ -26,8 +24,8 @@ func init() {
 			Slice []Inner
 		}
 
-		key := aedatastore.NewIncompleteKey(ctx, "AETest", nil)
-		_, err := aedatastore.Put(ctx, key, &Data{
+		key := originaldatastore.NewIncompleteKey(ctx, "AETest", nil)
+		_, err := originaldatastore.Put(ctx, key, &Data{
 			Slice: []Inner{
 				Inner{A: "A1", B: "B1"},
 				Inner{A: "A2", B: "B2"},
@@ -47,7 +45,7 @@ func init() {
 	http.HandleFunc("/api/test2", func(w http.ResponseWriter, r *http.Request) {
 		ctx := appengine.NewContext(r)
 
-		ds, err := datastore.FromContext(ctx)
+		ds, err := aedatastore.FromContext(ctx)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Warningf(ctx, "error: %v", err)
@@ -84,7 +82,7 @@ func init() {
 	http.HandleFunc("/api/test3", func(w http.ResponseWriter, r *http.Request) {
 		ctx := appengine.NewContext(r)
 
-		ds, err := datastore.FromContext(ctx)
+		ds, err := aedatastore.FromContext(ctx)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Warningf(ctx, "error: %v", err)
