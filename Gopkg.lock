@@ -126,7 +126,7 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "9ef9f5bb98a1fdc41f8cf6c250a4404b4085e389"
+  revision = "89e543239a64caf31d3a6865872ea120b41446df"
 
 [[projects]]
   branch = "master"
@@ -138,7 +138,7 @@
     "jws",
     "jwt"
   ]
-  revision = "770e5ebd4ab27c4d70b0983674d138217f5e2c72"
+  revision = "ec22f46f877b4505e0117eeaab541714644fdd28"
 
 [[projects]]
   branch = "master"
@@ -181,7 +181,7 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "1937f90a1bb43667aff4059b1bab13eb15121e8e"
+  revision = "a5b4c53f6e8bdcafa95a94671bf2d1203365858b"
 
 [[projects]]
   branch = "master"
@@ -192,7 +192,7 @@
     "option",
     "transport/grpc"
   ]
-  revision = "348810ff778af56686d572415ce79e6c9fad9613"
+  revision = "de6fadef861e6dbf0af2a8d98d6c1389aaa28ca5"
 
 [[projects]]
   branch = "master"
@@ -210,11 +210,13 @@
     "internal/modules",
     "internal/remote_api",
     "internal/socket",
+    "internal/taskqueue",
     "internal/urlfetch",
     "internal/user",
     "log",
     "memcache",
     "socket",
+    "taskqueue",
     "urlfetch",
     "user"
   ]
@@ -290,6 +292,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2b575cc5ac1665e6f2c72b10a28f9e25a73ed59b44c5c1bce4597b1b311551d5"
+  inputs-digest = "4b35c2b8199c8651bd320130825967acb88a3bb7dc3b43e5f457c3efbfe6d802"
   solver-name = "gps-cdcl"
   solver-version = 1
