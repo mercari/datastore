@@ -49,7 +49,7 @@ func basic(ctx context.Context, t *testing.T, client datastore.Client) {
 	}()
 
 	rh := rpcretry.New(
-		rpcretry.WithLogf(logf),
+		rpcretry.WithLogger(logf),
 		rpcretry.WithMinBackoffDuration(1),
 		rpcretry.WithRetryLimit(4),
 	)
@@ -170,7 +170,7 @@ func transaction(ctx context.Context, t *testing.T, client datastore.Client) {
 	}()
 
 	rh := rpcretry.New(
-		rpcretry.WithLogf(logf),
+		rpcretry.WithLogger(logf),
 		rpcretry.WithMinBackoffDuration(1),
 		rpcretry.WithRetryLimit(2),
 	)
@@ -377,7 +377,7 @@ func allocateIDs(ctx context.Context, t *testing.T, client datastore.Client) {
 	}()
 
 	rh := rpcretry.New(
-		rpcretry.WithLogf(logf),
+		rpcretry.WithLogger(logf),
 		rpcretry.WithMinBackoffDuration(1),
 		rpcretry.WithRetryLimit(2),
 	)
@@ -468,7 +468,7 @@ func getAll(ctx context.Context, t *testing.T, client datastore.Client) {
 	}()
 
 	rh := rpcretry.New(
-		rpcretry.WithLogf(logf),
+		rpcretry.WithLogger(logf),
 		rpcretry.WithMinBackoffDuration(1),
 		rpcretry.WithRetryLimit(2),
 	)
@@ -613,7 +613,7 @@ func count(ctx context.Context, t *testing.T, client datastore.Client) {
 	}()
 
 	rh := rpcretry.New(
-		rpcretry.WithLogf(logf),
+		rpcretry.WithLogger(logf),
 		rpcretry.WithMinBackoffDuration(1),
 		rpcretry.WithRetryLimit(2),
 	)

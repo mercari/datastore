@@ -49,16 +49,22 @@ func (w *withMaxDoublings) Apply(rh *retryHandler) {
 	rh.maxDoublings = w.maxDoublings
 }
 
-// WithLogf creates a ClientOption that uses the specified logger.
-// TODO rename to WithLogger
-func WithLogf(logf func(ctx context.Context, format string, args ...interface{})) RetryOption {
-	return &withLogf{logf}
+// WithLogger creates a ClientOption that uses the specified logger.
+func WithLogger(logf func(ctx context.Context, format string, args ...interface{})) RetryOption {
+	return &withLogger{logf}
 }
 
-type withLogf struct {
+// WithLogf creates a ClientOption that uses the specified logger.
+//
+// Deprecated: use WithLogger instead.
+func WithLogf(logf func(ctx context.Context, format string, args ...interface{})) RetryOption {
+	return WithLogger(logf)
+}
+
+type withLogger struct {
 	logf func(ctx context.Context, format string, args ...interface{})
 }
 
-func (w *withLogf) Apply(rh *retryHandler) {
+func (w *withLogger) Apply(rh *retryHandler) {
 	rh.logf = w.logf
 }

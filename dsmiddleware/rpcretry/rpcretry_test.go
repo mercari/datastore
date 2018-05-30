@@ -100,7 +100,7 @@ func TestRPCRetry_Basic(t *testing.T) {
 	}()
 
 	rh := New(
-		WithLogf(logf),
+		WithLogger(logf),
 		WithMinBackoffDuration(1),
 		WithRetryLimit(4),
 	)
@@ -217,7 +217,7 @@ func TestRPCRetry_Transaction(t *testing.T) {
 	}()
 
 	rh := New(
-		WithLogf(logf),
+		WithLogger(logf),
 		WithMinBackoffDuration(1),
 		WithRetryLimit(2),
 	)
@@ -420,7 +420,7 @@ func TestRPCRetry_AllocateIDs(t *testing.T) {
 	}()
 
 	rh := New(
-		WithLogf(logf),
+		WithLogger(logf),
 		WithMinBackoffDuration(1),
 		WithRetryLimit(2),
 	)
@@ -507,7 +507,7 @@ func TestRPCRetry_GetAll(t *testing.T) {
 	}()
 
 	rh := New(
-		WithLogf(logf),
+		WithLogger(logf),
 		WithMinBackoffDuration(1),
 		WithRetryLimit(2),
 	)
@@ -648,7 +648,7 @@ func TestRPCRetry_Count(t *testing.T) {
 	}()
 
 	rh := New(
-		WithLogf(logf),
+		WithLogger(logf),
 		WithMinBackoffDuration(1),
 		WithRetryLimit(2),
 	)

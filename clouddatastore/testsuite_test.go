@@ -170,7 +170,7 @@ func TestCloudDatastoreWithRPCRetryAndChaosRPCTestSuite(t *testing.T) {
 				rpcretry.WithRetryLimit(10),
 				rpcretry.WithMinBackoffDuration(1),
 				rpcretry.WithMaxBackoffDuration(1),
-				rpcretry.WithLogf(func(ctx context.Context, format string, args ...interface{}) {
+				rpcretry.WithLogger(func(ctx context.Context, format string, args ...interface{}) {
 					t.Logf(format, args...)
 				}),
 			)
