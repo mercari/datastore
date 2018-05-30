@@ -6,6 +6,7 @@ import (
 
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/clouddatastore"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 func Example_clientGet() {
@@ -14,6 +15,8 @@ func Example_clientGet() {
 	if err != nil {
 		panic(err)
 	}
+	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	type Data struct {
 		Name string
@@ -38,11 +41,12 @@ func Example_clientGet() {
 
 func Example_batch() {
 	ctx := context.Background()
-	cli, err := clouddatastore.FromContext(ctx)
+	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		panic(err)
 	}
-	defer cli.Close()
+	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	type Comment struct {
 		Message string
@@ -56,21 +60,21 @@ func Example_batch() {
 	// preparing entities
 	for i := 0; i < 4; i++ {
 		post := &Post{Content: fmt.Sprintf("post #%d", i+1)}
-		key, err := cli.Put(ctx, cli.IncompleteKey("Post", nil), post)
+		key, err := client.Put(ctx, client.IncompleteKey("Post", nil), post)
 		if err != nil {
 			panic(err)
 		}
 
 		for j := 0; j < 5; j++ {
 			comment := &Comment{Message: fmt.Sprintf("comment #%d", j+1)}
-			cKey, err := cli.Put(ctx, cli.IncompleteKey("Comment", nil), comment)
+			cKey, err := client.Put(ctx, client.IncompleteKey("Comment", nil), comment)
 			if err != nil {
 				panic(err)
 			}
 
 			post.CommentIDs = append(post.CommentIDs, cKey.ID())
 		}
-		_, err = cli.Put(ctx, key, post)
+		_, err = client.Put(ctx, key, post)
 		if err != nil {
 			panic(err)
 		}
@@ -78,19 +82,19 @@ func Example_batch() {
 
 	// start fetching...
 	posts := make([]*Post, 0)
-	_, err = cli.GetAll(ctx, cli.NewQuery("Post").Order("Content"), &posts)
+	_, err = client.GetAll(ctx, client.NewQuery("Post").Order("Content"), &posts)
 	if err != nil {
 		panic(err)
 	}
 
 	// Let's batch get!
-	bt := cli.Batch()
+	bt := client.Batch()
 
 	for _, post := range posts {
 		comments := make([]*Comment, 0)
 		for _, id := range post.CommentIDs {
 			comment := &Comment{}
-			bt.Get(cli.IDKey("Comment", id, nil), comment, nil)
+			bt.Get(client.IDKey("Comment", id, nil), comment, nil)
 			comments = append(comments, comment)
 		}
 		post.Comments = comments
@@ -138,11 +142,12 @@ func Example_batch() {
 
 func Example_batchWithBatchErrHandler() {
 	ctx := context.Background()
-	cli, err := clouddatastore.FromContext(ctx)
+	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		panic(err)
 	}
-	defer cli.Close()
+	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	type Comment struct {
 		Message string
@@ -152,12 +157,12 @@ func Example_batchWithBatchErrHandler() {
 	// Put ID: 2, 4 into Datastore.
 	var keys []datastore.Key
 	for i := 1; i <= 5; i++ {
-		key := cli.IDKey("Comment", int64(i), nil)
+		key := client.IDKey("Comment", int64(i), nil)
 		keys = append(keys, key)
 
 		comment := &Comment{Message: fmt.Sprintf("comment #%d", i)}
 		if i%2 == 0 {
-			_, err = cli.Put(ctx, key, comment)
+			_, err = client.Put(ctx, key, comment)
 			if err != nil {
 				panic(err)
 			}
@@ -165,7 +170,7 @@ func Example_batchWithBatchErrHandler() {
 	}
 
 	// Let's batch get!
-	bt := cli.Batch()
+	bt := client.Batch()
 
 	var comments []*Comment
 	for _, key := range keys {
@@ -249,13 +254,14 @@ func (ids UserIDs) FromPropertyValue(ctx context.Context, p datastore.Property) 
 
 func ExamplePropertyTranslator() {
 	ctx := context.Background()
-	cli, err := clouddatastore.FromContext(ctx)
+	client, err := clouddatastore.FromContext(ctx)
 	if err != nil {
 		panic(err)
 	}
-	defer cli.Close()
+	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
-	ctx = context.WithValue(ctx, contextClient{}, cli)
+	ctx = context.WithValue(ctx, contextClient{}, client)
 
 	// Each fields are saved as datastore.Key and [] datastore.Key on Datastore.
 	type Group struct {
@@ -264,10 +270,10 @@ func ExamplePropertyTranslator() {
 	}
 
 	entity, err := datastore.SaveEntity(
-		ctx, cli.IncompleteKey("Group", nil),
+		ctx, client.IncompleteKey("Group", nil),
 		&Group{
-			OwnerID:   1,
-			MemberIDs: UserIDs{1, 2, 3},
+			OwnerID:   147,
+			MemberIDs: UserIDs{147, 258, 369},
 		},
 	)
 	if err != nil {
@@ -287,8 +293,8 @@ func ExamplePropertyTranslator() {
 		}
 	}
 
-	// Output: OwnerID 1
-	// MemberID 1
-	// MemberID 2
-	// MemberID 3
+	// Output: OwnerID 147
+	// MemberID 147
+	// MemberID 258
+	// MemberID 369
 }

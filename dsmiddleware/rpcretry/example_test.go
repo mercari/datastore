@@ -6,6 +6,7 @@ import (
 
 	"go.mercari.io/datastore/clouddatastore"
 	"go.mercari.io/datastore/dsmiddleware/rpcretry"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 func Example_howToUse() {
@@ -15,6 +16,7 @@ func Example_howToUse() {
 		panic(err)
 	}
 	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	mw := rpcretry.New(
 		rpcretry.WithRetryLimit(5),

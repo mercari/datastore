@@ -6,6 +6,7 @@ import (
 
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/clouddatastore"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 const ProjectID = "datastore-wrapper"
@@ -20,6 +21,7 @@ func ExampleFromContext() {
 		panic(err)
 	}
 	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	type Data struct {
 		Name string

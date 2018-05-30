@@ -10,6 +10,7 @@ import (
 	"go.mercari.io/datastore/clouddatastore"
 	"go.mercari.io/datastore/dsmiddleware/aememcache"
 	"go.mercari.io/datastore/dsmiddleware/localcache"
+	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
 )
@@ -42,6 +43,7 @@ func ExampleBoom() {
 		panic(err)
 	}
 	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	bm := boom.FromClient(ctx, client)
 
@@ -76,6 +78,7 @@ func ExampleBoom_kind() {
 		panic(err)
 	}
 	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	bm := boom.FromClient(ctx, client)
 
@@ -113,6 +116,7 @@ func ExampleBoom_parent() {
 		panic(err)
 	}
 	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	bm := boom.FromClient(ctx, client)
 
