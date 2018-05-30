@@ -1,3 +1,20 @@
+<a name="0.18.0"></a>
+# [0.18.0](https://github.com/mercari/datastore/compare/v0.17.0...v0.18.0) (2018-05-30)
+
+
+### Bug Fixes
+
+* **clouddatastore:** set MaxAttempts to 1 by default ([8d3adc1](https://github.com/mercari/datastore/commit/8d3adc1))
+
+
+### Features
+
+* **ci:** change golint repository ([2ec03e4](https://github.com/mercari/datastore/commit/2ec03e4))
+* **core:** update dependencies ([23c9dd3](https://github.com/mercari/datastore/commit/23c9dd3))
+* **core:** update dependencies ([751c049](https://github.com/mercari/datastore/commit/751c049))
+
+
+
 <a name="0.17.0"></a>
 # [0.17.0](https://github.com/mercari/datastore/compare/v0.16.0...v0.17.0) (2018-03-27)
 
