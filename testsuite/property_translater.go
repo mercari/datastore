@@ -15,14 +15,13 @@ var _ datastore.PropertyTranslator = unixTime(time.Time{})
 var _ json.Marshaler = unixTime(time.Time{})
 var _ json.Unmarshaler = (*unixTime)(&time.Time{})
 
+type contextClient struct{}
+
 type userID int64
 type unixTime time.Time
 
 func (id userID) ToPropertyValue(ctx context.Context) (interface{}, error) {
-	client, err := datastore.FromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	client := ctx.Value(contextClient{}).(datastore.Client)
 	key := client.IDKey("User", int64(id), nil)
 	return key, nil
 }
@@ -81,6 +80,8 @@ func propertyTranslaterPutAndGet(ctx context.Context, t *testing.T, client datas
 			t.Fatal(err)
 		}
 	}()
+	ctx = context.WithValue(ctx, contextClient{}, client)
+	client.SetContext(ctx)
 
 	type User struct {
 		ID   int64 `datastore:"-"`

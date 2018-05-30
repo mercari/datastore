@@ -8,6 +8,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"go.mercari.io/datastore/clouddatastore"
 	"go.mercari.io/datastore/dsmiddleware/rediscache"
+	"go.mercari.io/datastore/internal/testutils"
 )
 
 const redisAddress = ":6379"
@@ -19,6 +20,7 @@ func Example_howToUse() {
 		panic(err)
 	}
 	defer client.Close()
+	defer testutils.CleanUpAllEntities(ctx, client)
 
 	dial, err := net.Dial("tcp", redisAddress)
 	if err != nil {

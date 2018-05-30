@@ -9,6 +9,7 @@ import (
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/aedatastore"
 	"go.mercari.io/datastore/clouddatastore"
+	"google.golang.org/api/iterator"
 )
 
 // EmitCleanUpLog is flag for emit Datastore clean up log.
@@ -83,4 +84,33 @@ func SetupAEDatastore(t *testing.T) (context.Context, datastore.Client, func()) 
 	}
 
 	return ctx, client, func() { testerator.SpinDown() }
+}
+
+// CleanUpAllEntities in Datastore
+func CleanUpAllEntities(ctx context.Context, client datastore.Client) {
+	q := client.NewQuery("__kind__").KeysOnly()
+	iter := client.Run(ctx, q)
+	var kinds []string
+	for {
+		key, err := iter.Next(nil)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+		kinds = append(kinds, key.Name())
+	}
+
+	for _, kind := range kinds {
+		q := client.NewQuery(kind).KeysOnly()
+		keys, err := client.GetAll(ctx, q, nil)
+		if err != nil {
+			panic(err)
+		}
+		err = client.DeleteMulti(ctx, keys)
+		if err != nil {
+			panic(err)
+		}
+	}
 }

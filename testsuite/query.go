@@ -384,6 +384,8 @@ func filterPropertyTranslater(ctx context.Context, t *testing.T, client datastor
 			t.Fatal(err)
 		}
 	}()
+	ctx = context.WithValue(ctx, contextClient{}, client)
+	client.SetContext(ctx)
 
 	type Data struct {
 		UserID   userID
@@ -481,6 +483,8 @@ func filterPropertyTranslaterWithOriginalTypes(ctx context.Context, t *testing.T
 			t.Fatal(err)
 		}
 	}()
+	ctx = context.WithValue(ctx, contextClient{}, client)
+	client.SetContext(ctx)
 
 	type Data struct {
 		UserID   userID
