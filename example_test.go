@@ -199,3 +199,96 @@ func Example_batchWithBatchErrHandler() {
 	// Comment comment #2
 	// Comment comment #4
 }
+
+var _ datastore.PropertyTranslator = UserID(0)
+var _ datastore.PropertyTranslator = UserIDs(nil)
+
+type UserID int64
+type UserIDs []UserID
+
+type contextClient struct{}
+
+func (id UserID) ToPropertyValue(ctx context.Context) (interface{}, error) {
+	// When putting to Datastore, convert to datastore.Key
+	client := ctx.Value(contextClient{}).(datastore.Client)
+	key := client.IDKey("User", int64(id), nil)
+	return key, nil
+}
+
+func (id UserID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+	// When getting from Datastore, convert from datastore.Key
+	key, ok := p.Value.(datastore.Key)
+	if !ok {
+		return nil, datastore.ErrInvalidEntityType
+	}
+	return UserID(key.ID()), nil
+}
+
+func (ids UserIDs) ToPropertyValue(ctx context.Context) (interface{}, error) {
+	// When putting to Datastore, convert to []datastore.Key
+	client := ctx.Value(contextClient{}).(datastore.Client)
+	keys := make([]datastore.Key, 0, len(ids))
+	for _, id := range ids {
+		keys = append(keys, client.IDKey("User", int64(id), nil))
+	}
+	return keys, nil
+}
+
+func (ids UserIDs) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+	// When getting from Datastore, convert from datastore.Key
+	keys, ok := p.Value.([]datastore.Key)
+	if !ok {
+		return nil, datastore.ErrInvalidEntityType
+	}
+	newIDs := make(UserIDs, 0, len(keys))
+	for _, key := range keys {
+		newIDs = append(ids, UserID(key.ID()))
+	}
+	return newIDs, nil
+}
+
+func ExamplePropertyTranslator() {
+	ctx := context.Background()
+	cli, err := clouddatastore.FromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+	defer cli.Close()
+
+	ctx = context.WithValue(ctx, contextClient{}, cli)
+
+	// Each fields are saved as datastore.Key and [] datastore.Key on Datastore.
+	type Group struct {
+		OwnerID   UserID
+		MemberIDs UserIDs
+	}
+
+	entity, err := datastore.SaveEntity(
+		ctx, cli.IncompleteKey("Group", nil),
+		&Group{
+			OwnerID:   1,
+			MemberIDs: UserIDs{1, 2, 3},
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	if key, ok := entity.Properties[0].Value.(datastore.Key); !ok {
+		panic("unexpected state")
+	} else {
+		fmt.Println("OwnerID", key.ID())
+	}
+	if keys, ok := entity.Properties[1].Value.([]datastore.Key); !ok {
+		panic("unexpected state")
+	} else {
+		for _, key := range keys {
+			fmt.Println("MemberID", key.ID())
+		}
+	}
+
+	// Output: OwnerID 1
+	// MemberID 1
+	// MemberID 2
+	// MemberID 3
+}
