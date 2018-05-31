@@ -42,19 +42,19 @@ type batchDelete struct {
 	hs   []BatchErrHandler
 }
 
-// Put puts Entity into the queue of Put.
+// Put Entity operation into the queue.
 // This operation doesn't Put to Datastore immediatly.
 // If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
 func (b *Batch) Put(key Key, src interface{}, h BatchPutHandler) {
 	b.put.Put(key, src, h)
 }
 
-// Get puts Entity fetch processing into the queue of Get.
+// Get Entity operation into the queue.
 func (b *Batch) Get(key Key, dst interface{}, h BatchErrHandler) {
 	b.get.Get(key, dst, h)
 }
 
-// Delete puts Entity delete processing into the queue of Delete.
+// Delete Entity operation into the queue.
 func (b *Batch) Delete(key Key, h BatchErrHandler) {
 	b.delete.Delete(key, h)
 }

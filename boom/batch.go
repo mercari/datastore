@@ -22,7 +22,7 @@ func (b *Batch) Boom() *Boom {
 	return b.bm
 }
 
-// Put puts Entity into the queue of Put.
+// Put Entity operation into the queue.
 // This operation doesn't Put to Datastore immediatly.
 // If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
 func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
@@ -68,7 +68,7 @@ func (b *Batch) Put(src interface{}, h datastore.BatchPutHandler) {
 	})
 }
 
-// Get puts Entity fetch processing into the queue of Get.
+// Get Entity operation into the queue.
 func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
@@ -86,7 +86,7 @@ func (b *Batch) Get(dst interface{}, h datastore.BatchErrHandler) {
 	b.b.Get(keys[0], dst, h)
 }
 
-// Delete puts Entity delete processing into the queue of Delete.
+// Delete Entity operation into the queue.
 func (b *Batch) Delete(dst interface{}, h datastore.BatchErrHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{dst})
 	if err != nil {
