@@ -3,8 +3,6 @@
 [godoc]: https://godoc.org/go.mercari.io/datastore
 [circleci]: https://circleci.com/gh/mercari/datastore
 
-:construction: This package is unstable :construction: [github repo](https://github.com/mercari/datastore)
-
 (AppEngine | Cloud) Datastore wrapper for Go 👉
 
 Simple.
@@ -54,58 +52,6 @@ $ go get -u go.mercari.io/datastore
     * When using slice of struct, MUST specified `datastore:",flatten"` option.
         * original (ae & cloud) datastore.SaveStruct have different behaviors.
         * see aeprodtest/main.go `/api/test3`
-
-## How To Use
-
-TODO
-
-## Best Practice
-
-TODO
-
-## Project Navigation
-
-* `aedatastore`
-    * Datastore Wrapper implementation for AppEngine Datastore
-* `aeprodtest`
-    * Test code that works in AppEngine production environment
-* `boom`
-    * [goon](https://github.com/mjibson/goon) likes interface for this package
-* `clouddatastore`
-    * Datastore Wrapper implementation for Cloud Datastore
-* `dsmiddleware`
-    * Various processing can be intercepted
-    * `dsmiddleware/aememcache`
-        * Entity caching with [AE Memcache](https://cloud.google.com/appengine/docs/standard/go/memcache/using)
-    * `dsmiddleware/chaosrpc`
-        * Randomly generate an RPC error!
-    * `dsmiddleware/dslog`
-        * Datastore operation logging in cache layer
-    * `dsmiddleware/fishbone`
-        * Replace query by KeysOnly query with Get ops
-    * `dsmiddleware/localcache`
-        * Entity caching with machine local memory
-    * `dsmiddleware/noop`
-        * noop middleware :wink:
-    * `dsmiddleware/rediscache`
-        * Entity caching with [Redis](https://redis.io/)
-    * `dsmiddleware/rpcretry`
-        * Retry RPC when an error occurred
-    * `dsmiddleware/storagecache`
-        * Entity cacheing base code
-* `internal`
-    * internal package
-* `testbed`
-    * Testbed to check the behavior of AE Datastore and Cloud Datastore
-* `testsuite`
-    * Test suite for this package
-        * [AE Datastore entry point](https://github.com/mercari/datastore/blob/master/aedatastore/testsuite_test.go)
-        * [Cloud Datastore entry point](https://github.com/mercari/datastore/blob/master/clouddatastore/testsuite_test.go)
-
-## TODO
-
-* Write more documents
-* Check new Cloud Datastore APIs
 
 ## Committers
 
