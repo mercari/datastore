@@ -1,5 +1,8 @@
 /*
 Package datastore has an abstract representation of (AppEngine | Cloud) Datastore.
+
+repository https://github.com/mercari/datastore
+
 Let's read https://cloud.google.com/datastore/docs/ or https://cloud.google.com/appengine/docs/standard/go/datastore/ .
 You should also check https://godoc.org/cloud.google.com/go/datastore or https://godoc.org/google.golang.org/appengine/datastore as datastore original library.
 
