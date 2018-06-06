@@ -29,7 +29,7 @@ func (b *TransactionBatch) Transaction() *Transaction {
 }
 
 // Put Entity operation into the queue.
-// This operation doesn't Put to Datastore immediatly.
+// This operation doesn't Put to Datastore immediately.
 // If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
 func (b *TransactionBatch) Put(src interface{}, h datastore.TxBatchPutHandler) {
 	keys, err := b.bm.extractKeys([]interface{}{src})

@@ -1063,7 +1063,7 @@ func TestLocalCache_Transaction(t *testing.T) {
 		if v := key3.Name(); v != key2.Name() {
 			t.Errorf("unexpected: %v", v)
 		}
-		// commited, but don't put to cache in tx.
+		// committed, but don't put to cache in tx.
 		if v := ch.HasCache(key3); v {
 			t.Fatalf("unexpected: %v", v)
 		}

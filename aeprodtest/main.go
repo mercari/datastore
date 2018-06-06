@@ -27,9 +27,9 @@ func init() {
 		key := originaldatastore.NewIncompleteKey(ctx, "AETest", nil)
 		_, err := originaldatastore.Put(ctx, key, &Data{
 			Slice: []Inner{
-				Inner{A: "A1", B: "B1"},
-				Inner{A: "A2", B: "B2"},
-				Inner{A: "A3", B: "B3"},
+				{A: "A1", B: "B1"},
+				{A: "A2", B: "B2"},
+				{A: "A3", B: "B3"},
 			},
 		})
 		if err != nil {
@@ -64,9 +64,9 @@ func init() {
 		key := ds.IncompleteKey("AETest", nil)
 		_, err = ds.Put(ctx, key, &Data{
 			Slice: []Inner{
-				Inner{A: "A1", B: "B1"},
-				Inner{A: "A2", B: "B2"},
-				Inner{A: "A3", B: "B3"},
+				{A: "A1", B: "B1"},
+				{A: "A2", B: "B2"},
+				{A: "A3", B: "B3"},
 			},
 		})
 		if err != nil {
@@ -101,9 +101,9 @@ func init() {
 		key := ds.IncompleteKey("AETest", nil)
 		_, err = ds.Put(ctx, key, &Data{
 			Slice: []Inner{
-				Inner{A: "A1", B: "B1"},
-				Inner{A: "A2", B: "B2"},
-				Inner{A: "A3", B: "B3"},
+				{A: "A1", B: "B1"},
+				{A: "A2", B: "B2"},
+				{A: "A3", B: "B3"},
 			},
 		})
 		if err != nil {

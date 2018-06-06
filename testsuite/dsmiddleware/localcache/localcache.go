@@ -1107,7 +1107,7 @@ func transaction(ctx context.Context, t *testing.T, client datastore.Client) {
 		if v := key3.Name(); v != key2.Name() {
 			t.Errorf("unexpected: %v", v)
 		}
-		// commited, but don't put to dsmiddleware in tx.
+		// committed, but don't put to dsmiddleware in tx.
 		if v := ch.HasCache(key3); v {
 			t.Fatalf("unexpected: %v", v)
 		}

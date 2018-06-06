@@ -438,7 +438,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		if v := key3.Name(); v != key2.Name() {
 			t.Errorf("unexpected: %v", v)
 		}
-		// commited, but don't put to cache in tx.
+		// committed, but don't put to cache in tx.
 		hit, err = inCache(ctx, ch, key3)
 		if err != nil {
 			t.Fatal(err)

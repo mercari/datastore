@@ -139,9 +139,9 @@ func putAndGetObjectHasObjectSlice(ctx context.Context, t *testing.T, client dat
 	key := client.NameKey("Test", "a", nil)
 	_, err := client.Put(ctx, key, &Data{
 		Slice: []Inner{
-			Inner{A: "A1", B: "B1"},
-			Inner{A: "A2", B: "B2"},
-			Inner{A: "A3", B: "B3"},
+			{A: "A1", B: "B1"},
+			{A: "A2", B: "B2"},
+			{A: "A3", B: "B3"},
 		},
 	})
 	if err != nil {
@@ -188,9 +188,9 @@ func putAndGetObjectHasObjectSliceWithFlatten(ctx context.Context, t *testing.T,
 	key := client.NameKey("Test", "a", nil)
 	_, err := client.Put(ctx, key, &Data{
 		Slice: []Inner{
-			Inner{A: "A1", B: "B1"},
-			Inner{A: "A2", B: "B2"},
-			Inner{A: "A3", B: "B3"},
+			{A: "A1", B: "B1"},
+			{A: "A2", B: "B2"},
+			{A: "A3", B: "B3"},
 		},
 	})
 	if err != nil {

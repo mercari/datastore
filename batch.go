@@ -43,7 +43,7 @@ type batchDelete struct {
 }
 
 // Put Entity operation into the queue.
-// This operation doesn't Put to Datastore immediatly.
+// This operation doesn't Put to Datastore immediately.
 // If a h is provided, it passes the processing result to the handler, and treats the return value as the value of the result of Putting.
 func (b *Batch) Put(key Key, src interface{}, h BatchPutHandler) {
 	b.put.Put(key, src, h)

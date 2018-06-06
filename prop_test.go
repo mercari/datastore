@@ -241,9 +241,9 @@ func TestSaveStruct_ObjectHasObjectSlice(t *testing.T) {
 
 	ps, err := SaveStruct(ctx, &Data{
 		Slice: []Inner{
-			Inner{A: "A1", B: "B1"},
-			Inner{A: "A2", B: "B2"},
-			Inner{A: "A3", B: "B3"},
+			{A: "A1", B: "B1"},
+			{A: "A2", B: "B2"},
+			{A: "A3", B: "B3"},
 		},
 	})
 	if err != nil {

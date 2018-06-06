@@ -111,7 +111,7 @@ func TestAEDatastore_Transaction(t *testing.T) {
 
 	newTransaction := func(ctx context.Context) (context.Context, func() error, func() error) {
 		if ctx == nil {
-			t.Fatal("context is not comming")
+			t.Fatal("context is not coming")
 		}
 
 		ctxC := make(chan context.Context)
@@ -437,9 +437,9 @@ func TestAEDatastore_ObjectHasObjectSlice(t *testing.T) {
 
 	ps, err := datastore.SaveStruct(&Data{
 		Slice: []Inner{
-			Inner{A: "A1", B: "B1"},
-			Inner{A: "A2", B: "B2"},
-			Inner{A: "A3", B: "B3"},
+			{A: "A1", B: "B1"},
+			{A: "A2", B: "B2"},
+			{A: "A3", B: "B3"},
 		},
 	})
 	if err != nil {
