@@ -1,3 +1,17 @@
+<a name="1.0.0"></a>
+# [1.0.0](https://github.com/mercari/datastore/compare/v0.19.0...v1.0.0) (2018-06-06)
+
+
+### Features
+
+* **dsmiddleware/storagecache:** go to private about Tx* type & struct ([b06c9a7](https://github.com/mercari/datastore/commit/b06c9a7))
+
+
+### BREAKING CHANGES
+
+Go to private about TxOps, TxOpLog in `go.mercari.io/datastore/dsmiddleware/storagecache`.
+
+
 <a name="0.19.0"></a>
 # [0.19.0](https://github.com/mercari/datastore/compare/v0.18.0...v0.19.0) (2018-05-30)
 
