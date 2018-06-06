@@ -52,26 +52,21 @@ type CacheItem struct {
 	PropertyList datastore.PropertyList
 }
 
-// TxOps represents the type of operation in the transaction.
-// TODO rename to txOps
-type TxOps int
+// txOps represents the type of operation in the transaction.
+type txOps int
 
 const (
-	// TxPutOp represents the put operation in the transaction.
-	// TODO rename to txPutOp
-	TxPutOp TxOps = iota
-	// TxGetOp represents the get operation in the transaction.
-	// TODO rename to txGetOp
-	TxGetOp
-	// TxDeleteOp represents the delete operation in the transaction.
-	// TODO rename to txDeleteOp
-	TxDeleteOp
+	// txPutOp represents the put operation in the transaction.
+	txPutOp txOps = iota
+	// txGetOp represents the get operation in the transaction.
+	txGetOp
+	// txDeleteOp represents the delete operation in the transaction.
+	txDeleteOp
 )
 
-// TxOpLog is a log of operations within a transaction.
-// TODO rename to txOpLog
-type TxOpLog struct {
-	Ops          TxOps
+// txOpLog is a log of operations within a transaction.
+type txOpLog struct {
+	Ops          txOps
 	Key          datastore.Key
 	PendingKey   datastore.PendingKey
 	PropertyList datastore.PropertyList
@@ -135,9 +130,9 @@ func (ch *cacheHandler) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []da
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
-	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*TxOpLog)
+	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txOpLog)
 	if !ok {
-		txOpMap = make(map[datastore.Transaction][]*TxOpLog)
+		txOpMap = make(map[datastore.Transaction][]*txOpLog)
 		info.Context = context.WithValue(info.Context, contextTx{}, txOpMap)
 	}
 
@@ -146,8 +141,8 @@ func (ch *cacheHandler) PutMultiWithTx(info *datastore.MiddlewareInfo, keys []da
 		if !ch.target(info.Context, key) {
 			continue
 		}
-		log := &TxOpLog{
-			Ops:          TxPutOp,
+		log := &txOpLog{
+			Ops:          txPutOp,
 			PropertyList: psList[idx],
 		}
 		if key.Incomplete() {
@@ -276,9 +271,9 @@ func (ch *cacheHandler) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []da
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
-	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*TxOpLog)
+	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txOpLog)
 	if !ok {
-		txOpMap = make(map[datastore.Transaction][]*TxOpLog)
+		txOpMap = make(map[datastore.Transaction][]*txOpLog)
 		info.Context = context.WithValue(info.Context, contextTx{}, txOpMap)
 	}
 
@@ -287,8 +282,8 @@ func (ch *cacheHandler) GetMultiWithTx(info *datastore.MiddlewareInfo, keys []da
 		if !ch.target(info.Context, key) {
 			continue
 		}
-		log := &TxOpLog{
-			Ops: TxGetOp,
+		log := &txOpLog{
+			Ops: txGetOp,
 			Key: key,
 		}
 		logs = append(logs, log)
@@ -327,9 +322,9 @@ func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys [
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
-	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*TxOpLog)
+	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txOpLog)
 	if !ok {
-		txOpMap = make(map[datastore.Transaction][]*TxOpLog)
+		txOpMap = make(map[datastore.Transaction][]*txOpLog)
 		info.Context = context.WithValue(info.Context, contextTx{}, txOpMap)
 	}
 
@@ -339,8 +334,8 @@ func (ch *cacheHandler) DeleteMultiWithTx(info *datastore.MiddlewareInfo, keys [
 			continue
 		}
 
-		log := &TxOpLog{
-			Ops: TxDeleteOp,
+		log := &txOpLog{
+			Ops: txDeleteOp,
 			Key: key,
 		}
 		logs = append(logs, log)
@@ -355,7 +350,7 @@ func (ch *cacheHandler) PostCommit(info *datastore.MiddlewareInfo, tx datastore.
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
-	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*TxOpLog)
+	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txOpLog)
 	if !ok {
 		return info.Next.PostCommit(info, tx, commit)
 	}
@@ -365,14 +360,14 @@ func (ch *cacheHandler) PostCommit(info *datastore.MiddlewareInfo, tx datastore.
 	keys := make([]datastore.Key, len(logs))
 	for idx, log := range logs {
 		switch log.Ops {
-		case TxPutOp:
+		case txPutOp:
 			key := log.Key
 			if log.PendingKey != nil {
 				key = commit.Key(log.PendingKey)
 			}
 			keys[idx] = key
 
-		case TxGetOp, TxDeleteOp:
+		case txGetOp, txDeleteOp:
 			keys[idx] = log.Key
 		}
 	}
@@ -405,7 +400,7 @@ func (ch *cacheHandler) PostRollback(info *datastore.MiddlewareInfo, tx datastor
 	ch.m.Lock()
 	defer ch.m.Unlock()
 
-	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*TxOpLog)
+	txOpMap, ok := info.Context.Value(contextTx{}).(map[datastore.Transaction][]*txOpLog)
 	if !ok {
 		return info.Next.PostRollback(info, tx)
 	}
