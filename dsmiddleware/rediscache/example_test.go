@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"go.mercari.io/datastore/clouddatastore"
 	"go.mercari.io/datastore/dsmiddleware/rediscache"
 	"go.mercari.io/datastore/internal/testutils"

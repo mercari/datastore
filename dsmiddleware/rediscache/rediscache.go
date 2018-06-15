@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/storagecache"
 )

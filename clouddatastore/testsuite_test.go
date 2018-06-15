@@ -17,7 +17,7 @@ import (
 	_ "go.mercari.io/datastore/testsuite/realworld/recursivebatch"
 	_ "go.mercari.io/datastore/testsuite/realworld/tbf"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"go.mercari.io/datastore/dsmiddleware/chaosrpc"
 	"go.mercari.io/datastore/dsmiddleware/localcache"
 	"go.mercari.io/datastore/dsmiddleware/rediscache"
