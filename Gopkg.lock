@@ -46,16 +46,7 @@
     "datastore",
     "memcache"
   ]
-  revision = "01295efde1160a219223641db4f81bbd76888a62"
-
-[[projects]]
-  name = "github.com/garyburd/redigo"
-  packages = [
-    "internal",
-    "redis"
-  ]
-  revision = "a69d19351219b6dd56f274f96d85a7014a2ec34e"
-  version = "v1.6.0"
+  revision = "04c1c0fc2a5a12ba14068ee37e764af81a4ac575"
 
 [[projects]]
   branch = "master"
@@ -70,7 +61,16 @@
     "ptypes/timestamp",
     "ptypes/wrappers"
   ]
-  revision = "3a3da3a4e26776cc22a79ef46d5d58477532dede"
+  revision = "5831880292e721c76b58a16ecc60adc27d8e6355"
+
+[[projects]]
+  name = "github.com/gomodule/redigo"
+  packages = [
+    "internal",
+    "redis"
+  ]
+  revision = "9c11da706d9b7902c6da69c592f75637793fe121"
+  version = "v2.0.0"
 
 [[projects]]
   name = "github.com/googleapis/gax-go"
@@ -90,6 +90,7 @@
 [[projects]]
   name = "go.opencensus.io"
   packages = [
+    ".",
     "internal",
     "internal/tagencoding",
     "plugin/ocgrpc",
@@ -101,8 +102,8 @@
     "trace/internal",
     "trace/propagation"
   ]
-  revision = "f7730ab009c252771b19074bd05217d054c0c93f"
-  version = "v0.10.0"
+  revision = "6edeb78af2d9e4f169abb223feaef35da2e45d06"
+  version = "v0.13.0"
 
 [[projects]]
   branch = "master"
@@ -126,7 +127,7 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "89e543239a64caf31d3a6865872ea120b41446df"
+  revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
 
 [[projects]]
   branch = "master"
@@ -138,7 +139,7 @@
     "jws",
     "jwt"
   ]
-  revision = "ec22f46f877b4505e0117eeaab541714644fdd28"
+  revision = "1e0a3fa8ba9a5c9eb35c271780101fdaf1b205d7"
 
 [[projects]]
   branch = "master"
@@ -181,7 +182,7 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "a5b4c53f6e8bdcafa95a94671bf2d1203365858b"
+  revision = "c6269430a55499efa2e293ae66926175dc3af30e"
 
 [[projects]]
   branch = "master"
@@ -192,7 +193,7 @@
     "option",
     "transport/grpc"
   ]
-  revision = "de6fadef861e6dbf0af2a8d98d6c1389aaa28ca5"
+  revision = "2eea9ba0a3d94f6ab46508083e299a00bbbc65f6"
 
 [[projects]]
   branch = "master"
@@ -231,7 +232,7 @@
     "googleapis/rpc/status",
     "googleapis/type/latlng"
   ]
-  revision = "694d95ba50e67b2e363f3483057db5d4910c18f9"
+  revision = "32ee49c4dd805befd833990acba36cb75042378c"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -262,8 +263,8 @@
     "tap",
     "transport"
   ]
-  revision = "41344da2231b913fa3d983840a57a6b1b7b631a1"
-  version = "v1.12.0"
+  revision = "7a6a684ca69eb4cae85ad0a484f2e531598c047b"
+  version = "v1.12.2"
 
 [[projects]]
   name = "honnef.co/go/tools"
@@ -292,6 +293,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4b35c2b8199c8651bd320130825967acb88a3bb7dc3b43e5f457c3efbfe6d802"
+  inputs-digest = "eae246bfbb25b00616593a72644a1e2a5ed9b23348d6fecc7fc1e7cedac2603a"
   solver-name = "gps-cdcl"
   solver-version = 1
