@@ -929,3 +929,50 @@ func TestAEDatastore_Namespace(t *testing.T) {
 		t.Fatalf("unexpected: %v", v)
 	}
 }
+
+func TestAEDatastore_KindlessQueryWithAncestor(t *testing.T) {
+	ctx, close, err := newContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close()
+
+	type A struct {
+		A string
+	}
+	type B struct {
+		B int
+	}
+
+	ancestorKey := datastore.NewKey(ctx, "Ancestor", "foo", 0, nil)
+
+	_, err = datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "A", ancestorKey), &A{A: "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "A", ancestorKey), &A{A: "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "B", ancestorKey), &B{B: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "B", ancestorKey), &B{B: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var es []*datastore.Entity
+	keys, err := datastore.NewQuery("").Ancestor(ancestorKey).GetAll(ctx, &es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := len(keys); v != 4 {
+		t.Fatalf("unexpected: %v", v)
+	}
+	if v := len(es); v != 4 {
+		t.Fatalf("unexpected: %v", v)
+	}
+}
