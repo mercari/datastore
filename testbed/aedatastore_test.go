@@ -963,8 +963,8 @@ func TestAEDatastore_KindlessQueryWithAncestor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var es []*datastore.Entity
-	keys, err := datastore.NewQuery("").Ancestor(ancestorKey).GetAll(ctx, &es)
+	var pss []datastore.PropertyList
+	keys, err := datastore.NewQuery("").Ancestor(ancestorKey).GetAll(ctx, &pss)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -972,7 +972,7 @@ func TestAEDatastore_KindlessQueryWithAncestor(t *testing.T) {
 	if v := len(keys); v != 4 {
 		t.Fatalf("unexpected: %v", v)
 	}
-	if v := len(es); v != 4 {
+	if v := len(pss); v != 4 {
 		t.Fatalf("unexpected: %v", v)
 	}
 }
