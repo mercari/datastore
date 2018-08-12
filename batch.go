@@ -11,6 +11,7 @@ import (
 type Batch struct {
 	Client Client
 
+	m      sync.Mutex
 	put    batchPut
 	get    batchGet
 	delete batchDelete
@@ -63,6 +64,31 @@ func (b *Batch) Delete(key Key, h BatchErrHandler) {
 // This process is done recursively until the queue is empty.
 // The return value may be MultiError, but the order of contents is not guaranteed.
 func (b *Batch) Exec(ctx context.Context) error {
+	// batch#Exec でロックを取る理由
+	// 次のようなシチュエーションで問題になる… 可能性がある
+	//
+	// 同一 *Batch に対して並列に動くジョブがあるとする。
+	// ジョブAがGet+error handlerを登録する
+	// ジョブBがGet+error handlerを登録する
+	// ジョブAがExecする 上記2つの操作が実行される 処理には少し時間がかかる
+	// ジョブBがExecする キューには何もないので高速に終了する ジョブAのExecは終わっていない
+	// ジョブBのGet+error handlerはまだ発火していないがジョブBはエラー無しとして処理を終了する
+	//
+	// 解決策は2種類ある
+	//   1. ここで行われている実装のように、ジョブがExecしている時は別ジョブのExecを待たせる
+	//   2. 呼び出し側でerror handlerが終わったことを sync.WaitGroup などを使って確定させる
+	//
+	// ここでは、 "Execしたら処理は全て終わっている" というモデルを維持するため 解決策1 を採用する
+	// 弊害として、Execがエラーを返さなかったからといってジョブが成功したとは限らなくなるということである
+	// 対策として、error handlerを使ったハンドリングを適切にやるか、同一の *Batch を使わない方法がある
+
+	b.m.Lock()
+	defer b.m.Unlock()
+
+	return b.exec(ctx)
+}
+
+func (b *Batch) exec(ctx context.Context) error {
 	var wg sync.WaitGroup
 	var errors []error
 	var m sync.Mutex
@@ -104,7 +130,7 @@ func (b *Batch) Exec(ctx context.Context) error {
 
 	// Batch操作した後PropertyLoadSaverなどで追加のBatch操作が積まれたらそれがなくなるまで処理する
 	if len(b.put.keys) != 0 || len(b.get.keys) != 0 || len(b.delete.keys) != 0 {
-		return b.Exec(ctx)
+		return b.exec(ctx)
 	}
 
 	return nil
