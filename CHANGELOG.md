@@ -1,3 +1,13 @@
+<a name="1.1.0"></a>
+# [1.1.0](https://github.com/mercari/datastore/compare/v1.0.1...v1.1.0) (2018-08-12)
+
+
+### Features
+
+* **core:** add lock to *Batch#Exec ([5c6aa54](https://github.com/mercari/datastore/commit/5c6aa54))
+
+
+
 <a name="1.0.1"></a>
 ## [1.0.1](https://github.com/mercari/datastore/compare/v1.0.0...v1.0.1) (2018-08-12)
 
