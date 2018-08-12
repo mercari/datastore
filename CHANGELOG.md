@@ -1,3 +1,20 @@
+<a name="1.0.1"></a>
+## [1.0.1](https://github.com/mercari/datastore/compare/v1.0.0...v1.0.1) (2018-08-12)
+
+
+### Bug Fixes
+
+* **ci:** fix broken test ([2fa8d46](https://github.com/mercari/datastore/commit/2fa8d46))
+* **dsmiddleware/storagecache:** fix panic occurred when DeleteMulti returns error ([f4e5501](https://github.com/mercari/datastore/commit/f4e5501))
+
+
+### Features
+
+* **core:** update dependencies ([dffe09e](https://github.com/mercari/datastore/commit/dffe09e))
+* **dsmiddleware/rediscache:** move to github.com/gomodule/redigo/redis from github.com/garyburd/redigo/redis ([7be2e88](https://github.com/mercari/datastore/commit/7be2e88))
+
+
+
 <a name="1.0.0"></a>
 # [1.0.0](https://github.com/mercari/datastore/compare/v0.19.0...v1.0.0) (2018-06-06)
 
