@@ -310,7 +310,7 @@ func (ch *cacheHandler) DeleteMultiWithoutTx(info *datastore.MiddlewareInfo, key
 
 	sErr := ch.s.DeleteMulti(info.Context, filteredKeys)
 	if sErr != nil {
-		ch.logf(info.Context, "dsmiddleware/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", err.Error())
+		ch.logf(info.Context, "dsmiddleware/storagecache.GetMultiWithoutTx: error on storage.DeleteMulti err=%s", sErr.Error())
 	}
 
 	return err
