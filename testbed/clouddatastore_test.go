@@ -1074,12 +1074,7 @@ func TestCloudDatastore_PendingKeyWithCompleteKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer func() {
-		if err := recover(); err == nil || err.(string) != "PendingKey was not created by corresponding transaction" {
-			t.Errorf("unexpected: '%v'", err)
-		}
-	}()
-	// panic occurred in this case.
+	// don't panic occurred after https://github.com/GoogleCloudPlatform/google-cloud-go/commit/02a2d936c7c22d0d585fb1e86ac05043bacb3a13
 	commit.Key(pKey)
 }
 
