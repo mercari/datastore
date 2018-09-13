@@ -23,6 +23,12 @@ type Transaction struct {
 	pendingKeysLater []*setKeyLater
 }
 
+// DatastoreTransaction returns datastore.Transaction that contains in boom's Transaction.
+// This function should not be used unless you have a special reason.
+func DatastoreTransaction(tx *Transaction) datastore.Transaction {
+	return tx.tx
+}
+
 type setKeyLater struct {
 	pendingKey datastore.PendingKey
 	src        interface{}
