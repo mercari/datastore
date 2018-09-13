@@ -1,3 +1,13 @@
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/mercari/datastore/compare/v1.1.0...v1.2.0) (2018-09-13)
+
+
+### Features
+
+* **boom:** add DatastoreTransaction function to boom package ([53c84a3](https://github.com/mercari/datastore/commit/53c84a3))
+
+
+
 <a name="1.1.0"></a>
 # [1.1.0](https://github.com/mercari/datastore/compare/v1.0.1...v1.1.0) (2018-08-12)
 
