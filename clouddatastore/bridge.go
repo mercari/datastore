@@ -64,6 +64,11 @@ func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) 
 	return &datastoreImpl{ctx: ctx, client: client}, nil
 }
 
+// FromClient make new Client by specified datastore.Client.
+func FromClient(ctx context.Context, client *datastore.Client) (w.Client, error) {
+	return &datastoreImpl{ctx: ctx, client: client}, nil
+}
+
 // IsCloudDatastoreClient returns check result that client is this package's client or not.
 func IsCloudDatastoreClient(client w.Client) bool {
 	_, ok := client.(*datastoreImpl)
