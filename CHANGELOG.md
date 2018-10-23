@@ -1,3 +1,14 @@
+<a name="1.3.0"></a>
+# [1.3.0](https://github.com/mercari/datastore/compare/v1.2.0...v1.3.0) (2018-10-23)
+
+
+### Features
+
+* **cloud:** add FromClient function ([33b8714](https://github.com/mercari/datastore/commit/33b8714))
+* **core:** update dependencies ([273cb3c](https://github.com/mercari/datastore/commit/273cb3c))
+
+
+
 <a name="1.2.0"></a>
 # [1.2.0](https://github.com/mercari/datastore/compare/v1.1.0...v1.2.0) (2018-09-13)
 
