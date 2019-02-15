@@ -2,20 +2,27 @@
 
 
 [[projects]]
-  digest = "1:05a0051c277d6f51a8026a23c7b9f3ae650f9f3b82e5d4f91a97f05fcbac10ff"
+  digest = "1:9f3bc9b251182aa0a26ac45e39a226c0f91e8f59dd91d8cab7d56b301684ee6a"
   name = "cloud.google.com/go"
   packages = [
     "compute/metadata",
     "datastore",
     "internal",
-    "internal/atomiccache",
     "internal/fields",
     "internal/trace",
     "internal/version",
   ]
   pruneopts = "T"
-  revision = "dfffe386c33fb24c34ee501e5723df5b97b98514"
-  version = "v0.30.0"
+  revision = "c9474f2f8deb81759839474b6bd1726bbfe1c1c4"
+  version = "v0.36.0"
+
+[[projects]]
+  digest = "1:147748cfa709da38076c3df47f6bca6814c8ced6cba510065ec03f2120cc4819"
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005"
+  version = "v0.3.1"
 
 [[projects]]
   branch = "master"
@@ -34,12 +41,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:3be1c1cb8a6dc6760f3420800131370d8a78e6f6ea8ce551b7bd986ccae5cfa6"
+  digest = "1:d7cc8a384601a2a651c21774511a0c491189783490f3044c6614d8ab52fd3438"
   name = "github.com/favclip/jwg"
   packages = ["."]
   pruneopts = "T"
-  revision = "17b6dde923a6fc30b726cee45beac1923092d2c6"
-  version = "v1.0.2"
+  revision = "7e80df75dc7371766a7b1337000acaea44687b29"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:523b99212d44403a1c2373faaeadf00ba5c63200b3fd4530932b5422a96a2ac0"
@@ -51,7 +58,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c43e3dcb9808de16920f96b87a245901366ada7935058a3a102b89af977fa791"
+  digest = "1:0edbf4706c95913574b931fed922244adb6ee6ee920d75fa2154c3bf06a3980a"
   name = "github.com/favclip/testerator"
   packages = [
     ".",
@@ -59,7 +66,7 @@
     "memcache",
   ]
   pruneopts = "T"
-  revision = "04c1c0fc2a5a12ba14068ee37e764af81a4ac575"
+  revision = "c967692c9c6519c9ab44484378e17cd17d05dd5c"
 
 [[projects]]
   digest = "1:a2ecb56e5053d942aafc86738915fb94c9131bac848c543b8b6764365fd69080"
@@ -90,29 +97,19 @@
   version = "v2.0.0"
 
 [[projects]]
-  digest = "1:e145e9710a10bc114a6d3e2738aadf8de146adaa031854ffdf7bbfe15da85e63"
+  digest = "1:9e4b223f95f353e817e93e9bfcc7ee050d2f1f0fd1a46c18f6285a070ebc1bd1"
   name = "github.com/googleapis/gax-go"
-  packages = ["."]
+  packages = ["v2"]
   pruneopts = "T"
-  revision = "317e0006254c44a0ac427cc52a0e083ff0b9622f"
-  version = "v2.0.0"
+  revision = "c8a15bac9b9fe955bd9f900272f9a306465d28cf"
+  version = "v2.0.3"
 
 [[projects]]
-  digest = "1:15ec2166e33ef6c60b344a04d050eec79193517e7f5082b6233b2d09ef0d10b8"
-  name = "github.com/kisielk/gotool"
-  packages = [
-    ".",
-    "internal/load",
-  ]
-  pruneopts = "T"
-  revision = "80517062f582ea3340cd4baf70e86d539ae7d84d"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:52361926d5deb9b82ce5aede592f058c403f8f60ee4646924f8066a84008366f"
+  digest = "1:6f84b81083f02e519470e91069acf75a43a2e46b5935a8df0a84ff82dca2f6cb"
   name = "go.opencensus.io"
   packages = [
     ".",
+    "exemplar",
     "internal",
     "internal/tagencoding",
     "plugin/ocgrpc",
@@ -126,23 +123,23 @@
     "trace/tracestate",
   ]
   pruneopts = "T"
-  revision = "79993219becaa7e29e3b60cb67f5b8e82dee11d6"
-  version = "v0.17.0"
+  revision = "2b5032d79456124f42db6b7eb19ac6c155449dc2"
+  version = "v0.19.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:4981814aa3a79480b4df088dea185666189615c37497e806a2b7bc42568e53bb"
+  digest = "1:64b9cd6df7d5e91f4025fb967f07ae1aba74d583e9e2aee7449c14d230b2b343"
   name = "golang.org/x/lint"
   packages = [
     ".",
     "golint",
   ]
   pruneopts = "T"
-  revision = "5906bd5c48cd840279ace88b165057fbbd7fb35a"
+  revision = "8f45f776aaf18cebc8d65861cc70c33c60471952"
 
 [[projects]]
   branch = "master"
-  digest = "1:1244f7fbc53a2b9c4174e7e1e62ed5cad5f2f42c67abeac2400a7a72c6c76643"
+  digest = "1:0db0b6c7b274d9dabc601ad561684eb9920c227935a50bae55299671120c089e"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -155,11 +152,11 @@
     "trace",
   ]
   pruneopts = "T"
-  revision = "04a2e542c03f1d053ab3e4d6e5abcd4b66e2be8e"
+  revision = "3a22650c66bd7f4fb6d1e8072ffd7b75c8a27898"
 
 [[projects]]
   branch = "master"
-  digest = "1:b0dea3e2f4c7bbb8f27d9874292ca44397bc067aaa9db9b32f2045d955f87785"
+  digest = "1:0e7daa40947bf901c8aaaa6d5f41c21d8986dc6e4343a479c82eeebcd25c1e28"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
@@ -169,23 +166,23 @@
     "jwt",
   ]
   pruneopts = "T"
-  revision = "9dcd33a902f40452422c2367fefcb95b54f9f8f8"
+  revision = "3e8b2be1363542a95c52ea0796d4a40dacfb5b95"
 
 [[projects]]
   branch = "master"
-  digest = "1:568750bfc9b318e074c14e4ac471ae24617a5a3cb05a74ce56516ca0b567d1ba"
+  digest = "1:6932d1ef4294f3ea819748e89d1003f5df3804b20b84b5f1c60f8f1d7c933e2d"
   name = "golang.org/x/sync"
   packages = ["errgroup"]
   pruneopts = "T"
-  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
+  revision = "37e7f081c4d4c64e13b10787722085407fe5d15f"
 
 [[projects]]
   branch = "master"
-  digest = "1:dbfb3304f301334e6f9e1a98860ae3942c6084a8ced85f996c81431f5ae89826"
+  digest = "1:a6600d7db0fd8efa4fe75db61c92f25894463506a2c84a2118cf6472e1cb1326"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "T"
-  revision = "eda9bb28ed513021f3e6a2a361031adc3d8a6301"
+  revision = "e77772198cdc3dbfcf7f2de96630204df9fd3a0b"
 
 [[projects]]
   digest = "1:6164911cb5e94e8d8d5131d646613ff82c14f5a8ce869de2f6d80d9889df8c5a"
@@ -212,7 +209,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b5112ff0356b6ba9d1b55125256a189a26778071dbdeb0f5093a2dbfabfae4ab"
+  digest = "1:f996ca80ef7aac95556419d32d4184e6b9264166305de7327b9d0aa46f46aa4f"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -221,18 +218,21 @@
     "go/gcexportdata",
     "go/internal/cgo",
     "go/internal/gcimporter",
+    "go/internal/packagesdriver",
     "go/loader",
+    "go/packages",
     "go/types/typeutil",
     "imports",
     "internal/fastwalk",
     "internal/gopathwalk",
+    "internal/module",
+    "internal/semver",
   ]
   pruneopts = "T"
-  revision = "3e7aa9e59977626dc60433e9aeadf1bb63d28295"
+  revision = "8dcb7bc8c7fe0a895995c76c721cef79419ac98a"
 
 [[projects]]
-  branch = "master"
-  digest = "1:da6605042a480ddf51b5261d24f4dc73f4016fc6ec9acb8185a69de982921596"
+  digest = "1:2aa09cbc32ca3e699753b1270176ff10bf6752326510e18878d2cb25a5274f4f"
   name = "google.golang.org/api"
   packages = [
     "googleapi",
@@ -243,11 +243,12 @@
     "transport/grpc",
   ]
   pruneopts = "T"
-  revision = "a2651947f503a1793446d4058bb073a6fdf99e53"
+  revision = "19e022d8cf43ce81f046bae8cc18c5397cc7732f"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:193075fba81bbed6bbb7909249582de60770f5e67ed1c9321f4eeb2d9b56c7a4"
+  digest = "1:fd3cd1920f860cb78ef0abaca0eb2bac9a759637aef492f5452aa45ba0f941c6"
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -273,11 +274,11 @@
     "user",
   ]
   pruneopts = "T"
-  revision = "ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06"
+  revision = "99bc4335fe23898c0a61f5b35afabb6d11f29094"
 
 [[projects]]
   branch = "master"
-  digest = "1:849525811c9f6ae1f5bd9b866adb4c9436f4a12d767f48e33bf343596d4aafd7"
+  digest = "1:91f75dc679abcf04b29b064a5b9c40a0b0561c86c322010fbf6fc08040cc48bc"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
@@ -287,28 +288,33 @@
     "googleapis/type/latlng",
   ]
   pruneopts = "T"
-  revision = "94acd270e44e65579b9ee3cdab25034d33fed608"
+  revision = "4b09977fb92221987e99d190c8f88f2c92727a29"
 
 [[projects]]
-  digest = "1:1cbd746dcb73e28898e1539bf866044a9e5b96c965112772c111bffbb4037255"
+  digest = "1:adec72b8770ba7ad04c7a5a8ef8c6cc13a766bd11f900b60f360303b4f56e0b1"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "credentials/oauth",
     "encoding",
     "encoding/proto",
     "grpclog",
     "internal",
     "internal/backoff",
+    "internal/binarylog",
     "internal/channelz",
     "internal/envconfig",
     "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
     "internal/transport",
     "keepalive",
     "metadata",
@@ -322,34 +328,40 @@
     "tap",
   ]
   pruneopts = "T"
-  revision = "8dea3dc473e90c8179e519d91302d0597c0ca1d1"
-  version = "v1.15.0"
+  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
+  version = "v1.18.0"
 
 [[projects]]
-  digest = "1:8f992e4b7941ac626801bd573c03512bb8fa6d4ec2436ed0c00472e4b88051e9"
+  digest = "1:27d45f1878ac782168ef8ab5e8f83cee146d02bd67460b95f8d718b2cec5ce8f"
   name = "honnef.co/go/tools"
   packages = [
+    "arg",
     "callgraph",
     "callgraph/static",
     "cmd/gosimple",
     "cmd/staticcheck",
     "cmd/unused",
+    "config",
     "deprecated",
     "functions",
     "internal/sharedcheck",
     "lint",
+    "lint/lintdsl",
     "lint/lintutil",
+    "lint/lintutil/format",
     "simple",
     "ssa",
     "ssa/ssautil",
+    "ssautil",
     "staticcheck",
     "staticcheck/vrp",
+    "stylecheck",
     "unused",
     "version",
   ]
   pruneopts = "T"
-  revision = "d73ab98e7c39fdcf9ba65062e43d34310f198353"
-  version = "2017.2.2"
+  revision = "c2f93a96b099cbbec1de36336ab049ffa620e6d7"
+  version = "2019.1"
 
 [solve-meta]
   analyzer-name = "dep"
