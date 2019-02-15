@@ -24,25 +24,41 @@ type UserPropertyDecoder func(src *UserJSON, dest *User) error
 
 // UserPropertyInfo stores property information.
 type UserPropertyInfo struct {
-	name    string
-	Encoder UserPropertyEncoder
-	Decoder UserPropertyDecoder
+	fieldName string
+	jsonName  string
+	Encoder   UserPropertyEncoder
+	Decoder   UserPropertyDecoder
+}
+
+// FieldName returns struct field name of property.
+func (info *UserPropertyInfo) FieldName() string {
+	return info.fieldName
+}
+
+// JSONName returns json field name of property.
+func (info *UserPropertyInfo) JSONName() string {
+	return info.jsonName
 }
 
 // UserJSONBuilder convert between User to UserJSON mutually.
 type UserJSONBuilder struct {
-	_properties map[string]*UserPropertyInfo
-	ID          *UserPropertyInfo
-	Name        *UserPropertyInfo
-	MentorID    *UserPropertyInfo
+	_properties        map[string]*UserPropertyInfo
+	_jsonPropertyMap   map[string]*UserPropertyInfo
+	_structPropertyMap map[string]*UserPropertyInfo
+	ID                 *UserPropertyInfo
+	Name               *UserPropertyInfo
+	MentorID           *UserPropertyInfo
 }
 
 // NewUserJSONBuilder make new UserJSONBuilder.
 func NewUserJSONBuilder() *UserJSONBuilder {
-	return &UserJSONBuilder{
-		_properties: map[string]*UserPropertyInfo{},
+	jb := &UserJSONBuilder{
+		_properties:        map[string]*UserPropertyInfo{},
+		_jsonPropertyMap:   map[string]*UserPropertyInfo{},
+		_structPropertyMap: map[string]*UserPropertyInfo{},
 		ID: &UserPropertyInfo{
-			name: "ID",
+			fieldName: "ID",
+			jsonName:  "id",
 			Encoder: func(src *User, dest *UserJSON) error {
 				if src == nil {
 					return nil
@@ -59,7 +75,8 @@ func NewUserJSONBuilder() *UserJSONBuilder {
 			},
 		},
 		Name: &UserPropertyInfo{
-			name: "Name",
+			fieldName: "Name",
+			jsonName:  "name",
 			Encoder: func(src *User, dest *UserJSON) error {
 				if src == nil {
 					return nil
@@ -76,7 +93,8 @@ func NewUserJSONBuilder() *UserJSONBuilder {
 			},
 		},
 		MentorID: &UserPropertyInfo{
-			name: "MentorID",
+			fieldName: "MentorID",
+			jsonName:  "mentorID",
 			Encoder: func(src *User, dest *UserJSON) error {
 				if src == nil {
 					return nil
@@ -93,6 +111,22 @@ func NewUserJSONBuilder() *UserJSONBuilder {
 			},
 		},
 	}
+	jb._structPropertyMap["ID"] = jb.ID
+	jb._jsonPropertyMap["id"] = jb.ID
+	jb._structPropertyMap["Name"] = jb.Name
+	jb._jsonPropertyMap["name"] = jb.Name
+	jb._structPropertyMap["MentorID"] = jb.MentorID
+	jb._jsonPropertyMap["mentorID"] = jb.MentorID
+	return jb
+}
+
+// Properties returns all properties on UserJSONBuilder.
+func (b *UserJSONBuilder) Properties() []*UserPropertyInfo {
+	return []*UserPropertyInfo{
+		b.ID,
+		b.Name,
+		b.MentorID,
+	}
 }
 
 // AddAll adds all property to UserJSONBuilder.
@@ -104,14 +138,67 @@ func (b *UserJSONBuilder) AddAll() *UserJSONBuilder {
 }
 
 // Add specified property to UserJSONBuilder.
-func (b *UserJSONBuilder) Add(info *UserPropertyInfo) *UserJSONBuilder {
-	b._properties[info.name] = info
+func (b *UserJSONBuilder) Add(infos ...*UserPropertyInfo) *UserJSONBuilder {
+	for _, info := range infos {
+		b._properties[info.fieldName] = info
+	}
+	return b
+}
+
+// AddByJSONNames add properties to UserJSONBuilder by JSON property name. if name is not in the builder, it will ignore.
+func (b *UserJSONBuilder) AddByJSONNames(names ...string) *UserJSONBuilder {
+	for _, name := range names {
+		info := b._jsonPropertyMap[name]
+		if info == nil {
+			continue
+		}
+		b._properties[info.fieldName] = info
+	}
+	return b
+}
+
+// AddByNames add properties to UserJSONBuilder by struct property name. if name is not in the builder, it will ignore.
+func (b *UserJSONBuilder) AddByNames(names ...string) *UserJSONBuilder {
+	for _, name := range names {
+		info := b._structPropertyMap[name]
+		if info == nil {
+			continue
+		}
+		b._properties[info.fieldName] = info
+	}
 	return b
 }
 
 // Remove specified property to UserJSONBuilder.
-func (b *UserJSONBuilder) Remove(info *UserPropertyInfo) *UserJSONBuilder {
-	delete(b._properties, info.name)
+func (b *UserJSONBuilder) Remove(infos ...*UserPropertyInfo) *UserJSONBuilder {
+	for _, info := range infos {
+		delete(b._properties, info.fieldName)
+	}
+	return b
+}
+
+// RemoveByJSONNames remove properties to UserJSONBuilder by JSON property name. if name is not in the builder, it will ignore.
+func (b *UserJSONBuilder) RemoveByJSONNames(names ...string) *UserJSONBuilder {
+
+	for _, name := range names {
+		info := b._jsonPropertyMap[name]
+		if info == nil {
+			continue
+		}
+		delete(b._properties, info.fieldName)
+	}
+	return b
+}
+
+// RemoveByNames remove properties to UserJSONBuilder by struct property name. if name is not in the builder, it will ignore.
+func (b *UserJSONBuilder) RemoveByNames(names ...string) *UserJSONBuilder {
+	for _, name := range names {
+		info := b._structPropertyMap[name]
+		if info == nil {
+			continue
+		}
+		delete(b._properties, info.fieldName)
+	}
 	return b
 }
 

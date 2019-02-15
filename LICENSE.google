@@ -1,5 +1,5 @@
 ========================================================================
-For cloud.google.com/go (/datastore, /internal/atomiccache, /internal/fields)
+For cloud.google.com/go (/datastore, /internal/fields)
     errors.go
     interfaces.go
     prop.go
@@ -7,7 +7,6 @@ For cloud.google.com/go (/datastore, /internal/atomiccache, /internal/fields)
     save.go
     query.go
     time.go
-    internal/c/atomiccache/atomiccache.go
     internal/c/fields/fold.go
     internal/c/fields/fields.go
 ========================================================================
