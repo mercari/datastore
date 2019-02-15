@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,8 +34,39 @@ var _ PropertyLoadSaver = (*PropertyList)(nil)
 // contents are loaded and saved as a sequence of Properties. Each property
 // name must be unique within an entity.
 type Property struct {
-	Name    string
-	Value   interface{}
+	// Name is the property name.
+	Name string
+	// Value is the property value. The valid types are:
+	//	- int64
+	//	- bool
+	//	- string
+	//	- float64
+	//	- Key
+	//	- time.Time (retrieved as local time)
+	//	- GeoPoint
+	//	- []byte (up to 1 megabyte in length)
+	//	- *Entity (representing a nested struct)
+	// Value can also be:
+	//	- []interface{} where each element is one of the above types
+	// This set is smaller than the set of valid struct field types that the
+	// datastore can load and save. A Value's type must be explicitly on
+	// the list above; it is not sufficient for the underlying type to be
+	// on that list. For example, a Value of "type myInt64 int64" is
+	// invalid. Smaller-width integers and floats are also invalid. Again,
+	// this is more restrictive than the set of valid struct field types.
+	//
+	// A Value will have an opaque type when loading entities from an index,
+	// such as via a projection query. Load entities into a struct instead
+	// of a PropertyLoadSaver when using a projection query.
+	//
+	// A Value may also be the nil interface value; this is equivalent to
+	// Python's None but not directly representable by a Go struct. Loading
+	// a nil-valued property into a struct will set that field to the zero
+	// value.
+	Value interface{}
+	// NoIndex is whether the datastore cannot index this property.
+	// If NoIndex is set to false, []byte and string values are limited to
+	// 1500 bytes.
 	NoIndex bool
 }
 
@@ -54,6 +85,8 @@ type PropertyLoadSaver interface {
 
 // KeyLoader can store a Key.
 type KeyLoader interface {
+	// PropertyLoadSaver is embedded because a KeyLoader
+	// must also always implement PropertyLoadSaver.
 	PropertyLoadSaver
 	LoadKey(ctx context.Context, k Key) error
 }
@@ -140,7 +173,7 @@ func validateType(t reflect.Type) error {
 	return validateChildType(t, "", false, false, map[reflect.Type]bool{})
 }
 
-// validateChildType is a recursion helper func for ValidateType
+// validateChildType is a recursion helper func for validateType
 func validateChildType(t reflect.Type, fieldName string, flatten, prevSlice bool, prevTypes map[reflect.Type]bool) error {
 	if prevTypes[t] {
 		return nil
@@ -170,7 +203,7 @@ func validateChildType(t reflect.Type, fieldName string, flatten, prevSlice bool
 			}
 
 			_, keep, other, err := parseTag(f.Tag)
-			// Handle error from ParseTag now instead of later (in cache.Fields call).
+			// Handle error from parseTag now instead of later (in cache.Fields call).
 			if err != nil {
 				return err
 			}
@@ -194,7 +227,7 @@ func validateChildType(t reflect.Type, fieldName string, flatten, prevSlice bool
 	return nil
 }
 
-// IsLeafType determines whether or not a type is a 'leaf type'
+// isLeafType determines whether or not a type is a 'leaf type'
 // and should not be recursed into, but considered one field.
 func isLeafType(t reflect.Type) bool {
 	return t == typeOfTime || t == typeOfGeoPoint
@@ -203,6 +236,7 @@ func isLeafType(t reflect.Type) bool {
 // structCache collects the structs whose fields have already been calculated.
 var structCache = fields.NewCache(parseTag, validateType, isLeafType)
 
+// structPLS adapts a struct to be a PropertyLoadSaver.
 type structPLS struct {
 	v     reflect.Value
 	codec fields.List
@@ -241,7 +275,6 @@ func LoadStruct(ctx context.Context, dst interface{}, p []Property) error {
 // SaveStruct returns the properties from src as a slice of Properties.
 // src must be a struct pointer.
 func SaveStruct(ctx context.Context, src interface{}) ([]Property, error) {
-
 	x, err := newStructPLS(src)
 	if err != nil {
 		return nil, err
@@ -304,6 +337,8 @@ func pls(v reflect.Value) (PropertyLoadSaver, error) {
 	return vpls, nil
 }
 
+// ptForLoad returns PropertyTranslator and set zero value if needed.
+// this function is peculiar to mercari/datastore.
 func ptForLoad(v reflect.Value) (PropertyTranslator, error) {
 	var nilPtr bool
 	if v.Kind() == reflect.Ptr && v.IsNil() {
@@ -320,6 +355,8 @@ func ptForLoad(v reflect.Value) (PropertyTranslator, error) {
 	return vpt, err
 }
 
+// pt returns PropertyTranslator from passed reflect.Value.
+// this function is peculiar to mercari/datastore.
 func pt(v reflect.Value) (PropertyTranslator, error) {
 	if v.Kind() != reflect.Ptr {
 		vps, ok := v.Interface().(PropertyTranslator)

@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -34,7 +33,7 @@ var (
 
 // typeMismatchReason returns a string explaining why the property p could not
 // be stored in an entity field of type v.Type().
-func typeMismatchReason(p Property, v reflect.Value) error {
+func typeMismatchReason(p Property, v reflect.Value) string {
 	entityType := "empty"
 	switch p.Value.(type) {
 	case int64:
@@ -57,7 +56,11 @@ func typeMismatchReason(p Property, v reflect.Value) error {
 		entityType = "[]byte"
 	}
 
-	return fmt.Errorf("type mismatch: %s versus %v", entityType, v.Type())
+	return fmt.Sprintf("type mismatch: %s versus %v", entityType, v.Type())
+}
+
+func overflowReason(x interface{}, v reflect.Value) string {
+	return fmt.Sprintf("value %v overflows struct field of type %v", x, v.Type())
 }
 
 type propertyLoader struct {
@@ -66,24 +69,24 @@ type propertyLoader struct {
 	m map[string]int
 }
 
-func (l *propertyLoader) load(ctx context.Context, codec fields.List, structValue reflect.Value, p Property, prev map[string]struct{}) error {
+func (l *propertyLoader) load(ctx context.Context, codec fields.List, structValue reflect.Value, p Property, prev map[string]struct{}) string {
 	sl, ok := p.Value.([]interface{})
 	if !ok {
 		return l.loadOneElement(ctx, codec, structValue, p, prev)
 	}
 	for _, val := range sl {
 		p.Value = val
-		if err := l.loadOneElement(ctx, codec, structValue, p, prev); err != nil {
-			return err
+		if errStr := l.loadOneElement(ctx, codec, structValue, p, prev); errStr != "" {
+			return errStr
 		}
 	}
-	return nil
+	return ""
 }
 
 // loadOneElement loads the value of Property p into structValue based on the provided
 // codec. codec is used to find the field in structValue into which p should be loaded.
 // prev is the set of property names already seen for structValue.
-func (l *propertyLoader) loadOneElement(ctx context.Context, codec fields.List, structValue reflect.Value, p Property, prev map[string]struct{}) error {
+func (l *propertyLoader) loadOneElement(ctx context.Context, codec fields.List, structValue reflect.Value, p Property, prev map[string]struct{}) string {
 	var sliceOk bool
 	var sliceIndex int
 	var v reflect.Value
@@ -112,39 +115,39 @@ func (l *propertyLoader) loadOneElement(ctx context.Context, codec fields.List, 
 		// If we never found a matching field in the codec, return
 		// error message.
 		if field == nil {
-			return errors.New("no such struct field")
+			return "no such struct field"
 		}
 
 		v = initField(structValue, field.Index)
 		if !v.IsValid() {
-			return errors.New("no such struct field")
+			return "no such struct field"
 		}
 		if !v.CanSet() {
-			return errors.New("cannot set struct field")
+			return "cannot set struct field"
 		}
 
 		ok, err := ptFieldLoad(ctx, v, p, fieldNames)
 		if err != nil {
-			return err
+			return err.Error()
 		}
 		if ok {
-			return nil
+			return ""
 		}
 
 		// If field implements PLS, we delegate loading to the PLS's Load early,
 		// and stop iterating through fields.
 		ok, err = plsFieldLoad(ctx, v, p, fieldNames)
 		if err != nil {
-			return err
+			return err.Error()
 		}
 		if ok {
-			return nil
+			return ""
 		}
 
 		if field.Type.Kind() == reflect.Struct {
 			codec, err = structCache.Fields(field.Type)
 			if err != nil {
-				return err
+				return err.Error()
 			}
 			structValue = v
 		}
@@ -163,26 +166,26 @@ func (l *propertyLoader) loadOneElement(ctx context.Context, codec fields.List, 
 
 			ok, err := ptFieldLoad(ctx, structValue, p, fieldNames)
 			if err != nil {
-				return err
+				return err.Error()
 			}
 			if ok {
-				return nil
+				return ""
 			}
 
 			// If structValue implements PLS, we delegate loading to the PLS's
 			// Load early, and stop iterating through fields.
 			ok, err = plsFieldLoad(ctx, structValue, p, fieldNames)
 			if err != nil {
-				return err
+				return err.Error()
 			}
 			if ok {
-				return nil
+				return ""
 			}
 
 			if structValue.Type().Kind() == reflect.Struct {
 				codec, err = structCache.Fields(structValue.Type())
 				if err != nil {
-					return err
+					return err.Error()
 				}
 			}
 			sliceOk = true
@@ -197,12 +200,12 @@ func (l *propertyLoader) loadOneElement(ctx context.Context, codec fields.List, 
 		// Zero the field back out that was set previously, turns out
 		// it's a slice and we don't know what to do with it
 		v.Set(reflect.Zero(v.Type()))
-		return errors.New("multiple-valued property requires a slice field type")
+		return "multiple-valued property requires a slice field type"
 	}
 
 	prev[p.Name] = struct{}{}
 
-	if errReason := setVal(ctx, v, p); errReason != nil {
+	if errReason := setVal(ctx, v, p); errReason != "" {
 		// Set the slice back to its zero value.
 		if slice.IsValid() {
 			slice.Set(reflect.Zero(slice.Type()))
@@ -214,7 +217,7 @@ func (l *propertyLoader) loadOneElement(ctx context.Context, codec fields.List, 
 		slice.Index(sliceIndex).Set(v)
 	}
 
-	return nil
+	return ""
 }
 
 // plsFieldLoad first tries to converts v's value to a PLS, then v's addressed
@@ -258,6 +261,8 @@ func plsFieldLoad(ctx context.Context, v reflect.Value, p Property, subfields []
 	return true, vpls.Load(ctx, []Property{p})
 }
 
+// ptFieldLoad try to load value by PropertyTranslator.
+// this function is peculiar to mercari/datastore.
 func ptFieldLoad(ctx context.Context, v reflect.Value, p Property, subfields []string) (ok bool, err error) {
 	vpt, err := ptForLoad(v)
 	if err != nil {
@@ -291,7 +296,7 @@ func ptFieldLoad(ctx context.Context, v reflect.Value, p Property, subfields []s
 }
 
 // setVal sets 'v' to the value of the Property 'p'.
-func setVal(ctx context.Context, v reflect.Value, p Property) error {
+func setVal(ctx context.Context, v reflect.Value, p Property) (s string) {
 	pValue := p.Value
 	switch v.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -300,7 +305,7 @@ func setVal(ctx context.Context, v reflect.Value, p Property) error {
 			return typeMismatchReason(p, v)
 		}
 		if v.OverflowInt(x) {
-			return fmt.Errorf("value %v overflows struct field of type %v", x, v.Type())
+			return overflowReason(x, v)
 		}
 		v.SetInt(x)
 	case reflect.Bool:
@@ -321,12 +326,12 @@ func setVal(ctx context.Context, v reflect.Value, p Property) error {
 			return typeMismatchReason(p, v)
 		}
 		if v.OverflowFloat(x) {
-			return fmt.Errorf("value %v overflows struct field of type %v", x, v.Type())
+			return overflowReason(x, v)
 		}
 		v.SetFloat(x)
 	case reflect.Ptr:
-		// v must be either a pointer to a Key or Entity.
-		if v.Type() != typeOfKey && v.Type().Elem().Kind() != reflect.Struct {
+		// v must be a pointer to either a Key, an Entity, or one of the supported basic types.
+		if v.Type() != typeOfKey && v.Type().Elem().Kind() != reflect.Struct && !isValidPointerType(v.Type().Elem()) {
 			return typeMismatchReason(p, v)
 		}
 
@@ -335,24 +340,41 @@ func setVal(ctx context.Context, v reflect.Value, p Property) error {
 			if !v.IsNil() {
 				v.Set(reflect.New(v.Type()).Elem())
 			}
-			return nil
+			return ""
 		}
 
+		//if x, ok := pValue.(Key); ok {
+		//	if _, ok := v.Interface().(Key); !ok {
+		//		return typeMismatchReason(p, v)
+		//	}
+		//	v.Set(reflect.ValueOf(x))
+		//	return ""
+		//}
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
 		switch x := pValue.(type) {
-		case Key:
-			if _, ok := v.Interface().(Key); !ok {
-				return typeMismatchReason(p, v)
-			}
-			v.Set(reflect.ValueOf(x))
 		case *Entity:
-			if v.IsNil() {
-				v.Set(reflect.New(v.Type().Elem()))
-			}
 			err := loadEntity(ctx, v.Interface(), x)
 			if err != nil {
-				return err
+				return err.Error()
 			}
-
+		case int64:
+			if v.Elem().OverflowInt(x) {
+				return overflowReason(x, v.Elem())
+			}
+			v.Elem().SetInt(x)
+		case float64:
+			if v.Elem().OverflowFloat(x) {
+				return overflowReason(x, v.Elem())
+			}
+			v.Elem().SetFloat(x)
+		case bool:
+			v.Elem().SetBool(x)
+		case string:
+			v.Elem().SetString(x)
+		case GeoPoint, time.Time:
+			v.Elem().Set(reflect.ValueOf(x))
 		default:
 			return typeMismatchReason(p, v)
 		}
@@ -394,7 +416,7 @@ func setVal(ctx context.Context, v reflect.Value, p Property) error {
 			}
 			err := loadEntity(ctx, v.Addr().Interface(), ent)
 			if err != nil {
-				return err
+				return err.Error()
 			}
 		}
 	case reflect.Slice:
@@ -409,7 +431,7 @@ func setVal(ctx context.Context, v reflect.Value, p Property) error {
 	default:
 		return typeMismatchReason(p, v)
 	}
-	return nil
+	return ""
 }
 
 // initField is similar to reflect's Value.FieldByIndex, in that it
@@ -447,40 +469,36 @@ func loadEntityToStruct(ctx context.Context, dst interface{}, ent *Entity) error
 	if err != nil {
 		return err
 	}
-	// Load properties.
-	err = pls.Load(ctx, ent.Properties)
-	if err != nil {
-		return err
-	}
-	// Load key.
+
+	// Try and load key.
 	keyField := pls.codec.Match(keyFieldName)
 	if keyField != nil && ent.Key != nil {
 		pls.v.FieldByIndex(keyField.Index).Set(reflect.ValueOf(ent.Key))
 	}
 
-	return nil
+	// Load properties.
+	return pls.Load(ctx, ent.Properties)
 }
 
 func (s structPLS) Load(ctx context.Context, props []Property) error {
-	var fieldName string
-	var errReason error
+	var fieldName, errReason string
 	var l propertyLoader
 
 	prev := make(map[string]struct{})
 	for _, p := range props {
-		if err := l.load(ctx, s.codec, s.v, p, prev); err != nil {
+		if errStr := l.load(ctx, s.codec, s.v, p, prev); errStr != "" {
 			// We don't return early, as we try to load as many properties as possible.
 			// It is valid to load an entity into a struct that cannot fully represent it.
 			// That case returns an error, but the caller is free to ignore it.
-			fieldName, errReason = p.Name, err
+			fieldName, errReason = p.Name, errStr
 		}
 	}
-	if errReason != nil {
+	if errReason != "" {
 		if !SuppressErrFieldMismatch {
 			return &ErrFieldMismatch{
 				StructType: s.v.Type(),
 				FieldName:  fieldName,
-				Reason:     errReason.Error(),
+				Reason:     errReason,
 			}
 		}
 	}

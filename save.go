@@ -1,4 +1,4 @@
-// Copyright 4 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ type saveOpts struct {
 	omitEmpty bool
 }
 
+// saveEntity saves an EntityProto into a PropertyLoadSaver or struct pointer.
 func saveEntity(ctx context.Context, key Key, src interface{}) (*Entity, error) {
 	var err error
 	var props []Property
@@ -76,6 +77,7 @@ func saveStructProperty(ctx context.Context, props *[]Property, name string, opt
 		case time.Time, GeoPoint:
 			p.Value = x
 		case PropertyTranslator:
+			// this case is peculiar to mercari/datastore.
 			v, err := x.ToPropertyValue(ctx)
 			if err != nil {
 				return err
@@ -98,9 +100,23 @@ func saveStructProperty(ctx context.Context, props *[]Property, name string, opt
 					return saveSliceProperty(ctx, props, name, opts, v)
 				}
 			case reflect.Ptr:
+				if isValidPointerType(v.Type().Elem()) {
+					if v.IsNil() {
+						// Nil pointer becomes a nil property value (unless omitempty, handled above).
+						p.Value = nil
+						*props = append(*props, p)
+						return nil
+					}
+					// When we recurse on the derefenced pointer, omitempty no longer applies:
+					// we already know the pointer is not empty, it doesn't matter if its referent
+					// is empty or not.
+					opts.omitEmpty = false
+					return saveStructProperty(ctx, props, name, opts, v.Elem())
+				}
 				if v.Type().Elem().Kind() != reflect.Struct {
 					return fmt.Errorf("datastore: unsupported struct field type: %s", v.Type())
 				}
+				// Pointer to struct is a special case.
 				if v.IsNil() {
 					return nil
 				}
@@ -352,6 +368,29 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Float() == 0
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
+	case reflect.Struct:
+		if t, ok := v.Interface().(time.Time); ok {
+			return t.IsZero()
+		}
+	}
+	return false
+}
+
+// isValidPointerType reports whether a struct field can be a pointer to type t
+// for the purposes of saving and loading.
+func isValidPointerType(t reflect.Type) bool {
+	if t == typeOfTime || t == typeOfGeoPoint {
+		return true
+	}
+	switch t.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	case reflect.Bool:
+		return true
+	case reflect.String:
+		return true
+	case reflect.Float32, reflect.Float64:
+		return true
 	}
 	return false
 }
