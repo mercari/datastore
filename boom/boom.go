@@ -154,12 +154,55 @@ func (bm *Boom) setStructKey(src interface{}, key datastore.Key) error {
 
 // Kind retrieves kind name from struct.
 func (bm *Boom) Kind(src interface{}) string {
-	key, err := bm.KeyError(src)
+	// bm.KeyError を使うと id が PropertyTranslator だった場合に無限再起する場合がある
+	kind, err := bm.kindErr(src)
 	if err != nil {
 		return ""
 	}
+	return kind
+}
 
-	return key.Kind()
+func (bm *Boom) kindErr(src interface{}) (string, error) {
+	v := reflect.Indirect(reflect.ValueOf(src))
+	t := v.Type()
+	k := t.Kind()
+
+	if k != reflect.Struct {
+		return "", fmt.Errorf("boom: Expected struct, got instead: %v", k)
+	}
+
+	var kind string
+
+	for i := 0; i < v.NumField(); i++ {
+		tf := t.Field(i)
+		vf := v.Field(i)
+
+		tag := tf.Tag.Get("boom")
+		if tag == "" {
+			tag = tf.Tag.Get("goon")
+		}
+		tagValues := strings.SplitN(tag, ",", 2)
+		if len(tagValues) > 0 {
+			switch tagValues[0] {
+			case "kind":
+				if vf.Kind() == reflect.String {
+					if kind != "" {
+						return "", fmt.Errorf("boom: Only one field may be marked kind")
+					}
+					kind = vf.String()
+					if kind == "" && len(tagValues) > 1 && tagValues[1] != "" {
+						kind = tagValues[1]
+					}
+				}
+			}
+		}
+	}
+
+	if kind == "" {
+		kind = t.Name()
+	}
+
+	return kind, nil
 }
 
 // Key retrieves datastore key from struct without error occurred.
