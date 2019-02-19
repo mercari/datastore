@@ -1,3 +1,20 @@
+<a name="1.4.0"></a>
+# [1.4.0](https://github.com/mercari/datastore/compare/v1.3.0...v1.4.0) (2019-02-19)
+
+
+### Bug Fixes
+
+* **boom:** Fix to prevent an error when a field implementing PropertyTranslator returns incomplete Key on KeyError ([80193be](https://github.com/mercari/datastore/commit/80193be))
+
+
+### Features
+
+* **boom:** Make Kind method doesn't depend to KeyError method ([a1db603](https://github.com/mercari/datastore/commit/a1db603))
+* **core:** pull current Cloud Datastore implementations ([85b9a4d](https://github.com/mercari/datastore/commit/85b9a4d))
+* **core:** update dependencies ([75e7af3](https://github.com/mercari/datastore/commit/75e7af3))
+
+
+
 <a name="1.3.0"></a>
 # [1.3.0](https://github.com/mercari/datastore/compare/v1.2.0...v1.3.0) (2018-10-23)
 
