@@ -2,6 +2,7 @@ package boom
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.mercari.io/datastore"
@@ -784,5 +785,67 @@ func TestBoom_TagKind(t *testing.T) {
 				t.Errorf("unexpected: %v", v)
 			}
 		}
+	}
+}
+
+var _ datastore.PropertyTranslator = CustomID(0)
+
+type CustomID int64
+type contextBoom struct{}
+
+type HasCustomID struct {
+	ID   CustomID `datastore:"-" boom:"id"`
+	Name string
+}
+
+func (id CustomID) ToPropertyValue(ctx context.Context) (interface{}, error) {
+	bm, ok := ctx.Value(contextBoom{}).(*Boom)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type: %T", ctx.Value("boom"))
+	}
+	key := bm.Client.IDKey(bm.Kind(&HasCustomID{}), int64(id), nil)
+	return key, nil
+}
+
+func (CustomID) FromPropertyValue(ctx context.Context, p datastore.Property) (interface{}, error) {
+	bm, ok := ctx.Value(contextBoom{}).(*Boom)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type: %T", ctx.Value("boom"))
+	}
+	key, ok := p.Value.(datastore.Key)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type: %T", p.Value)
+	}
+	if v := bm.Kind(&HasCustomID{}); v != key.Kind() {
+		return nil, fmt.Errorf("unexpected kind: %s", v)
+	}
+
+	return CustomID(key.ID()), nil
+}
+
+func TestBoom_KindWithPropertyTranslator(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	bm := FromClient(ctx, client)
+	ctx = context.WithValue(ctx, contextBoom{}, bm)
+	bm.Context = ctx
+
+	obj := &HasCustomID{
+		Name: "foobar",
+	}
+	key, err := bm.Put(obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj = &HasCustomID{ID: CustomID(key.ID())}
+	err = bm.Get(obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v := obj.Name; v != "foobar" {
+		t.Errorf("unexpected: %v", v)
 	}
 }
