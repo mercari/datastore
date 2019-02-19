@@ -267,9 +267,8 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 							keyID = key.ID()
 						} else if key.Name() != "" {
 							keyName = key.Name()
-						} else {
-							return nil, fmt.Errorf("boom: ID field must be int64 or string in %v", t.Name())
 						}
+						// TODO check kind value
 					}
 				} else {
 					switch vf.Kind() {
