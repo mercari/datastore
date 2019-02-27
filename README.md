@@ -69,8 +69,6 @@ https://www.mercari.com/cla/
     * [gcloud sdk](https://cloud.google.com/sdk/docs/quickstarts)
         * `gcloud components install app-engine-go`
         * `gcloud components install beta cloud-datastore-emulator`
-    * [dep](github.com/golang/dep)
-        * `go get -u github.com/golang/dep/cmd/dep`
 
 1. Testing in local
 
