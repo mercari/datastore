@@ -30,6 +30,9 @@ var SuppressErrFieldMismatch = true
 
 var _ PropertyLoadSaver = (*PropertyList)(nil)
 
+// Entities with more than this many indexed properties will not be saved.
+// const maxIndexedProperties = 20000
+
 // Property is a name/value pair plus some metadata. A datastore entity's
 // contents are loaded and saved as a sequence of Properties. Each property
 // name must be unique within an entity.
