@@ -3,6 +3,7 @@ package aedatastore
 import (
 	"context"
 	"errors"
+	"sync"
 
 	w "go.mercari.io/datastore"
 	"go.mercari.io/datastore/internal/shared"
@@ -16,6 +17,7 @@ var _ w.Commit = (*commitImpl)(nil)
 type contextTransaction struct{}
 
 type txExtractor struct {
+	sync.Mutex
 	txCtx   context.Context
 	finishC chan txResult
 	resultC chan error
@@ -45,9 +47,12 @@ func newTxExtractor(ctx context.Context) (*txExtractor, error) {
 	go func() {
 		// NOTE RunInTransactionが自動的にリトライされるのは初心者殺しなのでリトライしたかったらアプリ側でループしてほしいという意思
 		err := datastore.RunInTransaction(ctx, func(ctx netcontext.Context) error {
+			// ctxC <- ctx の前にある限りnilではない
+			finishC := ext.finishC
+
 			ctxC <- ctx
 
-			result, ok := <-ext.finishC
+			result, ok := <-finishC
 			if !ok {
 				return errors.New("channel closed")
 			}
@@ -213,11 +218,29 @@ func (c *commitImpl) Key(p w.PendingKey) w.Key {
 }
 
 func (ext *txExtractor) commit() error {
-	ext.finishC <- txResult{commit: true}
+	ext.Lock()
+	finishC := ext.finishC
+	if finishC != nil {
+		ext.finishC = nil
+	}
+	ext.Unlock()
+	if finishC == nil {
+		return errors.New("datastore: transaction expired")
+	}
+	finishC <- txResult{commit: true}
 	return <-ext.resultC
 }
 
 func (ext *txExtractor) rollback() error {
-	ext.finishC <- txResult{rollback: true}
+	ext.Lock()
+	finishC := ext.finishC
+	if finishC != nil {
+		ext.finishC = nil
+	}
+	ext.Unlock()
+	if finishC == nil {
+		return errors.New("datastore: transaction expired")
+	}
+	finishC <- txResult{rollback: true}
 	return <-ext.resultC
 }
