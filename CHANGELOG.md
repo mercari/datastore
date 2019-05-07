@@ -1,3 +1,18 @@
+## [1.4.1](https://github.com/mercari/datastore/compare/v1.4.0...v1.4.1) (2019-05-07)
+
+
+### Bug Fixes
+
+* **aedatastore:** fix dead lock in multiple tx method call ([740be27](https://github.com/mercari/datastore/commit/740be27))
+
+
+### Features
+
+* **core:** pull current Cloud Datastore implementations ([2c50ac8](https://github.com/mercari/datastore/commit/2c50ac8))
+* **core:** use go.mod instead of dep ([7759ca6](https://github.com/mercari/datastore/commit/7759ca6))
+
+
+
 <a name="1.4.0"></a>
 # [1.4.0](https://github.com/mercari/datastore/compare/v1.3.0...v1.4.0) (2019-02-19)
 
