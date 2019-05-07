@@ -215,6 +215,35 @@ func transactionJoinAncesterQuery(ctx context.Context, t *testing.T, client data
 	}
 }
 
+func transactionCommitAndRollback(ctx context.Context, t *testing.T, client datastore.Client) {
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	tx, err := client.NewTransaction(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Commit()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = tx.Rollback()
+	if err == nil || err.Error() != "datastore: transaction expired" {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Commit()
+	if err == nil || err.Error() != "datastore: transaction expired" {
+		t.Fatal(err)
+	}
+}
+
 func runInTransactionCommit(ctx context.Context, t *testing.T, client datastore.Client) {
 	defer func() {
 		err := client.Close()

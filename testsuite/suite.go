@@ -53,6 +53,7 @@ var TestSuite = map[string]Test{
 	"Filter_PropertyTranslaterWithOriginalTypes":  filterPropertyTranslaterWithOriginalTypes,
 	"Transaction_Commit":                          transactionCommit,
 	"Transaction_Rollback":                        transactionRollback,
+	"Transaction_CommitAndRollback":               transactionCommitAndRollback,
 	"Transaction_JoinAncesterQuery":               transactionJoinAncesterQuery,
 	"RunInTransaction_Commit":                     runInTransactionCommit,
 	"RunInTransaction_Rollback":                   runInTransactionRollback,

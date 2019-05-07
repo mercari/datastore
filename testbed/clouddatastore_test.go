@@ -1136,3 +1136,33 @@ func TestCloudDatastore_Namespace(t *testing.T) {
 		t.Fatalf("unexpected: %v", v)
 	}
 }
+
+func TestCloudDatastore_RollbackAfterCommit(t *testing.T) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, internal.GetProjectID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	defer cleanUp()
+
+	tx, err := client.NewTransaction(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Commit()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = tx.Rollback()
+	if err == nil || err.Error() != "datastore: transaction expired" {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Commit()
+	if err == nil || err.Error() != "datastore: transaction expired" {
+		t.Fatal(err)
+	}
+}
