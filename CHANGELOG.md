@@ -1,3 +1,12 @@
+## [1.4.2](https://github.com/mercari/datastore/compare/v1.4.1...v1.4.2) (2019-05-11)
+
+
+### Bug Fixes
+
+* **clouddatastore:** execute PostCommit hook after RunInTransaction succeed ([7fa9a91](https://github.com/mercari/datastore/commit/7fa9a91))
+
+
+
 ## [1.4.1](https://github.com/mercari/datastore/compare/v1.4.0...v1.4.1) (2019-05-07)
 
 
