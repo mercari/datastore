@@ -64,6 +64,8 @@ var TestSuite = map[string]Test{
 	"TransactionBatch_GetWithCustomErrHandler":    transactionBatchGetWithCustomErrHandler,
 	"TransactionBatch_Delete":                     transactionBatchDelete,
 	"TransactionBatch_DeleteWithCustomErrHandler": transactionBatchDeleteWithCustomErrHandler,
+
+	"CheckIssue59": checkIssue59,
 }
 
 // MergeTestSuite into this package's TestSuite.

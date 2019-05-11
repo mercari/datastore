@@ -116,9 +116,10 @@ func (d *datastoreImpl) NewTransaction(ctx context.Context) (w.Transaction, erro
 }
 
 func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transaction) error) (w.Commit, error) {
+	var txImpl *transactionImpl
 	commit, err := d.client.RunInTransaction(ctx, func(baseTx *datastore.Transaction) error {
 		txCtx := context.WithValue(ctx, contextTransaction{}, baseTx)
-		txImpl := &transactionImpl{
+		txImpl = &transactionImpl{
 			client: &datastoreImpl{
 				ctx:         txCtx,
 				client:      d.client,
@@ -136,7 +137,15 @@ func (d *datastoreImpl) RunInTransaction(ctx context.Context, f func(tx w.Transa
 		return nil, toWrapperError(err)
 	}
 
-	return &commitImpl{commit}, nil
+	cb := shared.NewCacheBridge(txImpl.cacheInfo, &originalClientBridgeImpl{txImpl.client}, &originalTransactionBridgeImpl{tx: txImpl}, nil, txImpl.client.middlewares)
+	commitImpl := &commitImpl{commit}
+	err = cb.PostCommit(txImpl.cacheInfo, txImpl, commitImpl)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return commitImpl, nil
 }
 
 func (d *datastoreImpl) Run(ctx context.Context, q w.Query) w.Iterator {
