@@ -18,6 +18,7 @@ require (
 	golang.org/x/tools v0.0.0-20190330180304-aef51cc3777c
 	google.golang.org/api v0.3.0
 	google.golang.org/appengine v1.5.0
+	google.golang.org/grpc v1.19.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	honnef.co/go/tools v0.0.0-20190319011948-d116c56a00f3

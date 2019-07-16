@@ -21,6 +21,7 @@ import (
 
 	"go.mercari.io/datastore/internal"
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
 )
 
 // A ClientOption is an option for a Datastore client.
@@ -90,4 +91,16 @@ type withHTTPClient struct{ client *http.Client }
 
 func (w withHTTPClient) Apply(o *internal.ClientSettings) {
 	o.HTTPClient = w.client
+}
+
+// WithGRPCDialOption returns a ClientOption that appends a new grpc.DialOption
+// to an underlying gRPC dial. It does not work with WithGRPCConn.
+func WithGRPCDialOption(opt grpc.DialOption) ClientOption {
+	return withGRPCDialOption{opt}
+}
+
+type withGRPCDialOption struct{ opt grpc.DialOption }
+
+func (w withGRPCDialOption) Apply(o *internal.ClientSettings) {
+	o.GRPCDialOpts = append(o.GRPCDialOpts, w.opt)
 }

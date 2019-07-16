@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
 )
 
 type ClientSettings struct {
@@ -14,6 +15,7 @@ type ClientSettings struct {
 	TokenSource     oauth2.TokenSource
 	CredentialsFile string // if set, Token Source is ignored.
 	HTTPClient      *http.Client
+	GRPCDialOpts    []grpc.DialOption
 }
 
 func GetProjectID() string {
