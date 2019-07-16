@@ -40,6 +40,7 @@ func newClientSettings(opts ...w.ClientOption) *internal.ClientSettings {
 }
 
 // FromContext make new Client by specified context.
+// Deprecated: use FromClient instead of FromContext. FromContext implicitly creates original datastore.Client.
 func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) {
 	settings := newClientSettings(opts...)
 	origOpts := make([]option.ClientOption, 0, len(opts))
@@ -54,6 +55,11 @@ func FromContext(ctx context.Context, opts ...w.ClientOption) (w.Client, error) 
 	}
 	if settings.HTTPClient != nil {
 		origOpts = append(origOpts, option.WithHTTPClient(settings.HTTPClient))
+	}
+	if len(settings.GRPCDialOpts) != 0 {
+		for _, dialOpt := range settings.GRPCDialOpts {
+			origOpts = append(origOpts, option.WithGRPCDialOption(dialOpt))
+		}
 	}
 
 	client, err := datastore.NewClient(ctx, settings.ProjectID, origOpts...)
