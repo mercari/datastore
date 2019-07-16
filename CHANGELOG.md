@@ -1,3 +1,12 @@
+# [1.5.0](https://github.com/mercari/datastore/compare/v1.4.2...v1.5.0) (2019-07-16)
+
+
+### Features
+
+* **cloud:** add WithGRPCDialOption option ([834e0eb](https://github.com/mercari/datastore/commit/834e0eb))
+
+
+
 ## [1.4.2](https://github.com/mercari/datastore/compare/v1.4.1...v1.4.2) (2019-05-11)
 
 
