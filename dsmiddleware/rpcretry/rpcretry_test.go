@@ -234,13 +234,6 @@ func TestRPCRetry_ContextCanceled(t *testing.T) {
 		client.RemoveMiddleware(aLog)
 	}()
 
-	gm := &glitchEmulator{errCount: 2}
-	client.AppendMiddleware(gm)
-	defer func() {
-		// stop logging before cleanUp func called.
-		client.RemoveMiddleware(gm)
-	}()
-
 	type Data struct {
 		Name string
 	}
@@ -258,9 +251,8 @@ func TestRPCRetry_ContextCanceled(t *testing.T) {
 	expected := heredoc.Doc(`
 		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
 		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
-		after: PutMultiWithoutTx #1, err=error by *glitchEmulator: PutMultiWithoutTx, keys=/Data,111
-		middleware/rpcretry.PutMultiWithoutTx: err=error by *glitchEmulator: PutMultiWithoutTx, keys=/Data,111, will be retry #1 after 1ns
-		before: PutMultiWithoutTx #1, err=error by *glitchEmulator: PutMultiWithoutTx, keys=/Data,111
+		after: PutMultiWithoutTx #1, err=rpc error: code = Canceled desc = context canceled
+		before: PutMultiWithoutTx #1, err=rpc error: code = Canceled desc = context canceled
 	`)
 	// strip `## FooBar` comment line
 	expected = regexp.MustCompile("(?m)^##.*\n").ReplaceAllString(expected, "")

@@ -5,6 +5,9 @@ import (
 	"math"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.mercari.io/datastore"
 )
 
@@ -68,19 +71,26 @@ func (rh *retryHandler) try(ctx context.Context, logPrefix string, f func() erro
 		if err == nil {
 			return
 		} else if _, ok := err.(datastore.MultiError); ok {
+			// If MultiError returns, it should not be fixed even if it is retried
+			return
+		} else if err == context.DeadlineExceeded || err == context.Canceled {
+			// for appengine datastore
+			return
+		} else if code := status.Code(err); code == codes.DeadlineExceeded || code == codes.Canceled {
+			// for cloud datastore
 			return
 		}
+
+		if rh.retryLimit <= try {
+			break
+		}
+
 		d := rh.waitDuration(try)
 		rh.logf(ctx, "%s: err=%s, will be retry #%d after %s", logPrefix, err.Error(), try, d.String())
 		t := time.NewTimer(d)
 		select {
 		case <-ctx.Done():
-			t.Stop()
-			return
 		case <-t.C:
-		}
-		if rh.retryLimit <= try {
-			break
 		}
 		try++
 	}
