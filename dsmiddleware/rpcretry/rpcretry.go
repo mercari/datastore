@@ -72,7 +72,13 @@ func (rh *retryHandler) try(ctx context.Context, logPrefix string, f func() erro
 		}
 		d := rh.waitDuration(try)
 		rh.logf(ctx, "%s: err=%s, will be retry #%d after %s", logPrefix, err.Error(), try, d.String())
-		time.Sleep(d)
+		t := time.NewTimer(d)
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+		}
 		if rh.retryLimit <= try {
 			break
 		}

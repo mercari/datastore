@@ -197,6 +197,79 @@ func TestRPCRetry_Basic(t *testing.T) {
 	}
 }
 
+func TestRPCRetry_ContextCanceled(t *testing.T) {
+	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
+	defer cleanUp()
+
+	var logs []string
+	logf := func(ctx context.Context, format string, args ...interface{}) {
+		t.Logf(format, args...)
+		logs = append(logs, fmt.Sprintf(format, args...))
+	}
+
+	// setup. strategies are first in - first apply.
+
+	bLog := dslog.NewLogger("before: ", logf)
+	client.AppendMiddleware(bLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveMiddleware(bLog)
+	}()
+
+	rh := New(
+		WithLogger(logf),
+		WithMinBackoffDuration(1),
+		WithRetryLimit(2),
+	)
+	client.AppendMiddleware(rh)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveMiddleware(rh)
+	}()
+
+	aLog := dslog.NewLogger("after: ", logf)
+	client.AppendMiddleware(aLog)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveMiddleware(aLog)
+	}()
+
+	gm := &glitchEmulator{errCount: 2}
+	client.AppendMiddleware(gm)
+	defer func() {
+		// stop logging before cleanUp func called.
+		client.RemoveMiddleware(gm)
+	}()
+
+	type Data struct {
+		Name string
+	}
+
+	// Put.
+	canceledCtx, cancel := context.WithCancel(ctx)
+	cancel()
+	key := client.IDKey("Data", 111, nil)
+	objBefore := &Data{Name: "Data"}
+	_, err := client.Put(canceledCtx, key, objBefore)
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+
+	expected := heredoc.Doc(`
+		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
+		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
+		after: PutMultiWithoutTx #1, err=error by *glitchEmulator: PutMultiWithoutTx, keys=/Data,111
+		middleware/rpcretry.PutMultiWithoutTx: err=error by *glitchEmulator: PutMultiWithoutTx, keys=/Data,111, will be retry #1 after 1ns
+		before: PutMultiWithoutTx #1, err=error by *glitchEmulator: PutMultiWithoutTx, keys=/Data,111
+	`)
+	// strip `## FooBar` comment line
+	expected = regexp.MustCompile("(?m)^##.*\n").ReplaceAllString(expected, "")
+
+	if v := strings.Join(logs, "\n") + "\n"; v != expected {
+		t.Errorf("unexpected: %v", v)
+	}
+}
+
 func TestRPCRetry_Transaction(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
