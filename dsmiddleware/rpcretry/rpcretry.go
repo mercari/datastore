@@ -5,10 +5,9 @@ import (
 	"math"
 	"time"
 
+	"go.mercari.io/datastore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"go.mercari.io/datastore"
 )
 
 var _ datastore.Middleware = &retryHandler{}
@@ -90,6 +89,7 @@ func (rh *retryHandler) try(ctx context.Context, logPrefix string, f func() erro
 		t := time.NewTimer(d)
 		select {
 		case <-ctx.Done():
+			t.Stop()
 		case <-t.C:
 		}
 		try++
