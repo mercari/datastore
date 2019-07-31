@@ -1,3 +1,12 @@
+## [1.5.1](https://github.com/mercari/datastore/compare/v1.5.0...v1.5.1) (2019-07-31)
+
+
+### Bug Fixes
+
+* **dsmiddleware/rpcretry:** do not retry when context is already done ([d193c83](https://github.com/mercari/datastore/commit/d193c83))
+
+
+
 # [1.5.0](https://github.com/mercari/datastore/compare/v1.4.2...v1.5.0) (2019-07-16)
 
 
