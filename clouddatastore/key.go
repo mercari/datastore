@@ -26,27 +26,36 @@ type contextPendingKey struct{}
 
 func (k *keyImpl) Kind() string {
 	if k == nil {
-		panic("k is nil")
+		return ""
 	}
 	return k.kind
 }
 
 func (k *keyImpl) ID() int64 {
+	if k == nil {
+		return 0
+	}
 	return k.id
 }
 
 func (k *keyImpl) Name() string {
+	if k == nil {
+		return ""
+	}
 	return k.name
 }
 
 func (k *keyImpl) ParentKey() w.Key {
-	if k.parent == nil {
+	if k == nil || k.parent == nil {
 		return nil
 	}
 	return k.parent
 }
 
 func (k *keyImpl) Namespace() string {
+	if k == nil {
+		return ""
+	}
 	return k.namespace
 }
 
