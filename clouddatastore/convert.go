@@ -276,10 +276,15 @@ func toWrapperEntity(entity *datastore.Entity) *w.Entity {
 		return nil
 	}
 
-	return &w.Entity{
-		Key:        toWrapperKey(entity.Key),
+	wrapperEntity := &w.Entity{
 		Properties: toWrapperPropertyList(entity.Properties),
 	}
+	if entity.Key == nil {
+		wrapperEntity.Key = nil
+	} else {
+		wrapperEntity.Key = toWrapperKey(entity.Key)
+	}
+	return wrapperEntity
 }
 
 func toWrapperProperty(p datastore.Property) w.Property {
