@@ -1,3 +1,12 @@
+## [1.5.2](https://github.com/mercari/datastore/compare/v1.5.1...v1.5.2) (2019-08-15)
+
+
+### Bug Fixes
+
+* **cloud:** fix encoding issue on embedded entity. thx @kailuo-qb ! ([d94e3f5](https://github.com/mercari/datastore/commit/d94e3f5))
+
+
+
 ## [1.5.1](https://github.com/mercari/datastore/compare/v1.5.0...v1.5.1) (2019-07-31)
 
 

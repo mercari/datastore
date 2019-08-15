@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "private": true,
   "scripts": {
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
