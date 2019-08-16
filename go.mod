@@ -5,6 +5,7 @@ go 1.12
 require (
 	cloud.google.com/go v0.37.2
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
+	github.com/bradfitz/gomemcache v0.0.0-20190329173943-551aad21a668
 	github.com/favclip/genbase v1.0.0 // indirect
 	github.com/favclip/jwg v1.1.0
 	github.com/favclip/qbg v1.1.1
