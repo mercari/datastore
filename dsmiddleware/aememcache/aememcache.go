@@ -85,7 +85,7 @@ func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 
 	err := memcache.SetMulti(ctx, itemList)
 	if err != nil {
-		ch.logf(ctx, "dsmiddleware/aememcache: error on memcache.SetMulti %s", err.Error())
+		ch.logf(ctx, "dsmiddleware/aememcache: error on dsmemcache.SetMulti %s", err.Error())
 		if ch.raiseMemcacheError {
 			if merr, ok := err.(appengine.MultiError); ok {
 				for _, err := range merr {
@@ -105,7 +105,7 @@ func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 		}
 		err = memcache.DeleteMulti(ctx, keys)
 		if err != nil {
-			ch.logf(ctx, "dsmiddleware/aememcache: error on memcache.DeleteMulti %s", err.Error())
+			ch.logf(ctx, "dsmiddleware/aememcache: error on dsmemcache.DeleteMulti %s", err.Error())
 			if ch.raiseMemcacheError {
 				if merr, ok := err.(appengine.MultiError); ok {
 					for _, err := range merr {
@@ -138,7 +138,7 @@ func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 	itemMap, err := memcache.GetMulti(ctx, cacheKeys)
 
 	if err != nil {
-		ch.logf(ctx, "dsmiddleware/aememcache: error on memcache.GetMulti %s", err.Error())
+		ch.logf(ctx, "dsmiddleware/aememcache: error on dsmemcache.GetMulti %s", err.Error())
 		if ch.raiseMemcacheError {
 			if merr, ok := err.(appengine.MultiError); ok {
 				for _, err := range merr {
@@ -195,7 +195,7 @@ func (ch *cacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) e
 
 	err := memcache.DeleteMulti(ctx, cacheKeys)
 	if err != nil {
-		ch.logf(ctx, "dsmiddleware/aememcache: error on memcache.DeleteMulti %s", err.Error())
+		ch.logf(ctx, "dsmiddleware/aememcache: error on dsmemcache.DeleteMulti %s", err.Error())
 		if ch.raiseMemcacheError {
 			if merr, ok := err.(appengine.MultiError); ok {
 				for _, err := range merr {

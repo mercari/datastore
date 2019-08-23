@@ -486,7 +486,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 		dsmiddleware/aememcache.GetMulti: hit=1 miss=0
 		before: PostCommit #9 Put keys=[/Data,@####@]
 		dsmiddleware/aememcache.DeleteMulti: incoming len=3
-		dsmiddleware/aememcache: error on memcache.DeleteMulti memcache: cache miss (and 1 other error)
+		dsmiddleware/aememcache: error on dsmemcache.DeleteMulti dsmemcache: cache miss (and 1 other error)
 		after: PostCommit #9 Put keys=[/Data,@####@]
 		dsmiddleware/aememcache.GetMulti: incoming len=1
 		dsmiddleware/aememcache.GetMulti: hit=0 miss=1
@@ -602,7 +602,7 @@ func TestAEMemcacheCache_MultiError(t *testing.T) {
 	for idx, err := range merr {
 		key := keys[idx]
 		if key.ID()%2 == 0 && key.ID()%3 == 0 {
-			// not exists on memcache & datastore both
+			// not exists on dsmemcache & datastore both
 			if err != datastore.ErrNoSuchEntity {
 				t.Error(err)
 			}

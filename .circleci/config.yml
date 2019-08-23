@@ -12,6 +12,7 @@ jobs:
       - image: google/cloud-sdk:236.0.0
         command: ['gcloud', '--project=datastore-wrapper', 'beta', 'emulators', 'datastore', 'start', '--host-port=localhost:8081', '--no-store-on-disk', '--consistency=1.0']
       - image: redis:4-alpine
+      - image: memcached:1.5-alpine
     steps:
       - checkout
 
