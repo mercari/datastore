@@ -1,4 +1,4 @@
-package memcache
+package dsmemcache
 
 import (
 	"context"
@@ -48,7 +48,7 @@ func TestMemcache_Basic(t *testing.T) {
 
 	memcacheClient := memcache.New(os.Getenv("MEMCACHE_ADDR"))
 	ch := New(
-		*memcacheClient,
+		memcacheClient,
 		WithLogger(logf),
 	)
 	client.AppendMiddleware(ch)
@@ -111,18 +111,18 @@ func TestMemcache_Basic(t *testing.T) {
 		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
 		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
 		after: PutMultiWithoutTx #1, keys=[/Data,111]
-		dsmiddleware/memcache.SetMulti: incoming len=1
+		dsmiddleware/dsmemcache.SetMulti: incoming len=1
 		before: PutMultiWithoutTx #1, keys=[/Data,111]
-		dsmiddleware/memcache.GetMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: hit=1 miss=0
+		dsmiddleware/dsmemcache.GetMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: hit=1 miss=0
 		before: GetMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
-		dsmiddleware/memcache.GetMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: hit=1 miss=0
+		dsmiddleware/dsmemcache.GetMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: hit=1 miss=0
 		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,111]
 		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
-		dsmiddleware/memcache.DeleteMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: hit=0 miss=1
+		dsmiddleware/dsmemcache.DeleteMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: hit=0 miss=1
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {
@@ -151,7 +151,7 @@ func TestMemcache_BasicWithoutExpire(t *testing.T) {
 
 	memcacheClient := memcache.New(os.Getenv("MEMCACHE_ADDR"))
 	ch := New(
-		*memcacheClient,
+		memcacheClient,
 		WithExpireDuration(0),
 		WithLogger(logf),
 	)
@@ -215,18 +215,18 @@ func TestMemcache_BasicWithoutExpire(t *testing.T) {
 		before: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
 		after: PutMultiWithoutTx #1, len(keys)=1, keys=[/Data,111]
 		after: PutMultiWithoutTx #1, keys=[/Data,111]
-		dsmiddleware/memcache.SetMulti: incoming len=1
+		dsmiddleware/dsmemcache.SetMulti: incoming len=1
 		before: PutMultiWithoutTx #1, keys=[/Data,111]
-		dsmiddleware/memcache.GetMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: hit=1 miss=0
+		dsmiddleware/dsmemcache.GetMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: hit=1 miss=0
 		before: GetMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
-		dsmiddleware/memcache.GetMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: hit=1 miss=0
+		dsmiddleware/dsmemcache.GetMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: hit=1 miss=0
 		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,111]
 		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,111]
-		dsmiddleware/memcache.DeleteMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: incoming len=1
-		dsmiddleware/memcache.GetMulti: hit=0 miss=1
+		dsmiddleware/dsmemcache.DeleteMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: incoming len=1
+		dsmiddleware/dsmemcache.GetMulti: hit=0 miss=1
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {
@@ -254,7 +254,7 @@ func TestMemcache_MultiError(t *testing.T) {
 
 	memcacheClient := memcache.New(os.Getenv("MEMCACHE_ADDR"))
 	ch := New(
-		*memcacheClient,
+		memcacheClient,
 		WithLogger(logf),
 	)
 	client.AppendMiddleware(ch)
@@ -344,25 +344,25 @@ func TestMemcache_MultiError(t *testing.T) {
 		before: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		after: PutMultiWithoutTx #1, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
 		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
-		dsmiddleware/memcache.SetMulti: incoming len=10
+		dsmiddleware/dsmemcache.SetMulti: incoming len=10
 		before: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
-		dsmiddleware/memcache.DeleteMulti: incoming len=1
+		dsmiddleware/dsmemcache.DeleteMulti: incoming len=1
 		before: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
 		after: DeleteMultiWithoutTx #2, len(keys)=1, keys=[/Data,3]
-		dsmiddleware/memcache.DeleteMulti: incoming len=1
-		dsmiddleware/memcache.DeleteMulti: incoming len=1
+		dsmiddleware/dsmemcache.DeleteMulti: incoming len=1
+		dsmiddleware/dsmemcache.DeleteMulti: incoming len=1
 		before: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
 		after: DeleteMultiWithoutTx #3, len(keys)=1, keys=[/Data,6]
-		dsmiddleware/memcache.DeleteMulti: incoming len=1
+		dsmiddleware/dsmemcache.DeleteMulti: incoming len=1
 		before: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
 		after: DeleteMultiWithoutTx #4, len(keys)=1, keys=[/Data,9]
-		dsmiddleware/memcache.DeleteMulti: incoming len=1
+		dsmiddleware/dsmemcache.DeleteMulti: incoming len=1
 		before: GetMultiWithoutTx #5, len(keys)=10, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5, /Data,6, /Data,7, /Data,8, /Data,9, /Data,10]
-		dsmiddleware/memcache.GetMulti: incoming len=10
-		dsmiddleware/memcache.GetMulti: hit=5 miss=5
+		dsmiddleware/dsmemcache.GetMulti: incoming len=10
+		dsmiddleware/dsmemcache.GetMulti: hit=5 miss=5
 		after: GetMultiWithoutTx #5, len(keys)=5, keys=[/Data,2, /Data,4, /Data,6, /Data,8, /Data,10]
 		after: GetMultiWithoutTx #5, err=datastore: no such entity
-		dsmiddleware/memcache.SetMulti: incoming len=4
+		dsmiddleware/dsmemcache.SetMulti: incoming len=4
 		before: GetMultiWithoutTx #5, err=datastore: no such entity
 	`)
 

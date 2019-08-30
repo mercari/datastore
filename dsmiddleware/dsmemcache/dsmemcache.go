@@ -1,4 +1,4 @@
-package memcache
+package dsmemcache
 
 import (
 	"bytes"
@@ -13,17 +13,14 @@ import (
 var _ storagecache.Storage = &cacheHandler{}
 var _ datastore.Middleware = &cacheHandler{}
 
-const defaultExpiration = 15 * time.Minute
-
-// New memcache middleware creates & returns.
-func New(client memcache.Client, opts ...CacheOption) interface {
+// New dsmemcache middleware creates & returns.
+func New(client *memcache.Client, opts ...CacheOption) interface {
 	datastore.Middleware
 	storagecache.Storage
 } {
 	ch := &cacheHandler{
-		client:         &client,
+		client:         client,
 		stOpts:         &storagecache.Options{},
-		expireDuration: defaultExpiration,
 	}
 
 	for _, opt := range opts {
@@ -38,7 +35,7 @@ func New(client memcache.Client, opts ...CacheOption) interface {
 	}
 	if ch.cacheKey == nil {
 		ch.cacheKey = func(key datastore.Key) string {
-			return "mercari:memcache:" + key.Encode()
+			return "mercari:dsmemcache:" + key.Encode()
 		}
 	}
 
@@ -55,14 +52,14 @@ type cacheHandler struct {
 	cacheKey       func(key datastore.Key) string
 }
 
-// A CacheOption is an cache option for a memcache middleware.
+// A CacheOption is an cache option for a dsmemcache middleware.
 type CacheOption interface {
 	Apply(*cacheHandler)
 }
 
 func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheItem) error {
 
-	ch.logf(ctx, "dsmiddleware/memcache.SetMulti: incoming len=%d", len(cis))
+	ch.logf(ctx, "dsmiddleware/dsmemcache.SetMulti: incoming len=%d", len(cis))
 
 	for _, ci := range cis {
 		if ci.Key.Incomplete() {
@@ -71,7 +68,7 @@ func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 		var buf bytes.Buffer
 		enc := gob.NewEncoder(&buf)
 		if err := enc.Encode(ci.PropertyList); err != nil {
-			ch.logf(ctx, "dsmiddleware/memcache.SetMulti: gob.Encode error key=%s err=%s", ci.Key.String(), err.Error())
+			ch.logf(ctx, "dsmiddleware/dsmemcache.SetMulti: gob.Encode error key=%s err=%s", ci.Key.String(), err.Error())
 			continue
 		}
 		item := &memcache.Item{
@@ -88,7 +85,7 @@ func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 }
 
 func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*storagecache.CacheItem, error) {
-	ch.logf(ctx, "dsmiddleware/memcache.GetMulti: incoming len=%d", len(keys))
+	ch.logf(ctx, "dsmiddleware/dsmemcache.GetMulti: incoming len=%d", len(keys))
 
 	resultList := make([]*storagecache.CacheItem, len(keys))
 
@@ -99,7 +96,7 @@ func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 	itemMap, err := ch.client.GetMulti(cacheKeys)
 
 	if err != nil {
-		ch.logf(ctx, "dsmiddleware/memcache: error on memcache.GetMulti %s", err.Error())
+		ch.logf(ctx, "dsmiddleware/dsmemcache: error on dsmemcache.GetMulti %s", err.Error())
 	}
 
 	hit, miss := 0, 0
@@ -116,7 +113,7 @@ func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 		err = dec.Decode(&ps)
 		if err != nil {
 			resultList[idx] = nil
-			ch.logf(ctx, "dsmiddleware/memcache.GetMulti: gob.Decode error key=%s err=%s", key.String(), err.Error())
+			ch.logf(ctx, "dsmiddleware/dsmemcache.GetMulti: gob.Decode error key=%s err=%s", key.String(), err.Error())
 			miss++
 			continue
 		}
@@ -128,17 +125,17 @@ func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 		hit++
 	}
 
-	ch.logf(ctx, "dsmiddleware/memcache.GetMulti: hit=%d miss=%d", hit, miss)
+	ch.logf(ctx, "dsmiddleware/dsmemcache.GetMulti: hit=%d miss=%d", hit, miss)
 
 	return resultList, nil
 }
 
 func (ch *cacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) error {
-	ch.logf(ctx, "dsmiddleware/memcache.DeleteMulti: incoming len=%d", len(keys))
+	ch.logf(ctx, "dsmiddleware/dsmemcache.DeleteMulti: incoming len=%d", len(keys))
 	for _, key := range keys {
 		err := ch.client.Delete(ch.cacheKey(key))
 		if err != nil {
-			ch.logf(ctx, "dsmiddleware/memcache: error on memcache.DeleteMulti %s", err.Error())
+			ch.logf(ctx, "dsmiddleware/dsmemcache: error on dsmemcache.DeleteMulti %s", err.Error())
 		}
 	}
 

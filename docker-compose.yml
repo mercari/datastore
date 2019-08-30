@@ -10,3 +10,8 @@ services:
     image: redis:4-alpine
     ports:
       - "6379:6379"
+
+  memcached:
+    image: memcached:1.5-alpine
+    ports:
+      - "11211:11211"

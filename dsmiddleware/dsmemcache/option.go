@@ -1,4 +1,4 @@
-package memcache
+package dsmemcache
 
 import (
 	"context"
