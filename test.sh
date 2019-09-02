@@ -15,7 +15,7 @@ do
     go vet $package
 done
 golint -set_exit_status -min_confidence 0.6 $packages_wo_internal
-staticcheck -ignore go.mercari.io/datastore/*/bridge.go:SA1019 $packages
+staticcheck $packages
 go generate $packages
 
 export DATASTORE_EMULATOR_HOST=localhost:8081
