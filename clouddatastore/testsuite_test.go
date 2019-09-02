@@ -8,9 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bradfitz/gomemcache/memcache"
-	"go.mercari.io/datastore/dsmiddleware/dsmemcache"
-
 	"go.mercari.io/datastore/testsuite"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/dslog"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/fishbone"
@@ -20,8 +17,10 @@ import (
 	_ "go.mercari.io/datastore/testsuite/realworld/recursivebatch"
 	_ "go.mercari.io/datastore/testsuite/realworld/tbf"
 
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gomodule/redigo/redis"
 	"go.mercari.io/datastore/dsmiddleware/chaosrpc"
+	"go.mercari.io/datastore/dsmiddleware/dsmemcache"
 	"go.mercari.io/datastore/dsmiddleware/localcache"
 	"go.mercari.io/datastore/dsmiddleware/rediscache"
 	"go.mercari.io/datastore/dsmiddleware/rpcretry"
