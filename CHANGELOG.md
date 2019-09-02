@@ -1,3 +1,12 @@
+## [1.6.1](https://github.com/mercari/datastore/compare/v1.6.0...v1.6.1) (2019-09-02)
+
+
+### Features
+
+* **dsmiddleware/splitop:** implement Put timing operation ([ab4b794](https://github.com/mercari/datastore/commit/ab4b794))
+
+
+
 # [1.6.0](https://github.com/mercari/datastore/compare/v1.5.3...v1.6.0) (2019-09-02)
 
 
