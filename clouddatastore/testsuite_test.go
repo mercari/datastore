@@ -2,6 +2,7 @@ package clouddatastore
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"net"
 	"os"
@@ -24,6 +25,7 @@ import (
 	"go.mercari.io/datastore/dsmiddleware/localcache"
 	"go.mercari.io/datastore/dsmiddleware/rediscache"
 	"go.mercari.io/datastore/dsmiddleware/rpcretry"
+	"go.mercari.io/datastore/dsmiddleware/splitop"
 	"google.golang.org/api/iterator"
 )
 
@@ -180,6 +182,49 @@ func TestCloudDatastoreWithMemcacheTestSuite(t *testing.T) {
 
 			ctx = testsuite.WrapCloudFlag(ctx)
 			test(ctx, t, datastore)
+		})
+	}
+}
+
+func TestCloudDatastoreWithSplitCallTestSuite(t *testing.T) {
+	ctx := context.Background()
+
+	thresholds := []int{0, 1, 2, 1000}
+	for _, threshold := range thresholds {
+		threshold := threshold
+		t.Run(fmt.Sprintf("threshold %d", threshold), func(t *testing.T) {
+			for name, test := range testsuite.TestSuite {
+				t.Run(name, func(t *testing.T) {
+					// Skip the failure that happens when you firstly appended another middleware layer.
+					switch name {
+					case
+						//"LocalCache_Basic",
+						"LocalCache_WithIncludeKinds",
+						"LocalCache_WithExcludeKinds",
+						"LocalCache_WithKeyFilter",
+						"FishBone_QueryWithoutTx":
+						t.SkipNow()
+					}
+
+					defer cleanUp()
+
+					datastore, err := FromContext(ctx)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					sc := splitop.New(
+						splitop.WithSplitThreshold(threshold),
+						splitop.WithLogger(func(ctx context.Context, format string, args ...interface{}) {
+							t.Logf(format, args...)
+						}),
+					)
+					datastore.AppendMiddleware(sc)
+
+					ctx = testsuite.WrapCloudFlag(ctx)
+					test(ctx, t, datastore)
+				})
+			}
 		})
 	}
 }
