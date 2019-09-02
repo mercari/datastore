@@ -1,3 +1,13 @@
+# [1.6.0](https://github.com/mercari/datastore/compare/v1.5.3...v1.6.0) (2019-09-02)
+
+
+### Features
+
+* **dsmiddleware/dsmemcache:** add dsmemcache middleware ([536df16](https://github.com/mercari/datastore/commit/536df16)) thanks @kailuo-qb !
+* **dsmiddleware/splitop:** add splitop middleware ([b016cb0](https://github.com/mercari/datastore/commit/b016cb0))
+
+
+
 ## [1.5.3](https://github.com/mercari/datastore/compare/v1.5.2...v1.5.3) (2019-09-02)
 
 
