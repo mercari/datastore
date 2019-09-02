@@ -14,6 +14,7 @@ import (
 )
 
 func init() {
+	//lint:ignore SA1019 for backward compatible
 	w.FromContext = FromContext
 
 	gob.Register(&keyImpl{})

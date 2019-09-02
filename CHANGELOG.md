@@ -1,3 +1,12 @@
+## [1.5.3](https://github.com/mercari/datastore/compare/v1.5.2...v1.5.3) (2019-09-02)
+
+
+### Features
+
+* **all:** update dependencies ([600488a](https://github.com/mercari/datastore/commit/600488a))
+
+
+
 ## [1.5.2](https://github.com/mercari/datastore/compare/v1.5.1...v1.5.2) (2019-08-15)
 
 
