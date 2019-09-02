@@ -12,7 +12,7 @@ import (
 	"go.mercari.io/datastore/internal/testutils"
 )
 
-func TestSplitCall_Basic(t *testing.T) {
+func TestSplitOp_Basic(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
 
@@ -33,7 +33,8 @@ func TestSplitCall_Basic(t *testing.T) {
 
 	ch := New(
 		WithLogger(logf),
-		WithSplitThreshold(3),
+		WithGetSplitThreshold(3),
+		WithPutSplitThreshold(2),
 	)
 	client.AppendMiddleware(ch)
 	defer func() {
@@ -81,15 +82,23 @@ func TestSplitCall_Basic(t *testing.T) {
 
 	expected := heredoc.Doc(`
 		before: PutMultiWithoutTx #1, len(keys)=5, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5]
-		after: PutMultiWithoutTx #1, len(keys)=5, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5]
-		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5]
+		put 5 keys
+		put [0, 2) range keys
+		after: PutMultiWithoutTx #1, len(keys)=2, keys=[/Data,1, /Data,2]
+		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2]
+		put [2, 4) range keys
+		after: PutMultiWithoutTx #2, len(keys)=2, keys=[/Data,3, /Data,4]
+		after: PutMultiWithoutTx #2, keys=[/Data,3, /Data,4]
+		put [4, 5) range keys
+		after: PutMultiWithoutTx #3, len(keys)=1, keys=[/Data,5]
+		after: PutMultiWithoutTx #3, keys=[/Data,5]
 		before: PutMultiWithoutTx #1, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5]
 		before: GetMultiWithoutTx #2, len(keys)=5, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5]
-		process 5 keys
-		process [0, 3) range keys
-		after: GetMultiWithoutTx #2, len(keys)=3, keys=[/Data,1, /Data,2, /Data,3]
-		process [3, 5) range keys
-		after: GetMultiWithoutTx #3, len(keys)=2, keys=[/Data,4, /Data,5]
+		get 5 keys
+		get [0, 3) range keys
+		after: GetMultiWithoutTx #4, len(keys)=3, keys=[/Data,1, /Data,2, /Data,3]
+		get [3, 5) range keys
+		after: GetMultiWithoutTx #5, len(keys)=2, keys=[/Data,4, /Data,5]
 	`)
 
 	if v := strings.Join(logs, "\n") + "\n"; v != expected {
@@ -97,7 +106,7 @@ func TestSplitCall_Basic(t *testing.T) {
 	}
 }
 
-func TestSplitCall_HasNoSuchEntity(t *testing.T) {
+func TestSplitOp_HasNoSuchEntity(t *testing.T) {
 	ctx, client, cleanUp := testutils.SetupCloudDatastore(t)
 	defer cleanUp()
 
@@ -118,7 +127,8 @@ func TestSplitCall_HasNoSuchEntity(t *testing.T) {
 
 	ch := New(
 		WithLogger(logf),
-		WithSplitThreshold(3),
+		WithGetSplitThreshold(3),
+		WithPutSplitThreshold(2),
 	)
 	client.AppendMiddleware(ch)
 	defer func() {
@@ -192,17 +202,22 @@ func TestSplitCall_HasNoSuchEntity(t *testing.T) {
 
 	expected := heredoc.Doc(`
 		before: PutMultiWithoutTx #1, len(keys)=3, keys=[/Data,1, /Data,3, /Data,5]
-		after: PutMultiWithoutTx #1, len(keys)=3, keys=[/Data,1, /Data,3, /Data,5]
-		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,3, /Data,5]
+		put 3 keys
+		put [0, 2) range keys
+		after: PutMultiWithoutTx #1, len(keys)=2, keys=[/Data,1, /Data,3]
+		after: PutMultiWithoutTx #1, keys=[/Data,1, /Data,3]
+		put [2, 3) range keys
+		after: PutMultiWithoutTx #2, len(keys)=1, keys=[/Data,5]
+		after: PutMultiWithoutTx #2, keys=[/Data,5]
 		before: PutMultiWithoutTx #1, keys=[/Data,1, /Data,3, /Data,5]
 		before: GetMultiWithoutTx #2, len(keys)=5, keys=[/Data,1, /Data,2, /Data,3, /Data,4, /Data,5]
-		process 5 keys
-		process [0, 3) range keys
-		after: GetMultiWithoutTx #2, len(keys)=3, keys=[/Data,1, /Data,2, /Data,3]
-		after: GetMultiWithoutTx #2, err=datastore: no such entity
-		process [3, 5) range keys
-		after: GetMultiWithoutTx #3, len(keys)=2, keys=[/Data,4, /Data,5]
+		get 5 keys
+		get [0, 3) range keys
+		after: GetMultiWithoutTx #3, len(keys)=3, keys=[/Data,1, /Data,2, /Data,3]
 		after: GetMultiWithoutTx #3, err=datastore: no such entity
+		get [3, 5) range keys
+		after: GetMultiWithoutTx #4, len(keys)=2, keys=[/Data,4, /Data,5]
+		after: GetMultiWithoutTx #4, err=datastore: no such entity
 		before: GetMultiWithoutTx #2, err=datastore: no such entity (and 1 other error)
 	`)
 

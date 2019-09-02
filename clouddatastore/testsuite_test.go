@@ -214,7 +214,7 @@ func TestCloudDatastoreWithSplitCallTestSuite(t *testing.T) {
 					}
 
 					sc := splitop.New(
-						splitop.WithSplitThreshold(threshold),
+						splitop.WithGetSplitThreshold(threshold),
 						splitop.WithLogger(func(ctx context.Context, format string, args ...interface{}) {
 							t.Logf(format, args...)
 						}),
