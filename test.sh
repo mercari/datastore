@@ -22,6 +22,7 @@ export DATASTORE_EMULATOR_HOST=localhost:8081
 export DATASTORE_PROJECT_ID=datastore-wrapper
 export REDIS_HOST=
 export REDIS_PORT=6379
+export MEMCACHE_ADDR=localhost:11211
 
 # use -p 1. Cloud Datastore Emulator can't dedicated by connections. go will running package concurrently.
 # goapp test $packages -p 1 $@
