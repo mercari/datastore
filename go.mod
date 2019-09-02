@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/bigquery v1.0.1 // indirect
 	cloud.google.com/go/datastore v1.0.0
 	github.com/MakeNowJust/heredoc v1.0.0
+	github.com/bradfitz/gomemcache v0.0.0-20190329173943-551aad21a668
 	github.com/favclip/genbase v1.0.0 // indirect
 	github.com/favclip/jwg v1.1.0
 	github.com/favclip/qbg v1.1.1
