@@ -25,7 +25,7 @@ import (
 	"go.mercari.io/datastore/dsmiddleware/localcache"
 	"go.mercari.io/datastore/dsmiddleware/rediscache"
 	"go.mercari.io/datastore/dsmiddleware/rpcretry"
-	"go.mercari.io/datastore/dsmiddleware/splitcall"
+	"go.mercari.io/datastore/dsmiddleware/splitop"
 	"google.golang.org/api/iterator"
 )
 
@@ -213,9 +213,9 @@ func TestCloudDatastoreWithSplitCallTestSuite(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					sc := splitcall.New(
-						splitcall.WithSplitThreshold(threshold),
-						splitcall.WithLogger(func(ctx context.Context, format string, args ...interface{}) {
+					sc := splitop.New(
+						splitop.WithSplitThreshold(threshold),
+						splitop.WithLogger(func(ctx context.Context, format string, args ...interface{}) {
 							t.Logf(format, args...)
 						}),
 					)

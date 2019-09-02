@@ -1,5 +1,5 @@
 /*
-Package splitcall provides a avoid Datastore's limitation.
+Package splitop provides a avoid Datastore's limitation.
 
 https://cloud.google.com/datastore/docs/concepts/limits
 
@@ -9,4 +9,4 @@ DO
   * > Maximum number of keys allowed for a Lookup operation in the Cloud Datastore API : 1,000
 
 */
-package splitcall // import "go.mercari.io/datastore/dsmiddleware/splitcall"
+package splitop // import "go.mercari.io/datastore/dsmiddleware/splitop"

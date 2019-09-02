@@ -1,4 +1,4 @@
-package splitcall
+package splitop
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func New(opts ...Option) datastore.Middleware {
 	return sh
 }
 
-// A Option is an option for splitcall.
+// A Option is an option for splitop.
 type Option interface {
 	Apply(*splitHandler)
 }

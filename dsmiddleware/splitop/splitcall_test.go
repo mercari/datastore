@@ -1,4 +1,4 @@
-package splitcall
+package splitop
 
 import (
 	"context"
