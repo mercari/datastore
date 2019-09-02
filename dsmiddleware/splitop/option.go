@@ -3,14 +3,31 @@ package splitop
 import "context"
 
 // WithSplitThreshold set operation split threshold.
+// Deprecated: use WithGetSplitThreshold instead.
 func WithSplitThreshold(threshold int) Option {
-	return &splitThreshold{threshold}
+	return &getSplitThreshold{threshold}
 }
 
-type splitThreshold struct{ splitThreshold int }
+// WithGetSplitThreshold set get operation split threshold.
+func WithGetSplitThreshold(threshold int) Option {
+	return &getSplitThreshold{threshold}
+}
 
-func (w *splitThreshold) Apply(o *splitHandler) {
-	o.splitThreshold = w.splitThreshold
+type getSplitThreshold struct{ splitThreshold int }
+
+func (w *getSplitThreshold) Apply(o *splitHandler) {
+	o.getSplitThreshold = w.splitThreshold
+}
+
+// WithPutSplitThreshold set put operation split threshold.
+func WithPutSplitThreshold(threshold int) Option {
+	return &putSplitThreshold{threshold}
+}
+
+type putSplitThreshold struct{ splitThreshold int }
+
+func (w *putSplitThreshold) Apply(o *splitHandler) {
+	o.putSplitThreshold = w.splitThreshold
 }
 
 // WithLogger creates a Option that uses the specified logger.
