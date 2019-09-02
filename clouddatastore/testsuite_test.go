@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bradfitz/gomemcache/memcache"
+	"go.mercari.io/datastore/dsmiddleware/dsmemcache"
+
 	"go.mercari.io/datastore/testsuite"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/dslog"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/fishbone"
@@ -141,6 +144,40 @@ func TestCloudDatastoreWithRedisCacheTestSuite(t *testing.T) {
 
 			rc := rediscache.New(conn)
 			datastore.AppendMiddleware(rc)
+
+			ctx = testsuite.WrapCloudFlag(ctx)
+			test(ctx, t, datastore)
+		})
+	}
+}
+
+func TestCloudDatastoreWithMemcacheTestSuite(t *testing.T) {
+	ctx := context.Background()
+	for name, test := range testsuite.TestSuite {
+		t.Run(name, func(t *testing.T) {
+			// Skip the failure that happens when you firstly appended another middleware layer.
+			switch name {
+			case
+				"LocalCache_Basic",
+				"LocalCache_WithIncludeKinds",
+				"LocalCache_WithExcludeKinds",
+				"LocalCache_WithKeyFilter",
+				"FishBone_QueryWithoutTx":
+				t.SkipNow()
+			}
+
+			defer cleanUp()
+
+			datastore, err := FromContext(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			memcacheClient := memcache.New(os.Getenv("MEMCACHE_ADDR"))
+			ch := dsmemcache.New(
+				memcacheClient,
+			)
+			datastore.AppendMiddleware(ch)
 
 			ctx = testsuite.WrapCloudFlag(ctx)
 			test(ctx, t, datastore)
