@@ -5,11 +5,10 @@ import (
 	"context"
 	"encoding/gob"
 	"errors"
-	"time"
-
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis/v7"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/storagecache"
+	"time"
 )
 
 var _ storagecache.Storage = &cacheHandler{}
@@ -18,7 +17,7 @@ var _ datastore.Middleware = &cacheHandler{}
 const defaultExpiration = 15 * time.Minute
 
 // New Redis cache middleware creates & returns.
-func New(conn redis.Conn, opts ...CacheOption) interface {
+func New(conn *redis.Client, opts ...CacheOption) interface {
 	datastore.Middleware
 	storagecache.Storage
 } {
@@ -53,7 +52,7 @@ type cacheHandler struct {
 	datastore.Middleware
 	stOpts *storagecache.Options
 
-	conn           redis.Conn
+	conn           *redis.Client
 	expireDuration time.Duration
 	logf           func(ctx context.Context, format string, args ...interface{})
 	cacheKey       func(key datastore.Key) string
@@ -68,12 +67,7 @@ func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 
 	ch.logf(ctx, "dsmiddleware/rediscache.SetMulti: incoming len=%d", len(cis))
 
-	err := ch.conn.Send("MULTI")
-	if err != nil {
-		ch.logf(ctx, `dsmiddleware/rediscache.SetMulti: conn.Send("MULTI") err=%s`, err.Error())
-		return err
-	}
-
+	pipe := ch.conn.TxPipeline()
 	cnt := 0
 	for _, ci := range cis {
 		if ci.Key.Incomplete() {
@@ -90,13 +84,13 @@ func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 		cacheValue := buf.Bytes()
 
 		if ch.expireDuration <= 0 {
-			err = ch.conn.Send("SET", cacheKey, cacheValue)
+			err = pipe.Set(cacheKey, cacheValue, 0).Err()
 			if err != nil {
 				ch.logf(ctx, `dsmiddleware/rediscache.SetMulti: conn.Send("SET", "%s", ...) err=%s`, cacheKey, err.Error())
 				return err
 			}
 		} else {
-			err = ch.conn.Send("SET", cacheKey, cacheValue, "PX", int64(ch.expireDuration/time.Millisecond))
+			err = ch.conn.Set(cacheKey, cacheValue, ch.expireDuration).Err()
 			if err != nil {
 				ch.logf(ctx, `dsmiddleware/rediscache.SetMulti: conn.Send("SET", "%s", ..., "PX", %d) err=%s`, cacheKey, ch.expireDuration/time.Millisecond, err.Error())
 				return err
@@ -106,8 +100,7 @@ func (ch *cacheHandler) SetMulti(ctx context.Context, cis []*storagecache.CacheI
 	}
 
 	ch.logf(ctx, "dsmiddleware/rediscache.SetMulti: len=%d", cnt)
-
-	_, err = ch.conn.Do("EXEC")
+	_, err := pipe.Exec()
 	if err != nil {
 		ch.logf(ctx, `dsmiddleware/rediscache.SetMulti: conn.Send("EXEC") err=%s`, err.Error())
 		return err
@@ -120,40 +113,38 @@ func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 
 	ch.logf(ctx, "dsmiddleware/rediscache.GetMulti: incoming len=%d", len(keys))
 
-	err := ch.conn.Send("MULTI")
-	if err != nil {
-		ch.logf(ctx, `dsmiddleware/rediscache.GetMulti: conn.Send("MULTI") err=%s`, err.Error())
-		return nil, err
-	}
+	pipe := ch.conn.TxPipeline()
 
 	resultList := make([]*storagecache.CacheItem, len(keys))
 
+	resps := make([]*redis.StringCmd, len(keys))
 	for idx, key := range keys {
 		cacheKey := ch.cacheKey(key)
 		resultList[idx] = &storagecache.CacheItem{
 			Key: key,
 		}
-		err := ch.conn.Send("GET", cacheKey)
-		if err != nil {
-			ch.logf(ctx, `dsmiddleware/rediscache.GetMulti: conn.Send("GET", "%s") err=%s`, cacheKey, err.Error())
-			return nil, err
-		}
+		resps[idx] = pipe.Get(cacheKey)
 	}
 
-	resp, err := ch.conn.Do("EXEC")
-	if err != nil {
+	_, err := pipe.Exec()
+	if err != nil && err != redis.Nil {
 		ch.logf(ctx, `dsmiddleware/rediscache.GetMulti: conn.Do("EXEC") err=%s`, err.Error())
-		return nil, err
-	}
-	bs, err := redis.ByteSlices(resp, nil)
-	if err != nil {
-		ch.logf(ctx, `dsmiddleware/rediscache.GetMulti: redis.ByteSlices err=%s`, err.Error())
 		return nil, err
 	}
 
 	hit := 0
 	miss := 0
-	for idx, b := range bs {
+	for idx, r := range resps {
+		b, err := r.Bytes()
+		if err == redis.Nil {
+			resultList[idx] = nil
+			miss++
+			continue
+		}
+		if err != nil {
+			ch.logf(ctx, `dsmiddleware/rediscache.GetMulti: conn.Send("GET") err=%s`, err.Error())
+			return nil, err
+		}
 		if len(b) == 0 {
 			resultList[idx] = nil
 			miss++
@@ -177,6 +168,7 @@ func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 
 		resultList[idx].PropertyList = ps
 		hit++
+
 	}
 
 	ch.logf(ctx, "dsmiddleware/rediscache.GetMulti: hit=%d miss=%d", hit, miss)
@@ -187,23 +179,19 @@ func (ch *cacheHandler) GetMulti(ctx context.Context, keys []datastore.Key) ([]*
 func (ch *cacheHandler) DeleteMulti(ctx context.Context, keys []datastore.Key) error {
 	ch.logf(ctx, "dsmiddleware/rediscache.DeleteMulti: incoming len=%d", len(keys))
 
-	err := ch.conn.Send("MULTI")
-	if err != nil {
-		ch.logf(ctx, `dsmiddleware/rediscache.DeleteMulti: conn.Send("MULTI") err=%s`, err.Error())
-		return err
-	}
+	pipe := ch.conn.TxPipeline()
 
 	for _, key := range keys {
 		cacheKey := ch.cacheKey(key)
 
-		err = ch.conn.Send("DEL", cacheKey)
+		err := pipe.Del(cacheKey).Err()
 		if err != nil {
 			ch.logf(ctx, `dsmiddleware/rediscache.DeleteMulti: conn.Send("DEL", "%s") err=%s`, cacheKey, err.Error())
 			return err
 		}
 	}
 
-	_, err = ch.conn.Do("EXEC")
+	_, err := pipe.Exec()
 	if err != nil {
 		ch.logf(ctx, `dsmiddleware/rediscache.DeleteMulti: conn.Send("EXEC") err=%s`, err.Error())
 		return err

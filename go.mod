@@ -12,6 +12,7 @@ require (
 	github.com/favclip/jwg v1.1.0
 	github.com/favclip/qbg v1.1.1
 	github.com/favclip/testerator v0.0.0-20181109065310-c967692c9c65
+	github.com/go-redis/redis/v7 v7.0.0-beta.4
 	github.com/golang/protobuf v1.3.2
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/pmezard/go-difflib v1.0.0 // indirect
