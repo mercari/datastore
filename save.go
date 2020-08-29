@@ -73,6 +73,8 @@ func saveStructProperty(ctx context.Context, props *[]Property, name string, opt
 		p.Value = v.Interface()
 
 	} else {
+		// PropertyTranslator returns nil often (e.g. datastore.Key(nil))
+		var allowNil bool
 		switch x := v.Interface().(type) {
 		case time.Time, GeoPoint:
 			p.Value = x
@@ -83,6 +85,7 @@ func saveStructProperty(ctx context.Context, props *[]Property, name string, opt
 				return err
 			}
 			p.Value = v
+			allowNil = true
 		default:
 			switch v.Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -153,7 +156,7 @@ func saveStructProperty(ctx context.Context, props *[]Property, name string, opt
 				}
 			}
 		}
-		if p.Value == nil {
+		if !allowNil && p.Value == nil {
 			return fmt.Errorf("datastore: unsupported struct field type: %v", v.Type())
 		}
 	}
