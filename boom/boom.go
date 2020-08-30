@@ -226,6 +226,7 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 	}
 
 	var parent datastore.Key
+	var key datastore.Key
 	var keyName string
 	var keyID int64
 	var kind string
@@ -250,35 +251,30 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 						return nil, err
 					}
 					if id, ok := pv.(int64); ok {
-						if keyID != 0 || keyName != "" {
+						if key != nil || keyID != 0 || keyName != "" {
 							return nil, fmt.Errorf("boom: Only one field may be marked id")
 						}
 						keyID = id
 					} else if name, ok := pv.(string); ok {
-						if keyID != 0 || keyName != "" {
+						if key != nil || keyID != 0 || keyName != "" {
 							return nil, fmt.Errorf("boom: Only one field may be marked id")
 						}
 						keyName = name
-					} else if key, ok := pv.(datastore.Key); ok {
-						if keyID != 0 || keyName != "" {
+					} else if propertyKey, ok := pv.(datastore.Key); ok {
+						if key != nil || keyID != 0 || keyName != "" {
 							return nil, fmt.Errorf("boom: Only one field may be marked id")
 						}
-						if key.ID() != 0 {
-							keyID = key.ID()
-						} else if key.Name() != "" {
-							keyName = key.Name()
-						}
-						// TODO check kind value
+						key = propertyKey
 					}
 				} else {
 					switch vf.Kind() {
 					case reflect.Int64:
-						if keyID != 0 || keyName != "" {
+						if key != nil || keyID != 0 || keyName != "" {
 							return nil, fmt.Errorf("boom: Only one field may be marked id")
 						}
 						keyID = vf.Int()
 					case reflect.String:
-						if keyID != 0 || keyName != "" {
+						if key != nil || keyID != 0 || keyName != "" {
 							return nil, fmt.Errorf("boom: Only one field may be marked id")
 						}
 						keyName = vf.String()
@@ -326,6 +322,25 @@ func (bm *Boom) KeyError(src interface{}) (datastore.Key, error) {
 
 	if kind == "" {
 		kind = t.Name()
+	}
+
+	if key != nil {
+		if key.ParentKey() != nil && parent != nil {
+			return nil, fmt.Errorf("boom: ID field returns key. don't use parent annotated field at same time")
+		}
+		if key.Kind() != kind {
+			return nil, fmt.Errorf("boom: ID field returns key that contains unexpected kind")
+		}
+
+		if key.ParentKey() != nil {
+			return key, nil
+		}
+
+		if keyName := key.Name(); keyName != "" {
+			return bm.Client.NameKey(kind, keyName, parent), nil
+		}
+
+		return bm.Client.IDKey(kind, key.ID(), parent), nil
 	}
 
 	if keyName != "" {
