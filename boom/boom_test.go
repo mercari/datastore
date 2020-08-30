@@ -3,6 +3,8 @@ package boom
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 
 	"go.mercari.io/datastore"
@@ -11,6 +13,7 @@ import (
 
 var _ datastore.PropertyTranslator = UserID(0)
 var _ datastore.PropertyTranslator = DataID(0)
+var _ datastore.PropertyTranslator = WithAncestorID("")
 var _ datastore.PropertyTranslator = IntID(0)
 var _ datastore.PropertyTranslator = StringID("")
 
@@ -18,6 +21,7 @@ type contextClient struct{}
 
 type UserID int64
 type DataID int64
+type WithAncestorID string
 
 type IntID int64
 type StringID string
@@ -48,6 +52,35 @@ func (id DataID) FromPropertyValue(ctx context.Context, p datastore.Property) (d
 		return nil, datastore.ErrInvalidEntityType
 	}
 	return DataID(key.ID()), nil
+}
+
+func (id WithAncestorID) ToPropertyValue(ctx context.Context) (interface{}, error) {
+	client := ctx.Value(contextClient{}).(datastore.Client)
+	ss := strings.SplitN(string(id), "-", 2)
+	if len(ss) != 2 {
+		return nil, fmt.Errorf("unexpected id format: %s", id)
+	}
+	userID, err := strconv.ParseInt(ss[0], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	dataID, err := strconv.ParseInt(ss[1], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	parentKey := client.IDKey("User", userID, nil)
+	key := client.IDKey("Data", dataID, parentKey)
+	return key, nil
+}
+
+func (id WithAncestorID) FromPropertyValue(ctx context.Context, p datastore.Property) (dst interface{}, err error) {
+	key, ok := p.Value.(datastore.Key)
+	if !ok {
+		return nil, datastore.ErrInvalidEntityType
+	}
+	userID := key.ParentKey().ID()
+	dataID := key.ID()
+	return WithAncestorID(fmt.Sprintf("%d-%d", userID, dataID)), nil
 }
 
 func (id IntID) ToPropertyValue(ctx context.Context) (interface{}, error) {
@@ -602,6 +635,34 @@ func TestBoom_TagIDWithPropertyTranslator(t *testing.T) {
 		}
 
 		err = bm.Get(&Data{ParentUserID: UserID(20), ID: DataID(100)})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	{ // Put & Get	 with boom:"id" that has ParentKey
+		type Data struct {
+			ID WithAncestorID `datastore:"-" boom:"id"`
+		}
+
+		key, err := bm.Put(&Data{ID: "20-100"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if v := key.Kind(); v != "Data" {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ID(); v != 100 {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ParentKey().Kind(); v != "User" {
+			t.Errorf("unexpected: %v", v)
+		}
+		if v := key.ParentKey().ID(); v != 20 {
+			t.Errorf("unexpected: %v", v)
+		}
+
+		err = bm.Get(&Data{ID: "20-100"})
 		if err != nil {
 			t.Fatal(err)
 		}
