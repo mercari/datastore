@@ -9,10 +9,9 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/gomodule/redigo/redis"
+	redis "github.com/go-redis/redis/v7"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/dslog"
 	"go.mercari.io/datastore/dsmiddleware/storagecache"
@@ -57,15 +56,20 @@ func TestRedisCache_Basic(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer dial.Close()
-	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
-	defer conn.Close()
+
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+		DB:   0,
+	})
+
 	ch := New(
-		conn,
+		redisClient,
 		WithLogger(logf),
 	)
 	client.AppendMiddleware(ch)
 	defer func() {
-		_, err := conn.Do("FLUSHALL")
+		_, err := redisClient.FlushAll().Result()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -169,16 +173,19 @@ func TestRedisCache_BasicWithoutExpire(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer dial.Close()
-	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
-	defer conn.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+		DB:   0,
+	})
+
 	ch := New(
-		conn,
-		WithExpireDuration(0),
+		redisClient,
 		WithLogger(logf),
 	)
 	client.AppendMiddleware(ch)
 	defer func() {
-		_, err := conn.Do("FLUSHALL")
+		_, err := redisClient.FlushAll().Result()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -282,15 +289,20 @@ func TestRedisCache_Query(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer dial.Close()
-	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
-	defer conn.Close()
+
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+		DB:   0,
+	})
+
 	ch := New(
-		conn,
+		redisClient,
 		WithLogger(logf),
 	)
 	client.AppendMiddleware(ch)
 	defer func() {
-		_, err := conn.Do("FLUSHALL")
+		_, err := redisClient.FlushAll().Result()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -416,15 +428,20 @@ func TestRedisCache_Transaction(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer dial.Close()
-	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
-	defer conn.Close()
+
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+		DB:   0,
+	})
+
 	ch := New(
-		conn,
+		redisClient,
 		WithLogger(logf),
 	)
 	client.AppendMiddleware(ch)
 	defer func() {
-		_, err := conn.Do("FLUSHALL")
+		_, err := redisClient.FlushAll().Result()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -628,15 +645,20 @@ func TestRedisCache_MultiError(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer dial.Close()
-	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
-	defer conn.Close()
+
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+		DB:   0,
+	})
+
 	ch := New(
-		conn,
+		redisClient,
 		WithLogger(logf),
 	)
 	client.AppendMiddleware(ch)
 	defer func() {
-		_, err := conn.Do("FLUSHALL")
+		_, err := redisClient.FlushAll().Result()
 		if err != nil {
 			t.Fatal(err)
 		}

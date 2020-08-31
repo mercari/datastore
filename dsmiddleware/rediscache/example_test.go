@@ -2,10 +2,9 @@ package rediscache_test
 
 import (
 	"context"
-	"net"
-	"time"
+	"github.com/go-redis/redis/v7"
+	"os"
 
-	"github.com/gomodule/redigo/redis"
 	"go.mercari.io/datastore/clouddatastore"
 	"go.mercari.io/datastore/dsmiddleware/rediscache"
 	"go.mercari.io/datastore/internal/testutils"
@@ -22,14 +21,11 @@ func Example_howToUse() {
 	defer client.Close()
 	defer testutils.CleanUpAllEntities(ctx, client)
 
-	dial, err := net.Dial("tcp", redisAddress)
-	if err != nil {
-		panic(err)
-	}
-	defer dial.Close()
-	conn := redis.NewConn(dial, 100*time.Millisecond, 100*time.Millisecond)
-	defer conn.Close()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+		DB:   0,
+	})
 
-	mw := rediscache.New(conn)
+	mw := rediscache.New(redisClient)
 	client.AppendMiddleware(mw)
 }
