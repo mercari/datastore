@@ -224,7 +224,7 @@ type Query interface {
 	Order(fieldName string) Query
 	Project(fieldNames ...string) Query
 	Distinct() Query
-	DistinctOn(fieldNames ...string) *Query
+	DistinctOn(fieldNames ...string) Query
 	KeysOnly() Query
 	Limit(limit int) Query
 	Offset(offset int) Query

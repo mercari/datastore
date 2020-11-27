@@ -108,6 +108,13 @@ func (q *queryImpl) Project(fieldNames ...string) w.Query {
 	return q
 }
 
+func (q *queryImpl) DistinctOn(fieldNames ...string) w.Query {
+	q = q.clone()
+	q.q = q.q.DistinctOn(fieldNames...)
+	q.dump.DistinctOn = append([]string(nil), fieldNames...)
+	return q
+}
+
 func (q *queryImpl) Distinct() w.Query {
 	q = q.clone()
 	q.q = q.q.Distinct()
