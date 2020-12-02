@@ -57,6 +57,7 @@ type QueryDump struct {
 	Filter              []*QueryFilterCondition
 	Order               []string
 	Project             []string
+	DistinctOn          []string
 	Distinct            bool
 	KeysOnly            bool
 	Limit               int
