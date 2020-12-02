@@ -3,16 +3,16 @@ jobs:
   build:
     working_directory: /go/src/go.mercari.io/datastore
     docker:
-      - image: google/cloud-sdk:236.0.0
+      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:319.0.0
         environment:
           GOPATH: /go
-          GOLANG_VERSION: "1.12"
+          GOLANG_VERSION: "1.11.13"
           GO111MODULE: "on"
           PROJECT_ID: datastore-wrapper
-      - image: google/cloud-sdk:236.0.0
+      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:319.0.0
         command: ['gcloud', '--project=datastore-wrapper', 'beta', 'emulators', 'datastore', 'start', '--host-port=localhost:8081', '--no-store-on-disk', '--consistency=1.0']
-      - image: redis:4-alpine
-      - image: memcached:1.5-alpine
+      - image: redis:6-alpine
+      - image: memcached:1.6-alpine
     steps:
       - checkout
 
@@ -25,23 +25,29 @@ jobs:
           name: install go binary
           command: |
             echo $PATH
-            /usr/bin/curl -v -o go.tar.gz https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
+            /usr/bin/curl -v -L -o go.tar.gz https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
             tar -zxf go.tar.gz && \
             mv go /usr/local && \
             rm go.tar.gz
-
       - run:
-          name: apply monkey patch
-          command: chmod +x /usr/lib/google-cloud-sdk/platform/google_appengine/goapp
+          name: setup appengine env
+          command: |
+            chmod +x /usr/lib/google-cloud-sdk/platform/google_appengine/appcfg.py
+            # ↓checker
+            # python "$(which dev_appserver.py)" --port=0 --api_port=0 --automatic_restart=false --skip_sdk_update_check=true --clear_datastore=true --clear_search_indexes=true --datastore_path=./datastore-tmp --datastore_consistency_policy=consistent --support_datastore_emulator=true ./
+            python --version
+            curl https://bootstrap.pypa.io/get-pip.py --output get-pip.py
+            python get-pip.py
+            python -m pip install grpcio==1.20.0
 
       - restore_cache:
           keys:
-            - gomod-cache-{{ checksum "go.sum" }}
+            - gomod-cache-{{ checksum "go.mod" }}-{{ checksum "go.sum" }}
       - run:
           name: setup
           command: ./setup.sh
       - save_cache:
-          key: gomod-cache-{{ checksum "go.sum" }}
+          key: gomod-cache-{{ checksum "go.mod" }}-{{ checksum "go.sum" }}
           paths:
             - /go/pkg/mod
       - run:

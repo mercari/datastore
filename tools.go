@@ -9,5 +9,4 @@ import (
 	_ "github.com/favclip/qbg"
 	_ "golang.org/x/lint/golint"
 	_ "golang.org/x/tools/cmd/goimports"
-	_ "honnef.co/go/tools/cmd/staticcheck"
 )
