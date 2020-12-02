@@ -1,3 +1,29 @@
+# [1.7.0](https://github.com/mercari/datastore/compare/v1.6.3...v1.7.0) (2020-12-02)
+
+
+### Features
+
+* **core:** added DistinctOn to Query interface. thanks @IzumiSy ! ([4cfa5e](https://github.com/mercari/datastore/commit/4cfa5e1a1d38db4c067b95ac7bc1ab42f8d2e9d9))
+* **all:** update dependencies ([b311cfc](https://github.com/mercari/datastore/commit/b311cfc8a9f7cec47dc7fd93ae97d00aa3379e94))
+
+
+
+## [1.6.3](https://github.com/mercari/datastore/compare/v1.6.2...v1.6.3) (2020-08-30)
+
+
+### Features
+
+* **boom:** support PropertyTranslator return Key with ParentKey ([c8a9cc](https://github.com/mercari/datastore/commit/c8a9cc))
+
+
+## [1.6.2](https://github.com/mercari/datastore/compare/v1.6.1...v1.6.2) (2020-08-30)
+
+
+### Bug Fixes
+
+* **core:** allow nil when PropertyTranslator returns nil value ([3a7754](https://github.com/mercari/datastore/commit/3a7754))
+
+
 ## [1.6.1](https://github.com/mercari/datastore/compare/v1.6.0...v1.6.1) (2019-09-02)
 
 
