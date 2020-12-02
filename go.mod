@@ -1,27 +1,24 @@
 module go.mercari.io/datastore
 
-go 1.12
+go 1.11
 
 require (
-	cloud.google.com/go v0.44.3
-	cloud.google.com/go/bigquery v1.0.1 // indirect
-	cloud.google.com/go/datastore v1.0.0
-	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/bradfitz/gomemcache v0.0.0-20190329173943-551aad21a668
-	github.com/favclip/genbase v1.0.0 // indirect
+	cloud.google.com/go v0.72.0
+	cloud.google.com/go/datastore v1.3.0
+	github.com/MakeNowJust/heredoc/v2 v2.0.1
+	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
+	github.com/favclip/genbase v1.1.0 // indirect
 	github.com/favclip/jwg v1.1.0
 	github.com/favclip/qbg v1.1.1
-	github.com/favclip/testerator v0.0.0-20181109065310-c967692c9c65
-	github.com/golang/protobuf v1.3.2
-	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/lint v0.0.0-20190409202823-959b441ac422
-	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58
-	golang.org/x/tools v0.0.0-20190830223141-573d9926052a
-	google.golang.org/api v0.9.0
-	google.golang.org/appengine v1.6.2
-	google.golang.org/grpc v1.23.0
-	honnef.co/go/tools v0.0.1-2019.2.2
+	github.com/favclip/testerator v1.2.0
+	github.com/golang/protobuf v1.4.3
+	github.com/gomodule/redigo v1.8.3
+	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
+	golang.org/x/net v0.0.0-20201201195509-5d6afe98e0b7
+	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+	golang.org/x/tools v0.0.0-20201201210846-92771a23d8e3
+	google.golang.org/api v0.35.0
+	google.golang.org/appengine v1.6.7
+	google.golang.org/grpc v1.33.2
 )

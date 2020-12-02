@@ -8,14 +8,13 @@ packages_wo_internal=`go list ./... | grep -v internal`
 
 # Apply tools
 export PATH=$(pwd)/build-cmd:$PATH
-which goimports golint staticcheck jwg qbg
+which goimports golint jwg qbg
 goimports -w $targets
 for package in $packages
 do
     go vet $package
 done
 golint -set_exit_status -min_confidence 0.6 $packages_wo_internal
-staticcheck $packages
 go generate $packages
 
 export DATASTORE_EMULATOR_HOST=localhost:8081
