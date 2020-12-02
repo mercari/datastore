@@ -1,3 +1,12 @@
+## [1.7.1](https://github.com/mercari/datastore/compare/v1.7.0...v1.7.1) (2020-12-02)
+
+
+### Bug Fixes
+
+* **core:** downgrade unsupported go version dependents ([e3afd4c](https://github.com/mercari/datastore/commit/e3afd4ce752aa072a5fab89e8025c63c0913ca8c))
+
+
+
 # [1.7.0](https://github.com/mercari/datastore/compare/v1.6.3...v1.7.0) (2020-12-02)
 
 
