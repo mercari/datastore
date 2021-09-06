@@ -1,3 +1,14 @@
+# [1.8.0](https://github.com/mercari/datastore/compare/v1.7.1...v1.8.0) (2021-09-06)
+
+
+### Features
+
+* **aedatastore:** don't specify time.Local on property value ([192d92b](https://github.com/mercari/datastore/commit/192d92bdc5f3c9b99321046d5a5cb558e6a461c5))
+* **ci:** update Circle CI settings ([7a7b110](https://github.com/mercari/datastore/commit/7a7b110373336088a18a6abb6f08b35f65d186fa))
+* **core:** update dependencies ([bcf71f5](https://github.com/mercari/datastore/commit/bcf71f5b3d15b105975d8034d01e52ede7879d20))
+
+
+
 ## [1.7.1](https://github.com/mercari/datastore/compare/v1.7.0...v1.7.1) (2020-12-02)
 
 
