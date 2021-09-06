@@ -72,8 +72,8 @@ func putAndGetTimeTime(ctx context.Context, t *testing.T, client datastore.Clien
 		t.Fatal(err)
 	}
 
-	// load by time.Local
-	if v := obj.At.Location(); v != time.Local {
+	// load by time.UTC
+	if v := obj.At.Location(); v != time.UTC {
 		t.Errorf("unexpected: %v", v)
 	}
 	if v := obj.At.UnixNano(); v != now.Truncate(time.Microsecond).UnixNano() {
