@@ -3,13 +3,13 @@ jobs:
   build:
     working_directory: /go/src/go.mercari.io/datastore
     docker:
-      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:319.0.0
+      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:355.0.0
         environment:
           GOPATH: /go
           GOLANG_VERSION: "1.11.13"
           GO111MODULE: "on"
           PROJECT_ID: datastore-wrapper
-      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:319.0.0
+      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:355.0.0
         command: ['gcloud', '--project=datastore-wrapper', 'beta', 'emulators', 'datastore', 'start', '--host-port=localhost:8081', '--no-store-on-disk', '--consistency=1.0']
       - image: redis:6-alpine
       - image: memcached:1.6-alpine
@@ -29,16 +29,6 @@ jobs:
             tar -zxf go.tar.gz && \
             mv go /usr/local && \
             rm go.tar.gz
-      - run:
-          name: setup appengine env
-          command: |
-            chmod +x /usr/lib/google-cloud-sdk/platform/google_appengine/appcfg.py
-            # ↓checker
-            # python "$(which dev_appserver.py)" --port=0 --api_port=0 --automatic_restart=false --skip_sdk_update_check=true --clear_datastore=true --clear_search_indexes=true --datastore_path=./datastore-tmp --datastore_consistency_policy=consistent --support_datastore_emulator=true ./
-            python --version
-            curl https://bootstrap.pypa.io/get-pip.py --output get-pip.py
-            python get-pip.py
-            python -m pip install grpcio==1.20.0
 
       - restore_cache:
           keys:
