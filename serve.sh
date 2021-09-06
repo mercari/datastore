@@ -1,3 +1,3 @@
 #!/bin/sh -eux
 
-docker-compose up
+docker compose up
