@@ -75,9 +75,29 @@ func (rh *retryHandler) try(ctx context.Context, logPrefix string, f func() erro
 		} else if err == context.DeadlineExceeded || err == context.Canceled {
 			// for appengine datastore
 			return
-		} else if code := status.Code(err); code == codes.DeadlineExceeded || code == codes.Canceled {
+		} else if code := status.Code(err); code != codes.Unknown {
 			// for cloud datastore
-			return
+			// https://cloud.google.com/datastore/docs/concepts/errors?hl=en#error_codes
+			switch code {
+			case codes.Aborted,
+				codes.AlreadyExists,
+				codes.FailedPrecondition,
+				codes.InvalidArgument,
+				codes.NotFound,
+				codes.PermissionDenied,
+				codes.Unauthenticated:
+				return
+			case codes.Internal:
+				if try != 1 {
+					// Do not retry this request more than once.
+					return
+				}
+			case codes.Canceled:
+				// not documented. but this error occurred by requester parameter.
+				return
+			default:
+				// retry
+			}
 		}
 
 		if rh.retryLimit <= try {
