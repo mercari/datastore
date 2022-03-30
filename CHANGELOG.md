@@ -1,3 +1,12 @@
+## [1.8.1](https://github.com/mercari/datastore/compare/v1.8.0...v1.8.1) (2022-03-30)
+
+
+### Bug Fixes
+
+* **dsmiddleware/rpcretry:** don't retry when receive definitive error ([99472f4](https://github.com/mercari/datastore/commit/99472f4f6e99a4d0d826d1bc500a44a23c49fb9a))
+
+
+
 # [1.8.0](https://github.com/mercari/datastore/compare/v1.7.1...v1.8.0) (2021-09-06)
 
 
