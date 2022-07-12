@@ -3,9 +3,9 @@ package aedatastore
 import (
 	"testing"
 
-	"github.com/favclip/testerator"
-	_ "github.com/favclip/testerator/datastore"
-	_ "github.com/favclip/testerator/memcache"
+	"github.com/favclip/testerator/v2"
+	_ "github.com/favclip/testerator/v2/datastore"
+	_ "github.com/favclip/testerator/v2/memcache"
 
 	"go.mercari.io/datastore/testsuite"
 	_ "go.mercari.io/datastore/testsuite/dsmiddleware/dslog"
