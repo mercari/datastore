@@ -1,0 +1,83 @@
+name: 'CI'
+
+on:
+  push:
+    branches:
+      - master
+      - feat-github-actions
+  pull_request_target: {}
+
+env:
+  GCLOUD_VERSION: "355.0.0"
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      matrix:
+        go_version:
+          - ~1.11
+          - ~1.12
+          - ~1.16
+    permissions:
+      contents: read
+    services:
+      # 本当はservicesで動かしたいけどオプションを指定して実行ができないっぽいので諦めるしかない…
+      # datastore_emulator:
+      #   image: gcr.io/google.com/cloudsdktool/cloud-sdk:355.0.0
+      #   ports:
+      #     - "8081:8081"
+      #   options: |-
+      #     --entrypoint "gcloud --project=datastore-wrapper beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --consistency=1.0"
+      #     --health-cmd "curl http://localhost:8081 --silent --retry-connrefused"
+      #     --health-interval 1s
+      #     --health-retries 30
+      redis:
+        image: redis:6-alpine
+        ports:
+          - "6379:6379"
+      memcached:
+        image: memcached:1.6-alpine
+        ports:
+          - "11211:11211"
+    env:
+      GO111MODULE: "on"
+      DATASTORE_EMULATOR_HOST: "localhost:8081"
+      DATASTORE_PROJECT_ID:    "unittest"
+      MEMCACHED_HOST: "localhost:11211"
+      GOOGLE_CLOUD_PROJECT: "unittest"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # pull_request_target の場合PRのhead(場合によってはvulnerable)、そうじゃなければcontextのsha
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go_version }}
+      - name: Cache go dependencies
+        uses: actions/cache@v3
+        id: cache
+        with:
+          key: ${{ runner.os }}-go-cache-r1-${{ matrix.go_version }}-${{ hashFiles('**/go.mod') }}-${{ hashFiles('**/go.sum') }}
+          path: |-
+            ~/go/pkg/mod
+            build-cmd
+      - name: Prepare dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |-
+          ./setup.sh
+          ls -la build-cmd
+      - uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: ${{ env.GCLOUD_VERSION }}
+          project_id: ${{ env.DATASTORE_PROJECT_ID }}
+          install_components: "beta,cloud-datastore-emulator,app-engine-go"
+      - name: Spinup Datastore Emulator
+        run: |-
+          gcloud beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --consistency=1.0 &
+          curl http://localhost:8081 --silent --retry 30 --retry-connrefused --retry-delay 1
+      - name: Run tests
+        run: |-
+          ./test.sh -v -timeout 4m
