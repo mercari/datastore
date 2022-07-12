@@ -1,3 +1,14 @@
+## [1.8.2](https://github.com/mercari/datastore/compare/v1.8.1...v1.8.2) (2022-07-12)
+
+
+### Features
+
+* **ci:** add .github/workflows/cicd.yml ([737dc56](https://github.com/mercari/datastore/commit/737dc5633283df543227de45288323d733ee1485))
+* **ci:** stop using Circle CI ([17d343d](https://github.com/mercari/datastore/commit/17d343dbd0eee4af3be406d4f61797181ff93c81))
+* **core:** update testerator to v2 ([a431428](https://github.com/mercari/datastore/commit/a431428355af7bd8fb3228021cb0953047aed25b))
+
+
+
 ## [1.8.1](https://github.com/mercari/datastore/compare/v1.8.0...v1.8.1) (2022-03-30)
 
 
