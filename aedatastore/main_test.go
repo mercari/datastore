@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/favclip/testerator"
+	"github.com/favclip/testerator/v2"
 )
 
 func TestMain(m *testing.M) {

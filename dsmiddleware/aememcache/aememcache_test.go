@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/favclip/testerator"
-	_ "github.com/favclip/testerator/datastore"
-	_ "github.com/favclip/testerator/memcache"
+	"github.com/favclip/testerator/v2"
+	_ "github.com/favclip/testerator/v2/datastore"
+	_ "github.com/favclip/testerator/v2/memcache"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"go.mercari.io/datastore"
