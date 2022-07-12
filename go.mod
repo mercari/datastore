@@ -1,9 +1,9 @@
 module go.mercari.io/datastore
 
-go 1.11
+go 1.16
 
 require (
-	cloud.google.com/go v0.103.0
+	cloud.google.com/go v0.103.0 // indirect
 	cloud.google.com/go/compute v1.7.0
 	cloud.google.com/go/datastore v1.8.0
 	github.com/MakeNowJust/heredoc/v2 v2.0.1

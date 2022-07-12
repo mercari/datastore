@@ -6,7 +6,7 @@ jobs:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:392.0.0
         environment:
           GOPATH: /go
-          GOLANG_VERSION: "1.11.13"
+          GOLANG_VERSION: "1.16.15"
           GO111MODULE: "on"
           PROJECT_ID: datastore-wrapper
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:392.0.0
