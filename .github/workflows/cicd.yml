@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - feat-github-actions
   pull_request_target: {}
 
 env:
