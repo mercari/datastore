@@ -7,7 +7,7 @@ on:
   pull_request_target: {}
 
 env:
-  GCLOUD_VERSION: "355.0.0"
+  GCLOUD_VERSION: "392.0.0"
 
 jobs:
   test:
@@ -25,11 +25,11 @@ jobs:
     services:
       # 本当はservicesで動かしたいけどオプションを指定して実行ができないっぽいので諦めるしかない…
       # datastore_emulator:
-      #   image: gcr.io/google.com/cloudsdktool/cloud-sdk:355.0.0
+      #   image: gcr.io/google.com/cloudsdktool/cloud-sdk:392.0.0
       #   ports:
       #     - "8081:8081"
       #   options: |-
-      #     --entrypoint "gcloud --project=datastore-wrapper beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --consistency=1.0"
+      #     --entrypoint "gcloud --project=datastore-wrapper beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --use-firestore-in-datastore-mode"
       #     --health-cmd "curl http://localhost:8081 --silent --retry-connrefused"
       #     --health-interval 1s
       #     --health-retries 30
@@ -75,7 +75,7 @@ jobs:
           install_components: "beta,cloud-datastore-emulator,app-engine-go"
       - name: Spinup Datastore Emulator
         run: |-
-          gcloud beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --consistency=1.0 &
+          gcloud beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --use-firestore-in-datastore-mode &
           curl http://localhost:8081 --silent --retry 30 --retry-connrefused --retry-delay 1
       - name: Run tests
         run: |-
