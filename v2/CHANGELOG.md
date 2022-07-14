@@ -1,3 +1,21 @@
+# [2.0.0](https://github.com/mercari/datastore/compare/v1.8.2...v2.0.0) (2022-07-14)
+
+add `go.mercari.io/datastore/v2` module.
+This module uses `google.golang.org/appengine/v2` package instead of `google.golang.org/appengine`.
+
+If you use GeoPoint with gob, `go.mercari.io/datastore/v2.GeoPoint` is not same struct about `go.mercari.io/datastore.GeoPoint`.
+Be careful.
+
+### Features
+
+* **all:** create v2 module with google.golang.org/appengine/v2 ([d93c630](https://github.com/mercari/datastore/commit/d93c630659946150ec1a95c5114bb7f7370ef8a0))
+* **ci:** change cache key ([da6cf1b](https://github.com/mercari/datastore/commit/da6cf1bb4acd38b4e980aba98a7c00f35d200e4e))
+* **ci:** prepare v2 ([21b85eb](https://github.com/mercari/datastore/commit/21b85ebc5927352d3e09f545d1a543935ee18565))
+* **ci:** test v1 with go 1.11 only ([a62d5ce](https://github.com/mercari/datastore/commit/a62d5ce90784e766b063bf8aaf16b820019c4a9a))
+* **ci:** update gcloud sdk version & use --use-firestore-in-datastore-mode flag to Cloud Datastore Emulator ([99c65a0](https://github.com/mercari/datastore/commit/99c65a0d71b278dc2cbbd636c0007cf2dd465e6d))
+
+
+
 ## [1.8.2](https://github.com/mercari/datastore/compare/v1.8.1...v1.8.2) (2022-07-12)
 
 
