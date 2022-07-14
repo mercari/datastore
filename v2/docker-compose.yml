@@ -1,0 +1,17 @@
+version: "3"
+services:
+  dsemu:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:392.0.0
+    ports:
+      - "8081:8081"
+    command: gcloud --project=datastore-wrapper beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --use-firestore-in-datastore-mode
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+
+  memcached:
+    image: memcached:1.6-alpine
+    ports:
+      - "11211:11211"

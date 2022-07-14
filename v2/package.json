@@ -1,0 +1,12 @@
+{
+  "name": "datastore",
+  "version": "1.8.2",
+  "private": true,
+  "scripts": {
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "conventional-changelog-cli": "^2.2.2"
+  }
+}

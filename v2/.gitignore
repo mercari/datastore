@@ -1,0 +1,10 @@
+.DS_Store
+
+.idea/
+
+node_modules/
+
+vendor/
+build-cmd/
+
+coverage.txt
