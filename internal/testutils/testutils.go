@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/favclip/testerator/v2"
+	testeratorv3 "github.com/favclip/testerator/v3"
 	"go.mercari.io/datastore"
-	"go.mercari.io/datastore/aedatastore"
+	"go.mercari.io/datastore/aedatastorev2"
 	"go.mercari.io/datastore/clouddatastore"
 	"google.golang.org/api/iterator"
 )
@@ -71,19 +71,19 @@ func SetupCloudDatastore(t *testing.T) (context.Context, datastore.Client, func(
 	}
 }
 
-// SetupAEDatastore returns AEDatastore clients and function for cleaning.
-func SetupAEDatastore(t *testing.T) (context.Context, datastore.Client, func()) {
-	_, ctx, err := testerator.SpinUp()
+// SetupAEDatastoreV2 returns AEDatastore clients and function for cleaning.
+func SetupAEDatastoreV2(t *testing.T) (context.Context, datastore.Client, func()) {
+	_, ctx, err := testeratorv3.SpinUp()
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	client, err := aedatastore.FromContext(ctx)
+	client, err := aedatastorev2.FromContext(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return ctx, client, func() { testerator.SpinDown() }
+	return ctx, client, func() { testeratorv3.SpinDown() }
 }
 
 // CleanUpAllEntities in Datastore

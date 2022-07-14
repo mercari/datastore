@@ -1,4 +1,4 @@
-package aememcache
+package aememcachev2
 
 import (
 	"bytes"
@@ -9,17 +9,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/favclip/testerator/v2"
-	_ "github.com/favclip/testerator/v2/datastore"
-	_ "github.com/favclip/testerator/v2/memcache"
+	"github.com/favclip/testerator/v3"
+	_ "github.com/favclip/testerator/v3/datastore"
+	_ "github.com/favclip/testerator/v3/memcache"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"go.mercari.io/datastore"
 	"go.mercari.io/datastore/dsmiddleware/dslog"
 	"go.mercari.io/datastore/dsmiddleware/storagecache"
-	"go.mercari.io/datastore/internal/testutilsv1"
+	"go.mercari.io/datastore/internal/testutils"
 	"google.golang.org/api/iterator"
-	"google.golang.org/appengine/memcache"
+	"google.golang.org/appengine/v2/memcache"
 )
 
 func TestMain(m *testing.M) {
@@ -54,7 +54,7 @@ func inCache(ctx context.Context, ch storagecache.Storage, key datastore.Key) (b
 }
 
 func TestAEMemcacheCache_Basic(t *testing.T) {
-	ctx, client, cleanUp := testutilsv1.SetupAEDatastore(t)
+	ctx, client, cleanUp := testutils.SetupAEDatastoreV2(t)
 	defer cleanUp()
 
 	var logs []string
@@ -154,7 +154,7 @@ func TestAEMemcacheCache_Basic(t *testing.T) {
 }
 
 func TestAEMemcacheCache_Query(t *testing.T) {
-	ctx, client, cleanUp := testutilsv1.SetupAEDatastore(t)
+	ctx, client, cleanUp := testutils.SetupAEDatastoreV2(t)
 	defer cleanUp()
 
 	var logs []string
@@ -277,7 +277,7 @@ func TestAEMemcacheCache_Query(t *testing.T) {
 }
 
 func TestAEMemcacheCache_Transaction(t *testing.T) {
-	ctx, client, cleanUp := testutilsv1.SetupAEDatastore(t)
+	ctx, client, cleanUp := testutils.SetupAEDatastoreV2(t)
 	defer cleanUp()
 
 	var logs []string
@@ -506,7 +506,7 @@ func TestAEMemcacheCache_Transaction(t *testing.T) {
 }
 
 func TestAEMemcacheCache_MultiError(t *testing.T) {
-	ctx, client, cleanUp := testutilsv1.SetupAEDatastore(t)
+	ctx, client, cleanUp := testutils.SetupAEDatastoreV2(t)
 	defer cleanUp()
 
 	var logs []string

@@ -12,6 +12,7 @@ require (
 	github.com/favclip/jwg v1.1.0
 	github.com/favclip/qbg v1.1.1
 	github.com/favclip/testerator/v2 v2.0.0
+	github.com/favclip/testerator/v3 v3.0.0
 	github.com/golang/protobuf v1.5.2
 	github.com/gomodule/redigo v1.8.5
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
@@ -21,5 +22,6 @@ require (
 	golang.org/x/tools v0.1.5
 	google.golang.org/api v0.56.0
 	google.golang.org/appengine v1.6.7
+	google.golang.org/appengine/v2 v2.0.1
 	google.golang.org/grpc v1.40.0
 )

@@ -9,13 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/favclip/testerator/v2"
-	_ "github.com/favclip/testerator/v2/datastore"
-	_ "github.com/favclip/testerator/v2/memcache"
+	"github.com/favclip/testerator/v3"
+	_ "github.com/favclip/testerator/v3/datastore"
+	_ "github.com/favclip/testerator/v3/memcache"
 
-	netcontext "golang.org/x/net/context"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/v2"
+	"google.golang.org/appengine/v2/datastore"
 )
 
 type AEDatastoreStruct struct {
@@ -135,7 +134,7 @@ func TestAEDatastore_Transaction(t *testing.T) {
 		rollbackErr := errors.New("rollback requested")
 
 		go func() {
-			err := datastore.RunInTransaction(ctx, func(ctx netcontext.Context) error {
+			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				t.Logf("into datastore.RunInTransaction")
 
 				ctxC <- ctx
@@ -250,7 +249,7 @@ func TestAEDatastore_TransactionDeleteAndGet(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	err = datastore.RunInTransaction(ctx, func(ctx netcontext.Context) error {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		err := datastore.Delete(ctx, key)
 		if err != nil {
 			return err
@@ -398,13 +397,13 @@ func TestAEDatastore_ErrConcurrentTransaction(t *testing.T) {
 	}
 
 	// ErrConcurrentTransaction will be occur
-	err = datastore.RunInTransaction(ctx, func(txCtx1 netcontext.Context) error {
+	err = datastore.RunInTransaction(ctx, func(txCtx1 context.Context) error {
 		err := datastore.Get(txCtx1, key, &Data{})
 		if err != nil {
 			return err
 		}
 
-		err = datastore.RunInTransaction(ctx, func(txCtx2 netcontext.Context) error {
+		err = datastore.RunInTransaction(ctx, func(txCtx2 context.Context) error {
 			err := datastore.Get(txCtx2, key, &Data{})
 			if err != nil {
 				return err
