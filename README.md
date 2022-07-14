@@ -1,7 +1,6 @@
-# Datastore Wrapper [![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)][godoc] [![CircleCI](https://circleci.com/gh/mercari/datastore.svg?style=svg)][circleci]
+# Datastore Wrapper [![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)][godoc] [![CI](https://github.com/mercari/datastore/actions/workflows/cicd.yml/badge.svg)](https://github.com/mercari/datastore/actions/workflows/cicd.yml)
 
-[godoc]: https://godoc.org/go.mercari.io/datastore
-[circleci]: https://circleci.com/gh/mercari/datastore
+[godoc]: https://pkg.go.dev/go.mercari.io/datastore/v2
 
 (AppEngine | Cloud) Datastore wrapper for Go 👉
 
@@ -10,8 +9,10 @@ Happy.
 Respect standard library.
 
 ```
-$ go get -u go.mercari.io/datastore
+$ go get -u go.mercari.io/datastore/v2
 ```
+
+see [v2 doc](https://pkg.go.dev/go.mercari.io/datastore/v2) at first.
 
 ## Feature
 
@@ -76,12 +77,6 @@ https://www.mercari.com/cla/
 $ ./setup.sh # exec once
 $ ./serve.sh # exec in background
 $ ./test.sh
-```
-
-2. Testing with [Circle CI CLI](https://circleci.com/docs/2.0/local-jobs/)
-
-```
-$ circleci build
 ```
 
 ## License

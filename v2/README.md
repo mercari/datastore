@@ -1,7 +1,6 @@
-# Datastore Wrapper [![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)][godoc] [![CircleCI](https://circleci.com/gh/mercari/datastore.svg?style=svg)][circleci]
+# Datastore Wrapper [![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)][godoc] [![CI](https://github.com/mercari/datastore/actions/workflows/cicd.yml/badge.svg)](https://github.com/mercari/datastore/actions/workflows/cicd.yml)
 
-[godoc]: https://godoc.org/go.mercari.io/datastore
-[circleci]: https://circleci.com/gh/mercari/datastore
+[godoc]: https://pkg.go.dev/go.mercari.io/datastore/v2
 
 (AppEngine | Cloud) Datastore wrapper for Go 👉
 
@@ -10,14 +9,14 @@ Happy.
 Respect standard library.
 
 ```
-$ go get -u go.mercari.io/datastore
+$ go get -u go.mercari.io/datastore/v2
 ```
 
 ## Feature
 
 ### DO
 
-* Wrap `google.golang.org/appengine/datastore` and `cloud.google.com/go/datastore`
+* Wrap `google.golang.org/appengine/v2/datastore` and `cloud.google.com/go/datastore`
     * keep key behavior
     * align to `cloud.google.com/go/datastore` first
 * Re-implement datastore package
@@ -51,7 +50,6 @@ $ go get -u go.mercari.io/datastore
 * `aedatastore` package
     * When using slice of struct, MUST specified `datastore:",flatten"` option.
         * original (ae & cloud) datastore.SaveStruct have different behaviors.
-        * see aeprodtest/main.go `/api/test3`
 
 ## Committers
 
@@ -76,12 +74,6 @@ https://www.mercari.com/cla/
 $ ./setup.sh # exec once
 $ ./serve.sh # exec in background
 $ ./test.sh
-```
-
-2. Testing with [Circle CI CLI](https://circleci.com/docs/2.0/local-jobs/)
-
-```
-$ circleci build
 ```
 
 ## License
