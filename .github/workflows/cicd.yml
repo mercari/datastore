@@ -14,9 +14,8 @@ jobs:
     strategy:
       matrix:
         go_version:
-          - ~1.11
-          - ~1.12
           - ~1.16
+          - ~1.18
     defaults:
       run:
         working-directory: v2
