@@ -221,6 +221,7 @@ type Query interface {
 	Namespace(ns string) Query
 	Transaction(t Transaction) Query
 	Filter(filterStr string, value interface{}) Query
+	FilterField(fieldName, operator string, value interface{}) Query
 	Order(fieldName string) Query
 	Project(fieldNames ...string) Query
 	Distinct() Query
