@@ -1,3 +1,13 @@
+# [2.1.0](https://github.com/mercari/datastore/compare/v2.0.0...v2.1.0) (2022-07-15)
+
+From this version, minimum go version is 1.16.
+
+### Features
+
+* **core:** update dependencies and update minimum go version to 1.16 ([03f4a2f](https://github.com/mercari/datastore/commit/03f4a2fe6366c9cf8ecfa85967432e57c86e1d64))
+
+
+
 # [2.0.0](https://github.com/mercari/datastore/compare/v1.8.2...v2.0.0) (2022-07-14)
 
 add `go.mercari.io/datastore/v2` module.
