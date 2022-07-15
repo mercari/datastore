@@ -1,3 +1,12 @@
+# [2.2.0](https://github.com/mercari/datastore/compare/v2.1.0...v2.2.0) (2022-07-15)
+
+
+### Features
+
+* **core:** add `FilterField` method to datastore.Query ([8e822aa](https://github.com/mercari/datastore/commit/8e822aa22c55165646e0c205531b38a38bd9668e)) [#97](https://github.com/mercari/datastore/issues/97)
+
+
+
 # [2.1.0](https://github.com/mercari/datastore/compare/v2.0.0...v2.1.0) (2022-07-15)
 
 From this version, minimum go version is 1.16.
