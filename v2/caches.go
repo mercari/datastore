@@ -94,7 +94,9 @@ func (dump *QueryDump) String() string {
 	if l := len(dump.Filter); l != 0 {
 		b.WriteString("&f=")
 		for idx, f := range dump.Filter {
-			b.WriteString(f.Filter)
+			b.WriteString(f.FieldName)
+			b.WriteString("|")
+			b.WriteString(f.Operator)
 			b.WriteString(fmt.Sprintf("%+v", f.Value))
 			if (idx + 1) != l {
 				b.WriteString("|")
@@ -137,6 +139,9 @@ func (dump *QueryDump) String() string {
 
 // QueryFilterCondition provides information of filter of query.
 type QueryFilterCondition struct {
-	Filter string
-	Value  interface{}
+	// Deprecated: use FieldName and Operator instead.
+	Filter    string
+	FieldName string
+	Operator  string
+	Value     interface{}
 }

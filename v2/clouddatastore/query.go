@@ -2,6 +2,8 @@ package clouddatastore
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"cloud.google.com/go/datastore"
 	w "go.mercari.io/datastore/v2"
@@ -74,6 +76,21 @@ func (q *queryImpl) Transaction(t w.Transaction) w.Query {
 }
 
 func (q *queryImpl) Filter(filterStr string, value interface{}) w.Query {
+	filterStr = strings.TrimSpace(filterStr)
+	if filterStr == "" {
+		if q.firstError == nil {
+			q = q.clone()
+			q.firstError = fmt.Errorf("datastore: invalid filter %q", filterStr)
+		}
+		return q
+	}
+	f := strings.TrimRight(filterStr, " ><=!")
+	op := strings.TrimSpace(filterStr[len(f):])
+
+	return q.FilterField(f, op, value)
+}
+
+func (q *queryImpl) FilterField(fieldName, operator string, value interface{}) w.Query {
 	q = q.clone()
 	var err error
 	if pt, ok := value.(w.PropertyTranslator); ok {
@@ -86,10 +103,12 @@ func (q *queryImpl) Filter(filterStr string, value interface{}) w.Query {
 		}
 	}
 	origV := toOriginalValue(value)
-	q.q = q.q.Filter(filterStr, origV)
+	q.q = q.q.FilterField(fieldName, operator, origV)
 	q.dump.Filter = append(q.dump.Filter, &w.QueryFilterCondition{
-		Filter: filterStr,
-		Value:  value,
+		Filter:    fmt.Sprintf("%s %s", fieldName, operator), // backward compat
+		FieldName: fieldName,
+		Operator:  operator,
+		Value:     value,
 	})
 	return q
 }
