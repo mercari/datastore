@@ -1,6 +1,6 @@
 module go.mercari.io/datastore/v2
 
-go 1.22.7
+go 1.22
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0
