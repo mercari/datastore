@@ -14,8 +14,8 @@ jobs:
     strategy:
       matrix:
         go_version:
-          - ~1.16
-          - ~1.18
+          - ~1.22
+          - ~1.24
     defaults:
       run:
         working-directory: v2
@@ -24,7 +24,7 @@ jobs:
     services:
       # 本当はservicesで動かしたいけどオプションを指定して実行ができないっぽいので諦めるしかない…
       # datastore_emulator:
-      #   image: gcr.io/google.com/cloudsdktool/cloud-sdk:392.0.0
+      #   image: gcr.io/google.com/cloudsdktool/cloud-sdk:510.0.0
       #   ports:
       #     - "8081:8081"
       #   options: |-
@@ -41,7 +41,7 @@ jobs:
         ports:
           - "11211:11211"
     env:
-      GCLOUD_VERSION: "392.0.0"
+      GCLOUD_VERSION: "510.0.0"
       GO111MODULE: "on"
       DATASTORE_EMULATOR_HOST: "localhost:8081"
       DATASTORE_PROJECT_ID:    "unittest"
@@ -111,7 +111,7 @@ jobs:
         ports:
           - "11211:11211"
     env:
-      GCLOUD_VERSION: "392.0.0"
+      GCLOUD_VERSION: "510.0.0"
       GO111MODULE: "on"
       DATASTORE_EMULATOR_HOST: "localhost:8081"
       DATASTORE_PROJECT_ID:    "unittest"
