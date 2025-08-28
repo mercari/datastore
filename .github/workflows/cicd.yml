@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - master
-  pull_request_target: {}
+  # Currently not actively developed, so commented out for security reasons.
+  # pull_request_target: {}
 
 jobs:
   test-v2:
