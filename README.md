@@ -16,7 +16,7 @@ see [v2 doc](https://pkg.go.dev/go.mercari.io/datastore/v2) at first.
 
 ## Feature
 
-### DO
+### TO DO
 
 * Wrap `google.golang.org/appengine/datastore` and `cloud.google.com/go/datastore`
     * keep key behavior
@@ -42,7 +42,7 @@ see [v2 doc](https://pkg.go.dev/go.mercari.io/datastore/v2) at first.
 * Add some useful methods
     * `aedatastore/TransactionContext`
 
-### DON'T
+### FUTURE TO DOS
 
 * have utility functions
 * support firestore
