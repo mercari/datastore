@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         go_version:
-          - ~1.16
-          - ~1.18
+          - ~1.26
+          - ~1.27
     defaults:
       run:
         working-directory: v2
@@ -89,7 +89,8 @@ jobs:
     strategy:
       matrix:
         go_version:
-          - ~1.11
+          - ~1.26
+          - ~1.27
     permissions:
       contents: read
     services:
