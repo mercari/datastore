@@ -21,7 +21,7 @@ rm -rf   internal/c internal/pb
 mkdir -p internal/c internal/pb
 
 cp -r $(go list -f '{{ .Dir }}' -m cloud.google.com/go)/internal/fields internal/c/fields
-cp -r $(go list -f '{{ .Dir }}' -m google.golang.org/appengine)/internal/memcache internal/pb/memcache
+cp -r $(go list -f '{{ .Dir }}' -m google.golang.org/appengine/v2)/internal/memcache internal/pb/memcache
 
 # go mod files have 0111
 chmod -R a+w internal/c
