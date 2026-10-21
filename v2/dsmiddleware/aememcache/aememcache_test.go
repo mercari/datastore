@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/favclip/testerator/v3"
 	_ "github.com/favclip/testerator/v3/datastore"
 	_ "github.com/favclip/testerator/v3/memcache"
 

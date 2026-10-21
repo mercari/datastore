@@ -58,7 +58,7 @@ func (bm *Boom) setStructKey(src interface{}, key datastore.Key) error {
 	k = t.Kind()
 
 	if k != reflect.Struct {
-		return fmt.Errorf(fmt.Sprintf("boom: Expected struct, got instead: %v", k))
+		return fmt.Errorf("boom: Expected struct, got instead: %v", k)
 	}
 
 	idSet := false

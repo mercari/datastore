@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/favclip/testerator/v3"
 )
 
 func TestMain(m *testing.M) {

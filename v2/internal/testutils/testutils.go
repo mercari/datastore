@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/favclip/testerator/v3"
 	"go.mercari.io/datastore/v2"
 	"go.mercari.io/datastore/v2/aedatastore"
 	"go.mercari.io/datastore/v2/clouddatastore"
