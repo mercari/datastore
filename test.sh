@@ -5,6 +5,10 @@ cd `dirname $0`
 targets=`find . -type f \( -name '*.go' -and -not -iwholename '*vendor*' -and -not -iwholename '*testdata*' \)`
 packages=`go list ./... | grep -v internal/c | grep -v internal/pb`
 packages_wo_internal=`go list ./... | grep -v internal`
+# google.golang.org/appengine (v1) aetest requires python2.7 and go111 runtime, which are no longer available.
+# So skip tests depending on dev_appserver.py.
+test_packages=`echo "$packages" | grep -v -e /aedatastore$ -e /dsmiddleware/aememcache$ -e /testbed$`
+test_skip='^(TestBoom_AEMemcache|ExampleBoom_withCache)$'
 
 # Apply tools
 export PATH=$(pwd)/build-cmd:$PATH
@@ -28,4 +32,4 @@ export MEMCACHE_ADDR=localhost:11211
 
 # Connect Cloud Datastore (production env)
 # (if you need login) → gcloud auth application-default login
-go test $packages -count 1 -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.txt $@
+go test $test_packages -skip "$test_skip" -count 1 -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.txt $@
