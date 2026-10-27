@@ -78,8 +78,10 @@ jobs:
           install_components: "beta,cloud-datastore-emulator,app-engine-go"
       - name: Spinup Datastore Emulator
         run: |-
-          gcloud beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --use-firestore-in-datastore-mode &
-          curl http://localhost:8081 --silent --retry 30 --retry-connrefused --retry-delay 1
+          docker run --detach --rm --name datastore-emulator --publish 8081:8081 \
+            guibeira/datastore-emulator:0.1.13 \
+            --host-port 0.0.0.0:8081 --no-store-on-disk
+          curl http://localhost:8081 --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 1
       - name: Run tests
         run: |-
           ./test.sh -v -timeout 4m
@@ -152,8 +154,10 @@ jobs:
           install_components: "beta,cloud-datastore-emulator,app-engine-go"
       - name: Spinup Datastore Emulator
         run: |-
-          gcloud beta emulators datastore start --host-port=0.0.0.0:8081 --no-store-on-disk --use-firestore-in-datastore-mode &
-          curl http://localhost:8081 --silent --retry 30 --retry-connrefused --retry-delay 1
+          docker run --detach --rm --name datastore-emulator --publish 8081:8081 \
+            guibeira/datastore-emulator:0.1.13 \
+            --host-port 0.0.0.0:8081 --no-store-on-disk
+          curl http://localhost:8081 --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 1
       - name: Run tests
         run: |-
           ./test.sh -v -timeout 4m
